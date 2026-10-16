@@ -8,9 +8,12 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-    :root { --bg-color: #0d0d0d; --sheet-bg: #141414; --card-bg: #1e1e1e; --text-main: #ffffff; --text-muted: #8e8e93; --gold: #e6b800; }
+    :root { --bg-color: #0d0d0d; --sheet-bg: #141414; --card-bg: #1e1e1e; --text-main: #ffffff; --text-muted: #8e8e93; --gold: #e6b800; --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); --ease-out: cubic-bezier(0.16, 1, 0.3, 1); }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg-color); color: var(--text-main); max-width: 480px; margin: 0 auto; min-height: 100vh; overflow-x: hidden; position: relative; }
+
+    button, .btn-tile, .menu-item, .admin-cat-item, .auction-btn, .choice-btn, .mini-card, .sim-card-item, .player-card, .tag-option, .promo-reward-item, .game-collection-item { transition: transform 0.15s var(--ease-spring), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+    button:active, .btn-tile:active, .menu-item:active, .admin-cat-item:active, .auction-btn:active, .choice-btn:active, .mini-card:active, .sim-card-item:active, .player-card:active, .game-collection-item:active { transform: scale(0.95); }
 
     .loading-screen { position: fixed; inset: 0; background: var(--bg-color); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
     .loading-screen.hidden { display: none; }
@@ -24,32 +27,29 @@
     .error-icon { font-size: 60px; }
     .error-title { font-size: 22px; font-weight: 800; color: #fff; }
     .error-text { color: #aaa; font-size: 14px; line-height: 1.6; }
-    .error-btn { background: linear-gradient(135deg, #a855f7, #7c3aed); color: #fff; border: none; border-radius: 14px; padding: 16px 32px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .error-btn { background: linear-gradient(135deg, #a855f7, #7c3aed); color: #fff; border: none; border-radius: 14px; padding: 16px 32px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 20px rgba(168,85,247,0.4); }
 
     .top-nav { display: flex; justify-content: flex-end; align-items: center; padding: 16px; }
     .nav-right { display: flex; gap: 16px; font-size: 18px; color: #fff; }
-
     .stats-bar { display: flex; justify-content: space-between; align-items: center; padding: 0 16px 16px 16px; gap: 8px; }
     .stats-left { display: flex; align-items: center; gap: 10px; }
     .icon-circle { width: 44px; height: 44px; background: #1c1c1c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #aaa; position: relative; cursor: pointer; overflow: hidden; }
     .icon-circle img { width: 100%; height: 100%; object-fit: cover; }
-    .icon-circle.red-dot::after { content: ''; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; }
+    .icon-circle.red-dot::after { content: ''; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 8px rgba(239,68,68,0.8); }
     .icon-circle.avatar { background: linear-gradient(135deg, #2a2200, #1a1500); border: 1px solid #5c4400; color: var(--gold); }
     .level-box { background: #1c1c1c; padding: 8px 14px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #ccc; }
     .progress-mini { width: 50px; height: 5px; background: #333; border-radius: 3px; overflow: hidden; }
-    .progress-mini-fill { width: 40%; height: 100%; background: #4caf50; }
-
+    .progress-mini-fill { width: 40%; height: 100%; background: linear-gradient(90deg, #4caf50, #22c55e); border-radius: 3px; }
     .balance { font-size: 20px; font-weight: 700; color: #e0e0e0; white-space: nowrap; }
     .balance span { font-size: 16px; color: #888; }
-
     .main-content { padding: 0 16px 40px 16px; display: flex; flex-direction: column; min-height: calc(100vh - 150px); }
 
-    .sim-card { background: linear-gradient(135deg, #3a3a3a, #1f1f1f); border-radius: 16px; padding: 20px; margin: 20px auto 16px auto; width: 100%; max-width: 340px; aspect-ratio: 1.6 / 1; position: relative; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #444; transition: border-color 0.4s ease; }
-    .sim-card.rarity-rare { border-color: #3b82f6; }
-    .sim-card.rarity-epic { border-color: #a855f7; }
-    .sim-card.rarity-legendary { border-color: #f59e0b; }
-    .sim-card.rarity-mythic { border-color: #ef4444; }
-    .sim-card.rarity-secret { background: linear-gradient(135deg, #1a0a2a, #0d0515); border: 1px solid #c084fc; }
+    .sim-card { background: linear-gradient(135deg, #3a3a3a, #1f1f1f); border-radius: 16px; padding: 20px; margin: 20px auto 16px auto; width: 100%; max-width: 340px; aspect-ratio: 1.6 / 1; position: relative; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #444; transition: border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease; }
+    .sim-card.rarity-rare { border-color: #3b82f6; box-shadow: 0 0 20px rgba(59,130,246,0.2); }
+    .sim-card.rarity-epic { border-color: #a855f7; box-shadow: 0 0 20px rgba(168,85,247,0.2); }
+    .sim-card.rarity-legendary { border-color: #f59e0b; box-shadow: 0 0 30px rgba(245,158,11,0.3); }
+    .sim-card.rarity-mythic { border-color: #ef4444; box-shadow: 0 0 30px rgba(239,68,68,0.4); }
+    .sim-card.rarity-secret { background: linear-gradient(135deg, #1a0a2a, #0d0515); border: 1px solid #c084fc; box-shadow: 0 0 40px rgba(192,132,252,0.5); }
     .sim-card.start-card { align-items: center; justify-content: center; background: linear-gradient(135deg, #2a1a3a, #1a0f2a); border: 1px dashed #4a2a6a; }
     .sim-card.start-card .start-hand { font-size: 44px; margin-bottom: 10px; }
     .sim-card.start-card .start-text { font-size: 20px; font-weight: 800; text-align: center; color: #e9d5ff; line-height: 1.3; }
@@ -116,7 +116,7 @@
     .mini-card.empty { opacity: 0.4; cursor: default; }
     .mini-op-icon { width: 18px; height: 18px; } .mini-op-icon svg { width: 100%; height: 100%; }
 
-    .save-sell-row { display: flex; gap: 10px; margin-bottom: 12px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.3s ease; max-height: 0; overflow: hidden; }
+    .save-sell-row { display: flex; gap: 10px; margin-bottom: 12px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.3s var(--ease-out); max-height: 0; overflow: hidden; }
     .save-sell-row.visible { opacity: 1; visibility: visible; transform: translateY(0); max-height: 80px; }
     .btn-save, .btn-sell { flex: 1; height: 52px; border: none; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .btn-save { background: linear-gradient(135deg, #0a2a0a, #051505); border: 1px solid #1e5f1e; color: #22c55e; }
@@ -139,24 +139,23 @@
     .option-label { font-size: 11px; color: #888; }
     .option-value { font-size: 15px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 6px; }
 
-    .action-row { display: flex; gap: 10px; margin-top: 4px; }
-    .btn-x5 { width: 70px; height: 60px; background: #1c1c1c; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; border: 1px solid #2a2a2a; cursor: pointer; }
+    .action-row { display: flex; gap: 10px; margin-top: 4px; position: relative; }
+    .btn-x5 { width: 70px; height: 60px; background: #1c1c1c; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; border: 1px solid #2a2a2a; cursor: pointer; flex-shrink: 0; }
     .btn-x5:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-x5.armed { background: linear-gradient(135deg, #2a1a3a, #1a0f2a); border-color: #a855f7; color: #e9d5ff; }
-    .btn-main { flex-grow: 1; height: 60px; background: #e0e0e0; color: #0d0d0d; border: none; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    .btn-main { flex-grow: 1; height: 60px; background: linear-gradient(135deg, #e0e0e0, #bdbdbd); color: #0d0d0d; border: none; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 16px; font-weight: 700; cursor: pointer; position: relative; padding: 0 12px; box-shadow: 0 4px 20px rgba(255,255,255,0.1); }
     .btn-main:disabled { background: #333; color: #666; cursor: not-allowed; }
     .btn-main #rollBtnPrice { color: #555; font-weight: 500; font-size: 14px; }
-    .btn-main.x5-armed { background: linear-gradient(135deg, #a855f7, #7c3aed); color: #fff; }
+    .btn-main.x5-armed { background: linear-gradient(135deg, #a855f7, #7c3aed); color: #fff; box-shadow: 0 4px 20px rgba(168,85,247,0.4); }
     .btn-main.x5-armed #rollBtnPrice { color: #f3e8ff; }
-    .btn-main.free { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+    .btn-main.free { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 4px 20px rgba(34,197,94,0.4); }
     .btn-main.free #rollBtnPrice { display: none; }
     .btn-x5.free { background: linear-gradient(135deg, #22c55e, #16a34a); border-color: #4ade80; }
-    .free-badge { position: absolute; top: -8px; right: -8px; background: #ef4444; color: #fff; font-size: 11px; font-weight: 800; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; display: flex; align-items: center; justify-content: center; border: 2px solid #0d0d0d; }
+    .free-badge { position: absolute; top: -8px; right: -8px; background: #ef4444; color: #fff; font-size: 11px; font-weight: 800; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; display: flex; align-items: center; justify-content: center; border: 2px solid #0d0d0d; box-shadow: 0 0 10px rgba(239,68,68,0.6); }
 
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: none; opacity: 0; transition: opacity 0.3s; }
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: none; opacity: 0; transition: opacity 0.3s; }
     .overlay.active { display: block; opacity: 1; }
-
-    .menu-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--sheet-bg); border-top-left-radius: 32px; border-top-right-radius: 32px; padding: 12px 16px 40px 16px; z-index: 101; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90vh; overflow-y: auto; max-width: 480px; margin: 0 auto; }
+    .menu-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--sheet-bg); border-top-left-radius: 32px; border-top-right-radius: 32px; padding: 12px 16px 40px 16px; z-index: 101; transform: translateY(100%); transition: transform 0.4s var(--ease-out); max-height: 90vh; overflow-y: auto; max-width: 480px; margin: 0 auto; }
     .menu-sheet.active { transform: translateY(0); }
     .sheet-handle { width: 40px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 16px auto; }
     .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
@@ -185,9 +184,10 @@
     .bg-green { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
     .bg-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
 
-    .choice-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 700; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.25s; padding: 20px; }
-    .choice-modal.active { opacity: 1; visibility: visible; }
-    .choice-box { background: #1a1a1a; border-radius: 20px; padding: 24px 20px; width: 100%; max-width: 340px; border: 1px solid #2a2a2a; display: flex; flex-direction: column; gap: 16px; }
+    .choice-modal, .tag-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 700; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.25s, visibility 0.25s; padding: 20px; }
+    .choice-modal.active, .tag-modal.active { opacity: 1; visibility: visible; }
+    .choice-box { background: #1a1a1a; border-radius: 20px; padding: 24px 20px; width: 100%; max-width: 340px; border: 1px solid #2a2a2a; display: flex; flex-direction: column; gap: 16px; transform: scale(0.9); transition: transform 0.3s var(--ease-spring); }
+    .choice-modal.active .choice-box { transform: scale(1); }
     .choice-number { text-align: center; font-family: 'Courier New', monospace; font-size: 20px; font-weight: 700; padding: 12px; background: #0f0f0f; border-radius: 12px; border: 1px solid #2a2a2a; color: #fff; }
     .choice-rarity { text-align: center; font-size: 13px; font-weight: 600; margin-top: -8px; }
     .choice-price { text-align: center; font-size: 15px; color: #f59e0b; font-weight: 700; margin-top: -8px; }
@@ -196,11 +196,39 @@
     .choice-save { background: linear-gradient(135deg, #0a2a0a, #051505); border: 1px solid #1e5f1e; color: #22c55e; }
     .choice-sell { background: linear-gradient(135deg, #2a2200, #1a1500); border: 1px solid #5c4400; color: #f59e0b; }
 
-    /* ========== ЭКРАНЫ ========== */
+    .sim-detail-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 800; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s; padding: 20px; }
+    .sim-detail-modal.active { opacity: 1; visibility: visible; }
+    .sim-detail-box { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; transform: scale(0.85); transition: transform 0.4s var(--ease-spring); }
+    .sim-detail-modal.active .sim-detail-box { transform: scale(1); }
+    .sim-detail-card { background: #f5f5f5; border-radius: 18px; padding: 20px; aspect-ratio: 1.6 / 1; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 8px 40px rgba(0,0,0,0.6); position: relative; }
+    .sim-detail-card .sdc-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .sim-detail-card .sdc-op { background: #333; color: #fff; font-size: 12px; font-weight: 800; padding: 4px 8px; border-radius: 6px; letter-spacing: 0.5px; }
+    .sim-detail-card .sdc-chip { width: 32px; height: 24px; background: linear-gradient(135deg, #d4af37, #f4d03f); border-radius: 4px; border: 1px solid #b8941f; position: relative; }
+    .sim-detail-card .sdc-chip::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 11px; border: 1px solid #b8941f; border-radius: 2px; }
+    .sim-detail-card .sdc-number { font-family: 'Courier New', monospace; font-size: 22px; font-weight: 800; color: #111; text-align: center; letter-spacing: -1px; }
+    .sim-detail-card .sdc-bottom { display: flex; justify-content: space-between; align-items: center; }
+    .sim-detail-card .sdc-rarity { font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    .sim-detail-card .sdc-price { font-size: 14px; font-weight: 800; color: #333; }
+    .sim-detail-card.rarity-common { background: #f5f5f5; } .sim-detail-card.rarity-common .sdc-rarity { color: #6b7280; }
+    .sim-detail-card.rarity-rare { background: linear-gradient(135deg, #e8f0ff, #c7dcff); } .sim-detail-card.rarity-rare .sdc-op { background: #3b82f6; } .sim-detail-card.rarity-rare .sdc-rarity { color: #3b82f6; }
+    .sim-detail-card.rarity-epic { background: linear-gradient(135deg, #f0e8ff, #dcc7ff); } .sim-detail-card.rarity-epic .sdc-op { background: #a855f7; } .sim-detail-card.rarity-epic .sdc-rarity { color: #a855f7; }
+    .sim-detail-card.rarity-legendary { background: linear-gradient(135deg, #fff8e1, #ffe4a1); box-shadow: 0 8px 40px rgba(245, 158, 11, 0.5); } .sim-detail-card.rarity-legendary .sdc-op { background: #f59e0b; } .sim-detail-card.rarity-legendary .sdc-rarity { color: #d97706; }
+    .sim-detail-card.rarity-mythic { background: linear-gradient(135deg, #ffe8e8, #ffb3b3); box-shadow: 0 8px 40px rgba(239, 68, 68, 0.6); } .sim-detail-card.rarity-mythic .sdc-op { background: #ef4444; } .sim-detail-card.rarity-mythic .sdc-rarity { color: #ef4444; }
+    .sim-detail-card.rarity-secret { background: linear-gradient(135deg, #f3e8ff, #c084fc); box-shadow: 0 8px 40px rgba(192, 132, 252, 0.7); } .sim-detail-card.rarity-secret .sdc-op { background: #7c3aed; } .sim-detail-card.rarity-secret .sdc-rarity { color: #7c3aed; }
+    .sim-detail-actions { display: flex; flex-direction: column; gap: 10px; }
+    .sim-detail-btn { width: 100%; height: 54px; border: none; border-radius: 14px; font-size: 15px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .sim-detail-btn.sell { background: linear-gradient(135deg, #2a2200, #1a1500); border: 1px solid #5c4400; color: #f59e0b; }
+    .sim-detail-btn.del { background: linear-gradient(135deg, #2a0a0a, #1a0505); border: 1px solid #5f1e1e; color: #f87171; }
+    .sim-detail-btn.close { background: #2a2a2a; color: #aaa; }
+
+    .skeleton { background: linear-gradient(90deg, #1c1c1c 25%, #252525 50%, #1c1c1c 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-card { height: 100px; margin: 0 16px 12px; }
+
     .collection-screen, .check-screen, .chances-screen, .profile-screen, .promo-screen, .games-screen,
     .admin-screen, .admin-players-screen, .admin-reset-screen, .admin-player-detail, .rating-screen,
     .admin-promo-screen, .auction-screen, .admin-stats-screen, .admin-collection-screen,
-    .notifications-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); z-index: 200; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; overflow-y: auto; padding-bottom: 40px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: opacity 0.3s, transform 0.3s, visibility 0.3s; }
+    .notifications-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); z-index: 200; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; overflow-y: auto; padding-bottom: 40px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: opacity 0.35s var(--ease-out), transform 0.35s var(--ease-out), visibility 0.35s; }
     .collection-screen.active, .check-screen.active, .chances-screen.active, .profile-screen.active,
     .promo-screen.active, .games-screen.active, .admin-screen.active, .admin-players-screen.active,
     .admin-reset-screen.active, .admin-player-detail.active, .rating-screen.active,
@@ -219,7 +247,7 @@
     .rarity-count .label { font-size: 14px; color: #888; font-weight: 600; }
     .rarity-slots { font-size: 13px; color: #888; }
     .rarity-progress { width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
-    .rarity-progress-fill { width: 1%; height: 100%; background: #a855f7; transition: width 0.3s; }
+    .rarity-progress-fill { width: 1%; height: 100%; background: linear-gradient(90deg, #a855f7, #3b82f6); transition: width 0.5s ease; }
     .rarity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .rarity-item { background: #252525; border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; cursor: pointer; border: 1px solid transparent; }
     .rarity-item.active { background: #2a2a2a; border: 1px solid #444; }
@@ -229,9 +257,8 @@
     .dot-legendary { background: #f59e0b; } .dot-mythic { background: #ef4444; } .dot-secret { background: linear-gradient(45deg, #a855f7, #3b82f6); }
     .rarity-item-right { color: #888; font-weight: 600; }
 
-    /* ========== КАРТОЧКИ SIM В КОЛЛЕКЦИИ ========== */
     .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; }
-    .sim-card-item { background: #f5f5f5; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; position: relative; cursor: pointer; aspect-ratio: 1.6 / 1; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .sim-card-item { background: #f5f5f5; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; position: relative; cursor: pointer; aspect-ratio: 1.6 / 1; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
     .sim-card-item .sci-top { display: flex; justify-content: space-between; align-items: flex-start; }
     .sim-card-item .sci-op-badge { background: #333; color: #fff; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 4px; letter-spacing: 0.5px; }
     .sim-card-item .sci-chip { width: 22px; height: 16px; background: linear-gradient(135deg, #d4af37, #f4d03f); border-radius: 3px; position: relative; border: 1px solid #b8941f; }
@@ -240,35 +267,19 @@
     .sim-card-item .sci-bottom { display: flex; justify-content: space-between; align-items: center; gap: 4px; }
     .sim-card-item .sci-rarity { font-size: 9px; font-weight: 700; text-transform: uppercase; }
     .sim-card-item .sci-price { font-size: 10px; font-weight: 700; color: #666; }
-    .sim-card-item .sci-actions { position: absolute; top: 6px; right: 6px; display: none; gap: 4px; }
-    .sim-card-item:active .sci-actions { display: flex; }
-    .sim-card-item .sci-actions button { width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    /* Цвета карточек по редкости */
-    .sim-card-item.rarity-common { background: #f5f5f5; }
-    .sim-card-item.rarity-common .sci-rarity { color: #6b7280; }
-    .sim-card-item.rarity-rare { background: #e8f0ff; }
-    .sim-card-item.rarity-rare .sci-op-badge { background: #3b82f6; }
-    .sim-card-item.rarity-rare .sci-rarity { color: #3b82f6; }
-    .sim-card-item.rarity-epic { background: #f0e8ff; }
-    .sim-card-item.rarity-epic .sci-op-badge { background: #a855f7; }
-    .sim-card-item.rarity-epic .sci-rarity { color: #a855f7; }
-    .sim-card-item.rarity-legendary { background: linear-gradient(135deg, #fff8e1, #ffe4a1); box-shadow: 0 2px 12px rgba(245, 158, 11, 0.4); }
-    .sim-card-item.rarity-legendary .sci-op-badge { background: #f59e0b; }
-    .sim-card-item.rarity-legendary .sci-rarity { color: #d97706; }
-    .sim-card-item.rarity-mythic { background: linear-gradient(135deg, #ffe8e8, #ffb3b3); box-shadow: 0 2px 12px rgba(239, 68, 68, 0.5); }
-    .sim-card-item.rarity-mythic .sci-op-badge { background: #ef4444; }
-    .sim-card-item.rarity-mythic .sci-rarity { color: #ef4444; }
-    .sim-card-item.rarity-secret { background: linear-gradient(135deg, #f3e8ff, #c084fc); box-shadow: 0 2px 12px rgba(192, 132, 252, 0.5); }
-    .sim-card-item.rarity-secret .sci-op-badge { background: #7c3aed; }
-    .sim-card-item.rarity-secret .sci-rarity { color: #7c3aed; }
+    .sim-card-item.rarity-common { background: #f5f5f5; } .sim-card-item.rarity-common .sci-rarity { color: #6b7280; }
+    .sim-card-item.rarity-rare { background: linear-gradient(135deg, #e8f0ff, #c7dcff); } .sim-card-item.rarity-rare .sci-op-badge { background: #3b82f6; } .sim-card-item.rarity-rare .sci-rarity { color: #3b82f6; }
+    .sim-card-item.rarity-epic { background: linear-gradient(135deg, #f0e8ff, #dcc7ff); } .sim-card-item.rarity-epic .sci-op-badge { background: #a855f7; } .sim-card-item.rarity-epic .sci-rarity { color: #a855f7; }
+    .sim-card-item.rarity-legendary { background: linear-gradient(135deg, #fff8e1, #ffe4a1); box-shadow: 0 2px 16px rgba(245, 158, 11, 0.4); } .sim-card-item.rarity-legendary .sci-op-badge { background: #f59e0b; } .sim-card-item.rarity-legendary .sci-rarity { color: #d97706; }
+    .sim-card-item.rarity-mythic { background: linear-gradient(135deg, #ffe8e8, #ffb3b3); box-shadow: 0 2px 16px rgba(239, 68, 68, 0.5); } .sim-card-item.rarity-mythic .sci-op-badge { background: #ef4444; } .sim-card-item.rarity-mythic .sci-rarity { color: #ef4444; }
+    .sim-card-item.rarity-secret { background: linear-gradient(135deg, #f3e8ff, #c084fc); box-shadow: 0 2px 16px rgba(192, 132, 252, 0.6); } .sim-card-item.rarity-secret .sci-op-badge { background: #7c3aed; } .sim-card-item.rarity-secret .sci-rarity { color: #7c3aed; }
     .collection-empty { text-align: center; color: #555; font-size: 13px; padding: 40px 20px; line-height: 1.5; grid-column: span 2; }
 
-    /* ========== ПРОФИЛЬ ========== */
     .profile-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; }
     .profile-header .nav-left { display: flex; align-items: center; gap: 12px; cursor: pointer; }
     .profile-header .nav-left i { font-size: 20px; color: #fff; }
     .profile-avatar-wrap { display: flex; flex-direction: column; align-items: center; padding: 10px 0 20px 0; gap: 12px; }
-    .profile-avatar { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, #2a2200, #1a1500); border: 2px solid #5c4400; display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--gold); overflow: hidden; }
+    .profile-avatar { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, #2a2200, #1a1500); border: 2px solid #5c4400; display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--gold); overflow: hidden; box-shadow: 0 0 30px rgba(230,184,0,0.3); }
     .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .profile-username { font-size: 15px; color: #aaa; font-weight: 500; text-align: center; }
     .profile-username b { color: #fff; }
@@ -281,14 +292,12 @@
     .rarity-list { background: #1c1c1c; border-radius: 20px; margin: 0 16px 24px 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
     .rarity-row { display: flex; align-items: center; gap: 12px; }
     .rarity-row .rarity-name { width: 100px; font-size: 13px; font-weight: 600; }
-    .rarity-row .rarity-name.common { color: #9ca3af; } .rarity-row .rarity-name.rare { color: #3b82f6; }
-    .rarity-row .rarity-name.epic { color: #a855f7; } .rarity-row .rarity-name.legendary { color: #f59e0b; }
-    .rarity-row .rarity-name.mythic { color: #ef4444; } .rarity-row .rarity-name.secret { color: #c084fc; }
+    .rarity-row .rarity-name.common { color: #9ca3af; } .rarity-row .rarity-name.rare { color: #3b82f6; } .rarity-row .rarity-name.epic { color: #a855f7; }
+    .rarity-row .rarity-name.legendary { color: #f59e0b; } .rarity-row .rarity-name.mythic { color: #ef4444; } .rarity-row .rarity-name.secret { color: #c084fc; }
     .rarity-row .rarity-bar { flex-grow: 1; height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
-    .rarity-row .rarity-bar-fill { height: 100%; border-radius: 3px; width: 0%; transition: width 0.3s; }
-    .rarity-row .rarity-bar-fill.common { background: #6b7280; } .rarity-row .rarity-bar-fill.rare { background: #3b82f6; }
-    .rarity-row .rarity-bar-fill.epic { background: #a855f7; } .rarity-row .rarity-bar-fill.legendary { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-    .rarity-row .rarity-bar-fill.mythic { background: linear-gradient(90deg, #f87171, #ef4444); } .rarity-row .rarity-bar-fill.secret { background: linear-gradient(90deg, #a855f7, #3b82f6); }
+    .rarity-row .rarity-bar-fill { height: 100%; border-radius: 3px; width: 0%; transition: width 0.5s ease; }
+    .rarity-row .rarity-bar-fill.common { background: #6b7280; } .rarity-row .rarity-bar-fill.rare { background: #3b82f6; } .rarity-row .rarity-bar-fill.epic { background: #a855f7; }
+    .rarity-row .rarity-bar-fill.legendary { background: linear-gradient(90deg, #fbbf24, #f59e0b); } .rarity-row .rarity-bar-fill.mythic { background: linear-gradient(90deg, #f87171, #ef4444); } .rarity-row .rarity-bar-fill.secret { background: linear-gradient(90deg, #a855f7, #3b82f6); }
     .rarity-row .rarity-count { font-size: 15px; font-weight: 700; color: #fff; min-width: 30px; text-align: right; }
 
     .promo-title, .check-title, .chances-title { font-size: 28px; font-weight: 700; padding: 0 16px 12px 16px; color: #fff; }
@@ -297,7 +306,7 @@
     .promo-input input, .check-input-wrap input { background: transparent; border: none; color: #fff; font-size: 18px; font-weight: 600; outline: none; width: 100%; }
     .promo-input input::placeholder, .check-input-wrap input::placeholder { color: #555; font-weight: 400; }
     .check-input-wrap input { font-family: 'Courier New', monospace; }
-    .promo-activate, .check-btn { background: #e0e0e0; color: #0d0d0d; border: none; border-radius: 16px; margin: 0 16px; padding: 18px; font-size: 16px; font-weight: 700; cursor: pointer; width: calc(100% - 32px); }
+    .promo-activate, .check-btn { background: linear-gradient(135deg, #e0e0e0, #bdbdbd); color: #0d0d0d; border: none; border-radius: 16px; margin: 0 16px; padding: 18px; font-size: 16px; font-weight: 700; cursor: pointer; width: calc(100% - 32px); }
 
     .country-tabs { display: flex; gap: 8px; padding: 0 16px 16px 16px; }
     .country-btn { padding: 10px 16px; background: #1c1c1c; border-radius: 20px; font-size: 14px; font-weight: 600; color: #ccc; cursor: pointer; border: 1px solid transparent; }
@@ -322,7 +331,7 @@
 
     .chances-list { display: flex; flex-direction: column; gap: 12px; padding: 0 16px; }
     .chance-card { background: #1c1c1c; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; border: 1px solid #2a2a2a; position: relative; }
-    .chance-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; }
+    .chance-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; border-radius: 16px 0 0 16px; }
     .chance-card.rarity-common::before { background: #6b7280; } .chance-card.rarity-rare::before { background: #3b82f6; }
     .chance-card.rarity-epic::before { background: #a855f7; } .chance-card.rarity-legendary::before { background: #f59e0b; }
     .chance-card.rarity-mythic::before { background: #ef4444; } .chance-card.rarity-secret::before { background: linear-gradient(180deg, #a855f7, #3b82f6); }
@@ -335,9 +344,8 @@
     .chance-percent { font-size: 18px; font-weight: 800; color: #fff; }
     .chance-bar { height: 6px; background: #2a2a2a; border-radius: 3px; overflow: hidden; margin-left: 8px; }
     .chance-bar-fill { height: 100%; border-radius: 3px; }
-    .chance-bar-fill.common { background: #6b7280; } .chance-bar-fill.rare { background: #3b82f6; }
-    .chance-bar-fill.epic { background: #a855f7; } .chance-bar-fill.legendary { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-    .chance-bar-fill.mythic { background: linear-gradient(90deg, #f87171, #ef4444); } .chance-bar-fill.secret { background: linear-gradient(90deg, #a855f7, #3b82f6); }
+    .chance-bar-fill.common { background: #6b7280; } .chance-bar-fill.rare { background: #3b82f6; } .chance-bar-fill.epic { background: #a855f7; }
+    .chance-bar-fill.legendary { background: linear-gradient(90deg, #fbbf24, #f59e0b); } .chance-bar-fill.mythic { background: linear-gradient(90deg, #f87171, #ef4444); } .chance-bar-fill.secret { background: linear-gradient(90deg, #a855f7, #3b82f6); }
     .chance-card-bottom { display: flex; justify-content: space-between; align-items: center; padding-left: 8px; font-size: 12px; }
     .chance-example { font-family: 'Courier New', monospace; color: #888; }
     .chance-price { color: #f59e0b; font-weight: 700; }
@@ -349,7 +357,7 @@
     .game-name { font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 12px; }
     .upgrade-icon { width: 42px; height: 42px; }
     .game-desc { font-size: 14px; color: #8e8e93; line-height: 1.45; }
-    .play-btn { width: 100%; padding: 16px; background: #fff; color: #000; border: none; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; }
+    .play-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #fff, #e0e0e0); color: #000; border: none; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; }
 
     .upgrade-game-screen, .mines-game-screen { position: fixed; inset: 0; background-color: #0b0e14; z-index: 9999; display: none; flex-direction: column; align-items: center; overflow-y: auto; padding: 10px; }
     .upgrade-game-screen.active, .mines-game-screen.active { display: flex; }
@@ -368,8 +376,8 @@
     .mult-btn.active .mult-chance { color: #f39c12; }
     .bar-container { position: relative; width: 100%; height: 48px; background: #2a1a1a; border-radius: 12px; overflow: hidden; }
     .success-zone { position: absolute; top: 0; left: 0; height: 100%; width: 60%; background: linear-gradient(90deg, #2ecc71, #27ae60); }
-    .slider { position: absolute; top: 0; left: 0; width: 8px; height: 100%; background: #fff; z-index: 10; border-radius: 4px; }
-    .result-text { font-size: 18px; font-weight: 800; text-align: center; height: 26px; opacity: 0; }
+    .slider { position: absolute; top: 0; left: 0; width: 8px; height: 100%; background: #fff; z-index: 10; border-radius: 4px; box-shadow: 0 0 12px rgba(255,255,255,0.8); }
+    .result-text { font-size: 18px; font-weight: 800; text-align: center; height: 26px; opacity: 0; transition: opacity 0.3s; }
     .result-text.visible { opacity: 1; }
     .result-success { color: #2ecc71; } .result-fail { color: #e74c3c; }
     .game-bet-card, .mines-bet-card { background: #0f131a; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-height: 80px; justify-content: center; align-items: center; text-align: center; }
@@ -378,9 +386,8 @@
     .game-bet-card .bet-price, .mines-bet-price { font-size: 13px; color: #f39c12; font-weight: 700; }
     .game-bet-card.empty .bet-number, .mines-bet-card.empty .mines-bet-number { color: #4a5568; }
     .btn-open-collection { background: linear-gradient(135deg, #1c2331, #2a3547); border: 1px solid #2a3547; color: #fff; border-radius: 14px; padding: 14px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-upgrade { width: 100%; padding: 18px; font-size: 16px; font-weight: 800; color: #fff; background: linear-gradient(90deg, #f39c12, #e67e22); border: none; border-radius: 14px; cursor: pointer; }
-    .btn-upgrade:disabled { background: #2a3547; color: #6b7a90; }
-
+    .btn-upgrade { width: 100%; padding: 18px; font-size: 16px; font-weight: 800; color: #fff; background: linear-gradient(90deg, #f39c12, #e67e22); border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 4px 20px rgba(243,156,18,0.4); }
+    .btn-upgrade:disabled { background: #2a3547; color: #6b7a90; box-shadow: none; }
     .mines-header { text-align: center; }
     .mines-title { font-size: 18px; font-weight: 800; color: #fff; }
     .mines-multipliers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -393,14 +400,14 @@
     .mine-cell .cell-mult { font-size: 11px; font-weight: 800; color: #f39c12; font-family: 'Courier New', monospace; }
     .mines-stats { display: flex; justify-content: space-between; gap: 10px; }
     .mines-stat { background: #0f131a; border-radius: 12px; padding: 8px 14px; font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; font-family: 'Courier New', monospace; }
-    .mines-take-btn { background: linear-gradient(90deg, #22c55e, #16a34a); }
-    .mines-take-btn:disabled { background: #2a3547; color: #6b7a90; }
+    .mines-take-btn { background: linear-gradient(90deg, #22c55e, #16a34a); box-shadow: 0 4px 20px rgba(34,197,94,0.4); }
+    .mines-take-btn:disabled { background: #2a3547; color: #6b7a90; box-shadow: none; }
     .mines-hint { text-align: center; font-size: 12px; color: #6b7a90; min-height: 16px; }
     .mines-hint.win { color: #22c55e; font-weight: 700; } .mines-hint.lose { color: #ef4444; font-weight: 700; }
 
-    .game-collection-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; display: flex; align-items: flex-end; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.25s; }
+    .game-collection-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 10000; display: flex; align-items: flex-end; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
     .game-collection-modal.active { opacity: 1; visibility: visible; }
-    .game-collection-sheet { background: #151a24; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 20px 16px 40px 16px; width: 100%; max-width: 480px; max-height: 75vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s; }
+    .game-collection-sheet { background: #151a24; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 20px 16px 40px 16px; width: 100%; max-width: 480px; max-height: 75vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.4s var(--ease-out); }
     .game-collection-modal.active .game-collection-sheet { transform: translateY(0); }
     .game-collection-handle { width: 40px; height: 4px; background: #2a3547; border-radius: 2px; margin: 0 auto 16px; }
     .game-collection-title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 16px; text-align: center; }
@@ -408,12 +415,9 @@
     .game-collection-item { background: #0f131a; border: 1px solid #232a38; border-radius: 14px; padding: 14px; cursor: pointer; }
     .game-collection-item .gci-number { font-family: 'Courier New', monospace; font-size: 18px; font-weight: 800; }
     .game-collection-item .gci-info { display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px; }
-    .game-collection-item.rarity-common .gci-number { color: #9ca3af; }
-    .game-collection-item.rarity-rare .gci-number { color: #3b82f6; }
-    .game-collection-item.rarity-epic .gci-number { color: #a855f7; }
-    .game-collection-item.rarity-legendary .gci-number { color: #f59e0b; }
-    .game-collection-item.rarity-mythic .gci-number { color: #ef4444; }
-    .game-collection-item.rarity-secret .gci-number { color: #c084fc; }
+    .game-collection-item.rarity-common .gci-number { color: #9ca3af; } .game-collection-item.rarity-rare .gci-number { color: #3b82f6; }
+    .game-collection-item.rarity-epic .gci-number { color: #a855f7; } .game-collection-item.rarity-legendary .gci-number { color: #f59e0b; }
+    .game-collection-item.rarity-mythic .gci-number { color: #ef4444; } .game-collection-item.rarity-secret .gci-number { color: #c084fc; }
 
     .user-tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-left: 6px; }
     .tag-owner { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
@@ -486,7 +490,7 @@
     .rating-name { font-size: 15px; font-weight: 700; color: #fff; }
     .rating-value { font-size: 15px; font-weight: 800; color: #e0e0e0; text-align: right; }
 
-    .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-30px); z-index: 99999; background: linear-gradient(135deg, #2a2200, #1a1500); border: 1px solid #5c4400; border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; opacity: 0; visibility: hidden; transition: opacity 0.3s, transform 0.3s; pointer-events: none; min-width: 280px; max-width: 90%; }
+    .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-30px); z-index: 99999; background: linear-gradient(135deg, #2a2200, #1a1500); border: 1px solid #5c4400; border-radius: 16px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; opacity: 0; visibility: hidden; transition: opacity 0.3s, transform 0.3s; pointer-events: none; min-width: 280px; max-width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
     .toast.active { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
     .toast.error { background: linear-gradient(135deg, #2a0a0a, #1a0505); border-color: #5f1e1e; }
     .toast-icon { width: 40px; height: 40px; border-radius: 12px; background: rgba(230, 184, 0, 0.15); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 20px; }
@@ -495,12 +499,9 @@
     .toast-title { font-size: 14px; font-weight: 700; color: #fff; }
     .toast-sub { font-size: 12px; color: #aaa; }
 
-    .tag-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 99000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; padding: 20px; }
-    .tag-modal.active { opacity: 1; visibility: visible; }
     .tag-modal-box { background: #1a1a1a; border-radius: 20px; padding: 20px; width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 12px; max-height: 80vh; overflow-y: auto; }
     .tag-modal-title { font-size: 16px; font-weight: 700; text-align: center; color: #fff; }
     .tag-option { background: #252525; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-    .tag-option-left { display: flex; align-items: center; gap: 10px; }
 
     .promo-form { background: #1c1c1c; border-radius: 20px; margin: 0 16px 20px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
     .promo-form-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; margin-top: 8px; }
@@ -533,14 +534,16 @@
 
     .drop-overlay { position: fixed; inset: 0; z-index: 99990; display: flex; align-items: center; justify-content: center; flex-direction: column; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity 0.4s, visibility 0.4s; padding: 20px; }
     .drop-overlay.active { opacity: 1; visibility: visible; pointer-events: auto; }
-    .drop-bg { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.92); }
+    .drop-bg { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.92); backdrop-filter: blur(8px); }
     .drop-title { position: relative; font-size: 28px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 24px; z-index: 10; text-align: center; }
     .drop-title.legendary { background: linear-gradient(90deg, #fbbf24, #fde047, #f59e0b, #fde047, #fbbf24); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: legendaryGradient 2s linear infinite; }
     .drop-title.mythic { background: linear-gradient(90deg, #ef4444, #fca5a5, #dc2626, #fca5a5, #ef4444); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: mythicGradient 1.5s linear infinite; font-size: 32px; }
     .drop-title.secret { background: linear-gradient(90deg, #a855f7, #60a5fa, #c084fc, #3b82f6, #a855f7); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: secretGradient 2s linear infinite; font-size: 30px; }
     .drop-card { position: relative; z-index: 10; width: 100%; max-width: 380px; }
     .drop-card-inner { background: linear-gradient(135deg, #3a3a3a, #1f1f1f); border-radius: 20px; padding: 24px; aspect-ratio: 1.6 / 1; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid #444; }
-    .drop-card-inner.rarity-legendary { border-color: #f59e0b; } .drop-card-inner.rarity-mythic { border-color: #ef4444; } .drop-card-inner.rarity-secret { border-color: #c084fc; }
+    .drop-card-inner.rarity-legendary { border-color: #f59e0b; box-shadow: 0 0 40px rgba(245,158,11,0.5); }
+    .drop-card-inner.rarity-mythic { border-color: #ef4444; box-shadow: 0 0 40px rgba(239,68,68,0.6); }
+    .drop-card-inner.rarity-secret { border-color: #c084fc; box-shadow: 0 0 40px rgba(192,132,252,0.7); }
     .drop-card-inner.op-mts { background: linear-gradient(135deg, #8b1a1a 0%, #4a0d0d 50%, #1a0505 100%); } .drop-card-inner.op-megafon { background: linear-gradient(135deg, #16a34a 0%, #0a5a2a 50%, #051505 100%); } .drop-card-inner.op-beeline { background: linear-gradient(135deg, #facc15 0%, #a67c00 45%, #0f0d00 100%); } .drop-card-inner.op-secret { background: linear-gradient(135deg, #2a0a4a 0%, #1a0a2a 50%, #0a0a2a 100%); }
     .dc-top { display: flex; justify-content: space-between; align-items: flex-start; }
     .dc-logo-top { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 18px; color: #ccc; }
@@ -555,9 +558,9 @@
     .d-value { font-size: 32px; font-weight: 900; color: #f59e0b; font-family: 'Courier New', monospace; }
     .drop-actions { position: relative; z-index: 10; margin-top: 24px; display: flex; gap: 10px; width: 100%; max-width: 380px; }
     .d-btn { flex: 1; height: 56px; border: none; border-radius: 16px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .d-btn.close { background: #2a2a2a; color: #fff; } .d-btn.save { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+    .d-btn.close { background: #2a2a2a; color: #fff; } .d-btn.save { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 4px 20px rgba(34,197,94,0.4); }
 
-    .pattern-badge { position: absolute; bottom: 12px; right: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 10px; display: flex; align-items: center; gap: 4px; z-index: 3; }
+    .pattern-badge { position: absolute; bottom: 12px; right: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 10px; display: flex; align-items: center; gap: 4px; z-index: 3; box-shadow: 0 2px 10px rgba(245,158,11,0.5); }
     .pattern-name { font-size: 9px; opacity: 0.85; text-transform: uppercase; }
 
     .notif-item { background: #1c1c1c; border-radius: 14px; margin: 0 16px 10px; padding: 14px; display: flex; gap: 12px; border: 1px solid #2a2a2a; }
@@ -574,7 +577,7 @@
     .auction-hint i { color: #4ade80; font-size: 20px; }
     .auction-hint-text { font-size: 12px; color: #86efac; }
     .auction-list { display: flex; flex-direction: column; gap: 12px; padding: 0 16px 20px; }
-    .auction-card { background: linear-gradient(135deg, #1a1a1a, #0f0f0f); border-radius: 16px; padding: 16px; border: 1px solid #2a2a2a; display: flex; flex-direction: column; gap: 12px; }
+    .auction-card { background: linear-gradient(135deg, #1a1a1a, #0f0f0f); border-radius: 16px; padding: 16px; border: 1px solid #2a2a2a; display: flex; flex-direction: column; gap: 12px; position: relative; }
     .auction-card.rarity-rare { border-color: #3b82f6; } .auction-card.rarity-epic { border-color: #a855f7; } .auction-card.rarity-legendary { border-color: #f59e0b; } .auction-card.rarity-mythic { border-color: #ef4444; } .auction-card.rarity-secret { border-color: #c084fc; } .auction-card.my-lot { border-color: #22c55e; }
     .auction-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
     .auction-number { font-family: 'Courier New', monospace; font-size: 18px; font-weight: 800; color: #fff; }
@@ -596,22 +599,23 @@
     .auction-btn.cancel { background: linear-gradient(135deg, #2a0a0a, #1a0505); border: 1px solid #ef4444; color: #f87171; }
     .auction-btn.take { background: linear-gradient(135deg, #0a2a0a, #051505); border: 1px solid #22c55e; color: #4ade80; }
     .auction-empty { text-align: center; color: #555; font-size: 13px; padding: 40px 20px; line-height: 1.5; }
+    .auction-empty i { font-size: 42px; margin-bottom: 12px; opacity: 0.3; display: block; }
     .my-lot-badge { position: absolute; top: 12px; right: 12px; background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 8px; }
     .create-lot-bar { background: linear-gradient(135deg, #1a2a3a, #0f1520); border: 1px solid #3b82f6; border-radius: 16px; margin: 0 16px 16px; padding: 14px; display: flex; gap: 12px; cursor: pointer; }
     .create-lot-bar i { color: #60a5fa; font-size: 22px; }
     .create-lot-title { font-size: 14px; font-weight: 700; color: #fff; }
     .create-lot-sub { font-size: 11px; color: #8ab4f8; }
-    .lot-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; display: flex; align-items: flex-end; justify-content: center; opacity: 0; visibility: hidden; }
+    .lot-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 10000; display: flex; align-items: flex-end; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
     .lot-modal.active { opacity: 1; visibility: visible; }
-    .lot-sheet { background: #151a24; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 20px 16px 40px; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s; }
+    .lot-sheet { background: #151a24; border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 20px 16px 40px; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.4s var(--ease-out); }
     .lot-modal.active .lot-sheet { transform: translateY(0); }
     .lot-handle { width: 40px; height: 4px; background: #2a3547; border-radius: 2px; margin: 0 auto 16px; }
     .lot-title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 16px; text-align: center; }
     .lot-input-wrap { background: #0f131a; border: 1px solid #232a38; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
     .lot-input-label { font-size: 11px; color: #6b7a90; text-transform: uppercase; margin-bottom: 6px; }
     .lot-input { width: 100%; background: transparent; border: none; color: #fff; font-size: 18px; font-weight: 700; outline: none; font-family: 'Courier New', monospace; }
-    .lot-confirm-btn { width: 100%; padding: 16px; background: linear-gradient(90deg, #22c55e, #16a34a); color: #fff; border: none; border-radius: 14px; font-size: 16px; font-weight: 800; cursor: pointer; }
-    .lot-confirm-btn:disabled { background: #2a3547; color: #6b7a90; }
+    .lot-confirm-btn { width: 100%; padding: 16px; background: linear-gradient(90deg, #22c55e, #16a34a); color: #fff; border: none; border-radius: 14px; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 20px rgba(34,197,94,0.4); }
+    .lot-confirm-btn:disabled { background: #2a3547; color: #6b7a90; box-shadow: none; }
 
     .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px 16px; }
     .stats-tile { background: #1c1c1c; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #2a2a2a; }
@@ -679,7 +683,6 @@
                 <div class="option-box"><div class="option-label">Тариф</div><div class="option-value">Стандарт</div></div>
             </div>
             <div class="action-row">
-                <div class="btn-x5
                 <div class="btn-x5" id="rollX5Btn" onclick="handleX5Click()">x5</div>
                 <div class="btn-main" id="rollBtn" onclick="handleMainClick()">
                     <span id="rollBtnText">Крутить</span> <span id="rollBtnPrice">500 ₽</span>
@@ -882,6 +885,28 @@
         </div>
     </div>
 
+    <!-- МОДАЛКА SIM-КАРТОЧКИ -->
+    <div class="sim-detail-modal" id="simDetailModal">
+        <div class="sim-detail-box">
+            <div class="sim-detail-card" id="simDetailCard">
+                <div class="sdc-top">
+                    <div class="sdc-op" id="sdcOp">МТС</div>
+                    <div class="sdc-chip"></div>
+                </div>
+                <div class="sdc-number" id="sdcNumber">+7 900 000-00-00</div>
+                <div class="sdc-bottom">
+                    <div class="sdc-rarity" id="sdcRarity">Редкий</div>
+                    <div class="sdc-price" id="sdcPrice">0 ₽</div>
+                </div>
+            </div>
+            <div class="sim-detail-actions">
+                <button class="sim-detail-btn sell" onclick="simDetailSell()"><i class="fa-solid fa-coins"></i> Продать за <span id="sdcSellPrice">0 ₽</span></button>
+                <button class="sim-detail-btn del" onclick="simDetailDelete()"><i class="fa-solid fa-trash"></i> Удалить</button>
+                <button class="sim-detail-btn close" onclick="closeSimDetail()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <!-- АДМИНКА -->
     <div class="admin-screen" id="adminScreen">
         <div class="admin-header"><div class="nav-left" onclick="closeAdmin()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
@@ -1064,9 +1089,7 @@
         <div class="toast-text"><div class="toast-title" id="toastTitle">Готово</div><div class="toast-sub" id="toastSub"></div></div>
     </div>
 
-    </div><!-- /gameRoot -->
-
-      <script>
+    </div><!-- /gameRoot -->    <script>
     // ==================== SUPABASE ====================
     const SUPABASE_URL = 'https://docubgerphcbftmwyltl.supabase.co';
     const SUPABASE_KEY = 'sb_publishable__b9xtiIVU_-mm9jBTGRViw_zV0HoW-I';
@@ -1099,11 +1122,13 @@
     let selectedLotIndex = null;
     let currentAuctionTab = 'all';
     let auctionTickInterval = null;
+    let simDetailTarget = null;
 
     const balanceDisplay = document.getElementById('balanceDisplay');
     const profileBalance = document.getElementById('profileBalance');
     const levelDisplay = document.getElementById('levelDisplay');
 
+    const TIRAGE_LIMITS = { common: Infinity, rare: Infinity, epic: Infinity, legendary: 5, mythic: 1, secret: 1 };
     const BASE_PRICES = { common: 100, rare: 2500, epic: 30000, legendary: 250000, mythic: 4000000, secret: 400000000 };
     const OPERATOR_MULT = { 'МТС': 1.15, 'Мегафон': 1.10, 'Билайн': 1.00, 'SECRET': 2.00 };
     const ROLL_PRICE = 500;
@@ -1197,7 +1222,6 @@
         setTimeout(() => toast.classList.remove('active'), 3000);
     }
 
-    // ==================== ЭКОНОМИКА ====================
     function getPatternMultiplier(digits) {
         if (!digits || digits.length !== 7) return 1.0;
         const d = digits; const s = digits.join('');
@@ -1331,40 +1355,36 @@
         return { op: opObj.code, opObj, digits, formatted, rarity };
     }
 
-    // ==================== ГЕНЕРАЦИЯ С ПРОВЕРКОЙ УНИКАЛЬНОСТИ ====================
     async function generateUniqueNumber(rarity) {
-        // Секретные — уникальные без оператора
+        const limit = TIRAGE_LIMITS[rarity.key];
+        if (limit === Infinity) {
+            const opObj = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
+            const digits = generateDigitsForRarity(rarity);
+            return buildNumberFromDigits(opObj, digits, rarity);
+        }
         if (rarity.key === 'secret') {
             const variants = ['0','1','2','3','4','5','6','7','8','9','0123456789','10','11','12','13','14','15','16'];
-            // Тасование
             const shuffled = variants.sort(() => Math.random() - 0.5);
             for (const v of shuffled) {
-                const { data } = await sb.from('saved_numbers').select('id').eq('rarity_key', 'secret').eq('formatted', v).limit(1);
-                if (!data || data.length === 0) {
+                const { count } = await sb.from('saved_numbers').select('id', { count: 'exact', head: true }).eq('rarity_key', 'secret').eq('formatted', v);
+                if ((count || 0) < limit) {
                     return { op: '-', opObj: { code: '-', name: 'SECRET', country: '🌌 Неизвестно' }, digits: v.split('').map(Number), formatted: v, rarity: rarity, isSecretVariant: v };
                 }
             }
-            // Все секретные заняты — возвращаем обычный
-            return generateUniqueNumber(RARITIES[5]); // common
+            return generateUniqueNumber(RARITIES[3]);
         }
-        // Обычные — просто генерируем
-        for (let attempt = 0; attempt < 20; attempt++) {
+        for (let attempt = 0; attempt < 30; attempt++) {
             const opObj = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
             const digits = generateDigitsForRarity(rarity);
             const num = buildNumberFromDigits(opObj, digits, rarity);
-            // Проверяем — есть ли такой же formatted в базе
-            const { data } = await sb.from('saved_numbers').select('id').eq('formatted', num.formatted).limit(1);
-            if (!data || data.length === 0) {
-                // Свободен — отдаём
+            const { count } = await sb.from('saved_numbers').select('id', { count: 'exact', head: true }).eq('formatted', num.formatted);
+            if ((count || 0) < limit) {
                 return num;
             }
-            // Занят — пробуем ещё
         }
-        // Не нашли свободный — генерируем заново
-        return generateUniqueNumber(rarity);
+        return generateUniqueNumber(RARITIES[3]);
     }
 
-    // ==================== УДАЧА ====================
     const LUCK_TIERS = [
         { key: 'x15', mult: 15, tier: 3 }, { key: 'x10', mult: 10, tier: 3 },
         { key: 'x5', mult: 5, tier: 2 }, { key: 'x2', mult: 2, tier: 1 },
@@ -1385,7 +1405,7 @@
         return null;
     }
     function getLuckMultiplier() { const a = getActiveBoost(); return a ? a.mult : 1; }
-    function updateLuckUI() { updateLuckRow(); renderChancesScreen(); }
+    function updateLuckUI() { updateLuckRow(); }
     function updateLuckRow() {
         const row = document.getElementById('luckRow');
         const label = document.getElementById('luckRowLabel');
@@ -1446,12 +1466,12 @@
         if (!list) return;
         const chances = calculateChances();
         const items = [
-            { key: 'common', name: 'Обычный', color: '#6b7280', percent: chances.common, example: '+7 928 135-53-24', price: 'от 100 ₽' },
-            { key: 'rare', name: 'Редкий', color: '#3b82f6', percent: chances.rare, example: '+7 964 343-34-43', price: 'от 2 500 ₽' },
-            { key: 'epic', name: 'Эпический', color: '#a855f7', percent: chances.epic, example: '+7 910 030-30-21', price: 'от 30 000 ₽' },
-            { key: 'legendary', name: 'Легендарный', color: '#f59e0b', percent: chances.legendary, example: '+7 905 700-00-00', price: 'от 250 000 ₽' },
-            { key: 'mythic', name: 'Мифический', color: '#ef4444', percent: chances.mythic, example: '+7 999 888-88-88', price: 'от 4 000 000 ₽' },
-            { key: 'secret', name: 'Секретный', color: '#c084fc', percent: chances.secret, example: '0, 0123456789', price: 'от 400 000 000 ₽' }
+            { key: 'common', name: 'Обычный', color: '#6b7280', percent: chances.common, example: '+7 928 135-53-24', price: 'от 100 ₽', tirage: '∞' },
+            { key: 'rare', name: 'Редкий', color: '#3b82f6', percent: chances.rare, example: '+7 964 343-34-43', price: 'от 2 500 ₽', tirage: '∞' },
+            { key: 'epic', name: 'Эпический', color: '#a855f7', percent: chances.epic, example: '+7 910 030-30-21', price: 'от 30 000 ₽', tirage: '∞' },
+            { key: 'legendary', name: 'Легендарный', color: '#f59e0b', percent: chances.legendary, example: '+7 905 700-00-00', price: 'от 250 000 ₽', tirage: '5 раз' },
+            { key: 'mythic', name: 'Мифический', color: '#ef4444', percent: chances.mythic, example: '+7 999 888-88-88', price: 'от 4 000 000 ₽', tirage: '1 раз' },
+            { key: 'secret', name: 'Секретный', color: '#c084fc', percent: chances.secret, example: '0, 0123456789', price: 'от 400 000 000 ₽', tirage: '1 раз' }
         ];
         const logs = items.map(it => Math.log(it.percent + 1));
         const maxLog = Math.max(...logs);
@@ -1460,12 +1480,11 @@
             return `<div class="chance-card rarity-${it.key}">
                 <div class="chance-card-top"><div class="chance-name ${it.key}"><span class="chance-dot" style="background: ${it.color};"></span>${it.name}</div><div class="chance-percent" style="color: ${it.color};">${formatChancePercent(it.percent)}</div></div>
                 <div class="chance-bar"><div class="chance-bar-fill ${it.key}" style="width: ${widthPercent}%;"></div></div>
-                <div class="chance-card-bottom"><div class="chance-example">${it.example}</div><div class="chance-price">${it.price}</div></div>
+                <div class="chance-card-bottom"><div class="chance-example">${it.example} · тираж: ${it.tirage}</div><div class="chance-price">${it.price}</div></div>
             </div>`;
         }).join('');
     }
 
-    // ==================== АВТОВХОД ====================
     async function bootstrap() {
         if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
             document.getElementById('loadingScreen').classList.add('hidden');
@@ -1612,7 +1631,6 @@
     function handleX5Click() { x5Armed = !x5Armed; updateRollButtons(); }
     function handleMainClick() { const c = x5Armed ? 5 : 1; startRoll(c); x5Armed = false; updateRollButtons(); }
 
-    // ==================== ЭКРАНЫ ====================
     function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
     function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
     function openCollection() { closeMenu(); currentFilter = 'all'; updateCollection(); setTimeout(() => document.getElementById('collectionScreen').classList.add('active'), 300); }
@@ -1654,7 +1672,6 @@
         else window.open(url, '_blank');
     }
 
-    // ==================== КРУТКА ====================
     function pickRarity() {
         const c = calculateChances();
         const r = Math.random() * 100;
@@ -1871,7 +1888,6 @@
         await saveUserData();
     }
 
-    // ==================== КОЛЛЕКЦИЯ (КАРТОЧКИ SIM) ====================
     function updateCollection() {
         const grid = document.getElementById('collectionGrid');
         if (!grid) return;
@@ -1901,10 +1917,6 @@
             const card = document.createElement('div');
             card.className = 'sim-card-item rarity-' + n.rarity.key;
             card.innerHTML = `
-                <div class="sci-actions">
-                    <button class="sci-sell" onclick="event.stopPropagation(); sellSaved('${n.id}')"><i class="fa-solid fa-coins"></i></button>
-                    <button class="sci-del" onclick="event.stopPropagation(); deleteSaved('${n.id}')"><i class="fa-solid fa-trash"></i></button>
-                </div>
                 <div class="sci-top">
                     <div class="sci-op-badge">${opShort}</div>
                     <div class="sci-chip"></div>
@@ -1914,28 +1926,49 @@
                     <div class="sci-rarity">${getRarityName(n.rarity.key)}</div>
                     <div class="sci-price">${formatPrice(n.price)}</div>
                 </div>`;
+            card.onclick = () => openSimDetail(n);
             grid.appendChild(card);
         });
     }
     document.querySelectorAll('#rarityFilters .rarity-item').forEach(it => it.addEventListener('click', () => { currentFilter = it.dataset.rarity; updateCollection(); }));
-    async function sellSaved(id) {
-        const n = savedNumbers.find(x => x.id === id);
-        if (!n) return;
+
+    function openSimDetail(n) {
+        simDetailTarget = n;
+        const card = document.getElementById('simDetailCard');
+        card.className = 'sim-detail-card rarity-' + n.rarity.key;
+        const opName = n.opObj ? n.opObj.name : 'SECRET';
+        document.getElementById('sdcOp').textContent = getOpShort(opName);
+        document.getElementById('sdcNumber').textContent = n.formatted;
+        document.getElementById('sdcRarity').textContent = getRarityName(n.rarity.key);
+        document.getElementById('sdcPrice').textContent = formatPrice(n.price);
+        document.getElementById('sdcSellPrice').textContent = formatPrice(n.price);
+        document.getElementById('simDetailModal').classList.add('active');
+    }
+    function closeSimDetail() {
+        document.getElementById('simDetailModal').classList.remove('active');
+        simDetailTarget = null;
+    }
+    async function simDetailSell() {
+        if (!simDetailTarget) return;
+        const n = simDetailTarget;
         balance += n.price; updateBalance();
-        await sb.from('saved_numbers').delete().eq('id', id);
-        savedNumbers = savedNumbers.filter(x => x.id !== id);
+        await sb.from('saved_numbers').delete().eq('id', n.id);
+        savedNumbers = savedNumbers.filter(x => x.id !== n.id);
         updateCollection(); updateProfileUI();
         showToast('success', 'Продан!', '+' + formatPrice(n.price));
         await saveUserData();
+        closeSimDetail();
     }
-    async function deleteSaved(id) {
-        await sb.from('saved_numbers').delete().eq('id', id);
-        savedNumbers = savedNumbers.filter(x => x.id !== id);
+    async function simDetailDelete() {
+        if (!simDetailTarget) return;
+        const n = simDetailTarget;
+        await sb.from('saved_numbers').delete().eq('id', n.id);
+        savedNumbers = savedNumbers.filter(x => x.id !== n.id);
         updateCollection(); updateProfileUI();
         showToast('error', 'Удалён', '');
+        closeSimDetail();
     }
 
-    // ==================== РЕЙТИНГ ====================
     function renderRating() {
         const list = document.getElementById('ratingList');
         if (!list) return;
@@ -1962,7 +1995,6 @@
         }).join('');
     }
 
-    // ==================== ПРОВЕРКА НОМЕРА ====================
     let currentCountry = 'ru';
     function selectCountry(c) {
         currentCountry = c;
@@ -2006,12 +2038,14 @@
             const av = owner && owner.avatar_url ? `<img src="${owner.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
             const ownerName = owner ? owner.username : 'Неизвестно';
             const ownerTg = owner && owner.tg_username ? `@${owner.tg_username}` : '';
+            const tirageLimit = TIRAGE_LIMITS[found.rarity_key];
+            const tirageText = tirageLimit === Infinity ? '∞ из ∞' : `1 из ${tirageLimit}`;
             resultEl.innerHTML = `
                 <div class="check-result-number">${found.formatted}</div>
                 <div class="check-status busy">Занят</div>
                 <div class="check-info-row">
                     <div class="check-info-col"><div class="check-info-label">Редкость</div><div class="check-info-value" style="color:${getRarityColor(found.rarity_key)};">${getRarityName(found.rarity_key)}</div></div>
-                    <div class="check-info-col"><div class="check-info-label">Осталось в тираже</div><div class="check-info-value">0 из 1</div></div>
+                    <div class="check-info-col"><div class="check-info-label">Тираж</div><div class="check-info-value">${tirageText}</div></div>
                 </div>
                 <div class="check-owner-title">Владелец</div>
                 <div class="check-owner">
@@ -2024,12 +2058,10 @@
                 <div class="check-status free">Свободен</div>
                 <div class="check-info-row">
                     <div class="check-info-col"><div class="check-info-label">Статус</div><div class="check-info-value" style="color:#4ade80;">Ни у кого</div></div>
-                    <div class="check-info-col"><div class="check-info-label">Осталось в тираже</div><div class="check-info-value">1 из 1</div></div>
                 </div>`;
         }
     }
 
-    // ==================== ПРОМОКОДЫ ====================
     async function activatePromo() {
         const input = document.getElementById('promoInput').value.trim().toUpperCase();
         if (!input) { showToast('error', 'Введите промокод', ''); return; }
@@ -2052,7 +2084,6 @@
         await saveUserData();
     }
 
-    // ==================== УВЕДОМЛЕНИЯ ====================
     function subscribeToNotifications() {
         if (notificationRealtimeChannel) sb.removeChannel(notificationRealtimeChannel);
         notificationRealtimeChannel = sb.channel('notif_' + currentUser.id)
@@ -2086,8 +2117,20 @@
             </div>`).join('');
     }
 
-    // ==================== АУКЦИОН ====================
-    async function openAuction() { closeMenu(); await loadAuctionLots(); await loadAllPlayers(); renderAuction(); subscribeToLots(); startAuctionTick(); setTimeout(() => document.getElementById('auctionScreen').classList.add('active'), 300); }
+    function openAuction() {
+        closeMenu();
+        document.getElementById('auctionScreen').classList.add('active');
+        const list = document.getElementById('auctionList');
+        list.innerHTML = `
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>`;
+        Promise.all([loadAuctionLots(), loadAllPlayers()]).then(() => {
+            renderAuction();
+        });
+        subscribeToLots();
+        startAuctionTick();
+    }
     function closeAuction() { document.getElementById('auctionScreen').classList.remove('active'); }
     function switchAuctionTab(t) { currentAuctionTab = t; document.querySelectorAll('.auction-tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); renderAuction(); }
     function subscribeToLots() {
@@ -2136,8 +2179,6 @@
     function renderAuction() {
         const list = document.getElementById('auctionList');
         const now = Date.now();
-        document.getElementById('auctionAllCount') && (document.getElementById('auctionAllCount').textContent = auctionLots.filter(l => !l.ended).length);
-        document.getElementById('auctionMyCount') && (document.getElementById('auctionMyCount').textContent = auctionLots.filter(l => l.isMine).length);
         let items = currentAuctionTab === 'my' ? auctionLots.filter(l => l.isMine) : auctionLots;
         if (items.length === 0) { list.innerHTML = `<div class="auction-empty"><i class="fa-solid fa-gavel"></i>${currentAuctionTab === 'my' ? 'Нет лотов' : 'Нет активных лотов'}</div>`; return; }
         items.sort((a, b) => (a.ended === b.ended) ? a.endsAt - b.endsAt : (a.ended ? 1 : -1));
@@ -2260,7 +2301,6 @@
         await loadAuctionLots(); switchAuctionTab('my');
     }
 
-    // ==================== АДМИНКА ====================
     async function renderAdminPlayersList() {
         await loadAllPlayers();
         const list = document.getElementById('adminPlayersList');
@@ -2382,7 +2422,6 @@
         showToast('success', 'Сезон сброшен', ''); closeAdminReset(); location.reload();
     }
 
-    // ==================== ПРОМО АДМИН ====================
     function generateRandomCode() {
         const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code = '';
         for (let i = 0; i < 8; i++) code += c[Math.floor(Math.random() * c.length)];
@@ -2424,7 +2463,6 @@
     }
     async function deletePromo(id) { await sb.from('promo_codes').delete().eq('id', id); await renderPromoList(); showToast('success', 'Удалён', ''); }
 
-    // ==================== АПГРЕЙД ====================
     const slider = document.getElementById('slider');
     const upgradeBtn = document.getElementById('upgradeBtn');
     const resultText = document.getElementById('resultText');
@@ -2504,7 +2542,6 @@
     }
     upgradeBtn.addEventListener('click', startUpgrade);
 
-    // ==================== САПЁР ====================
     const MINES_SIZE = 25;
     let minesState = { active: false, betNumber: null, minesCount: 3, multiplier: 1.07, minePositions: [], openedCells: [], currentPrice: 0, basePrice: 0, dead: false };
     function openMinesGame() { closeMenu(); resetMinesState(); document.getElementById('minesGameScreen').classList.add('active'); renderMinesField(); updateMinesUI(); }
@@ -2605,7 +2642,6 @@
         setTimeout(() => { resetMinesState(); renderMinesField(); updateMinesUI(); updateMinesBetCard(); }, 1500);
     }
 
-    // ==================== СТАРТ ====================
     bootstrap();
     if (tg && tg.onEvent) {
         tg.onEvent('backButtonClicked', () => {
