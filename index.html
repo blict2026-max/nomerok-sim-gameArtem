@@ -2095,42 +2095,50 @@
     }
 
     async function activatePromo() {
-        const input = document.getElementById('promoInput').value.trim().toUpperCase();
-        if (!input) { showToast('error', 'Введите промокод', ''); return; }
+    const input = document.getElementById('promoInput').value.trim().toUpperCase();
+    if (!input) { showToast('error', 'Введите промокод', ''); return; }
 
-        // Проверяем в БД, использовал ли этот юзер данный код
-        const { data: used } = await sb.from('used_promocodes')
-            .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
+    // 1. Проверяем в БД, использовал ли этот юзер данный код
+    const { data: used, error: checkErr } = await sb.from('used_promocodes')
+        .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
+    
+    if (checkErr) { showToast('error', 'Ошибка БД', checkErr.message); return; }
+    if (used) { showToast('error', 'Уже использован', 'Этот код уже активирован'); return; }
+
+    // 2. Проверяем существование промокода и его лимиты
+    const { data: promos, error: promoErr } = await sb.from('promo_codes').select('*').eq('code', input).limit(1);
+    if (promoErr) { showToast('error', 'Ошибка БД', promoErr.message); return; }
+    if (!promos || !promos.length) { showToast('error', 'Неверный промокод', ''); return; }
+    
+    const p = promos[0];
+    if (p.uses_left <= 0) { showToast('error', 'Исчерпан', ''); return; }
+    if (p.expires_at && new Date(p.expires_at) < new Date()) { showToast('error', 'Истёк', ''); return; }
+
+    // 3. Записываем в БД, что игрок использовал код (защита от повторного ввода)
+    const { error: insertErr } = await sb.from('used_promocodes')
+        .insert({ user_id: currentUser.id, code: input });
         
-        if (used) { showToast('error', 'Уже использован', ''); return; }
-
-        const { data: promos } = await sb.from('promo_codes').select('*').eq('code', input).limit(1);
-        if (!promos || !promos.length) { showToast('error', 'Неверный промокод', ''); return; }
-        
-        const p = promos[0];
-        if (p.uses_left <= 0) { showToast('error', 'Исчерпан', ''); return; }
-        if (p.expires_at && new Date(p.expires_at) < new Date()) { showToast('error', 'Истёк', ''); return; }
-
-        const r = p.rewards || {};
-        const applied = [];
-        if (r.money) { balance += r.money; applied.push(`+${r.money} ₽`); }
-        if (r.rolls) { freeRolls += r.rolls; applied.push(`+${r.rolls} круток`); }
-        ['x2','x5','x10','x15'].forEach(k => { if (r[k]) { activateLuckBoost(k, r[k]); applied.push(`×${k.slice(1)} на ${r[k]} мин`); } });
-
-        // Сначала пишем в БД, что промокод использован
-        const { error: usedErr } = await sb.from('used_promocodes')
-            .insert({ user_id: currentUser.id, code: input });
-        if (usedErr) { showToast('error', 'Ошибка базы', usedErr.message); return; }
-
-        // Уменьшаем количество доступных активаций
-        await sb.from('promo_codes').update({ uses_left: p.uses_left - 1 }).eq('id', p.id);
-        
-        usedPromoCodes.push(input);
-        updateBalance(); updateLuckUI(); updateRollButtons();
-        document.getElementById('promoInput').value = '';
-        showToast('success', 'Активирован!', applied.join(' · '));
-        await saveUserData();
+    if (insertErr) { 
+        showToast('error', 'Ошибка базы', 'Не удалось сохранить: ' + insertErr.message); 
+        return; 
     }
+
+    // 4. Выдаем награды (только если запись прошла успешно)
+    const r = p.rewards || {};
+    const applied = [];
+    if (r.money) { balance += r.money; applied.push(`+${r.money} ₽`); }
+    if (r.rolls) { freeRolls += r.rolls; applied.push(`+${r.rolls} круток`); }
+    ['x2','x5','x10','x15'].forEach(k => { if (r[k]) { activateLuckBoost(k, r[k]); applied.push(`×${k.slice(1)} на ${r[k]} мин`); } });
+
+    // 5. Уменьшаем кол-во оставшихся активаций
+    await sb.from('promo_codes').update({ uses_left: p.uses_left - 1 }).eq('id', p.id);
+    
+    usedPromoCodes.push(input);
+    updateBalance(); updateLuckUI(); updateRollButtons();
+    document.getElementById('promoInput').value = '';
+    showToast('success', 'Активирован!', applied.join(' · '));
+    await saveUserData();
+}
 
     function subscribeToNotifications() {
         if (notificationRealtimeChannel) sb.removeChannel(notificationRealtimeChannel);
