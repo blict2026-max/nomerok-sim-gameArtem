@@ -1295,17 +1295,44 @@
     }
     function calculatePrice(rarity, numberObj) {
         const key = rarity.key;
+        
+        // Секретные — фиксированные диапазоны
         if (key === 'secret') {
             const isJackpot = numberObj && numberObj.isSecretVariant === '0123456789';
             return isJackpot ? 900000000 : Math.floor(400000000 + Math.random() * 100000000);
         }
-        const actualKey = (numberObj && numberObj.digits) ? classifyByPattern(numberObj.digits) : key;
-        const base = BASE_PRICES[actualKey] || BASE_PRICES.common;
+
         const patternMult = numberObj && numberObj.digits ? getPatternMultiplier(numberObj.digits) : 1.0;
         const opMult = (numberObj && numberObj.opObj) ? (OPERATOR_MULT[numberObj.opObj.name] || 1.0) : 1.0;
         const digitBonus = numberObj && numberObj.digits ? getDigitBonus(numberObj.digits) : 1.0;
+
+        // Жесткие рамки для редкостей (гарантируют, что легендарка будет дороже эпика)
+        if (key === 'legendary') {
+            const base = 100000 + Math.random() * 600000;
+            const finalPrice = Math.floor(base * patternMult * opMult * digitBonus);
+            // Ограничиваем максимум 750к, минимум 106к
+            return Math.min(750000, Math.max(106000, finalPrice));
+        }
+
+        if (key === 'epic') {
+            const base = 25000 + Math.random() * 75000;
+            const finalPrice = Math.floor(base * patternMult * opMult * digitBonus);
+            // Ограничиваем максимум 120к (чтобы всегда было меньше легендарки)
+            return Math.min(120000, Math.max(30000, finalPrice));
+        }
+
+        if (key === 'mythic') {
+            const base = 4000000 + Math.random() * 26000000;
+            return Math.floor(base * patternMult * digitBonus);
+        }
+
+        // Обычные и редкие
+        const base = BASE_PRICES[key] || BASE_PRICES.common;
         const jitter = 0.95 + Math.random() * 0.10;
-        return Math.max(50, Math.floor(base * patternMult * opMult * digitBonus * jitter));
+        const minFloor = Math.floor(BASE_PRICES[key] * 0.85); 
+        const calculated = Math.floor(base * patternMult * opMult * digitBonus * jitter);
+        
+        return Math.max(minFloor, calculated);
     }
     function classifyByPattern(digits) {
         if (!digits || digits.length !== 7) return 'common';
@@ -1521,6 +1548,11 @@
             document.getElementById('loadingScreen').classList.add('hidden');
             await loadSavedNumbers();
             await loadAllPlayers();
+            
+            usedPromoCodes = []; 
+            const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
+            if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
+
             updateBalance(); updateProfileUI(); updateLuckUI(); updateRollButtons();
             renderMiniCards(); renderChancesScreen(); startLuckTimer(); updateAdminVisibility();
             subscribeToNotifications();
@@ -2065,18 +2097,34 @@
     async function activatePromo() {
         const input = document.getElementById('promoInput').value.trim().toUpperCase();
         if (!input) { showToast('error', 'Введите промокод', ''); return; }
-        if (usedPromoCodes.includes(input)) { showToast('error', 'Уже использован', ''); return; }
+
+        // Проверяем в БД, использовал ли этот юзер данный код
+        const { data: used } = await sb.from('used_promocodes')
+            .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
+        
+        if (used) { showToast('error', 'Уже использован', ''); return; }
+
         const { data: promos } = await sb.from('promo_codes').select('*').eq('code', input).limit(1);
         if (!promos || !promos.length) { showToast('error', 'Неверный промокод', ''); return; }
+        
         const p = promos[0];
         if (p.uses_left <= 0) { showToast('error', 'Исчерпан', ''); return; }
         if (p.expires_at && new Date(p.expires_at) < new Date()) { showToast('error', 'Истёк', ''); return; }
+
         const r = p.rewards || {};
         const applied = [];
         if (r.money) { balance += r.money; applied.push(`+${r.money} ₽`); }
         if (r.rolls) { freeRolls += r.rolls; applied.push(`+${r.rolls} круток`); }
         ['x2','x5','x10','x15'].forEach(k => { if (r[k]) { activateLuckBoost(k, r[k]); applied.push(`×${k.slice(1)} на ${r[k]} мин`); } });
+
+        // Сначала пишем в БД, что промокод использован
+        const { error: usedErr } = await sb.from('used_promocodes')
+            .insert({ user_id: currentUser.id, code: input });
+        if (usedErr) { showToast('error', 'Ошибка базы', usedErr.message); return; }
+
+        // Уменьшаем количество доступных активаций
         await sb.from('promo_codes').update({ uses_left: p.uses_left - 1 }).eq('id', p.id);
+        
         usedPromoCodes.push(input);
         updateBalance(); updateLuckUI(); updateRollButtons();
         document.getElementById('promoInput').value = '';
