@@ -1043,6 +1043,7 @@
         <div class="admin-cat-item" onclick="openAdminPromo()"><div class="admin-cat-icon promo"><i class="fa-solid fa-ticket"></i></div><div class="admin-cat-name">Промокоды</div><div class="admin-cat-desc">Создать</div></div>
         <div class="admin-cat-item" onclick="openAdminReset()"><div class="admin-cat-icon reset"><i class="fa-solid fa-rotate-left"></i></div><div class="admin-cat-name">Сброс</div><div class="admin-cat-desc">Опасно</div></div>
         <div class="admin-cat-item" onclick="openNewsCreator()"><div class="admin-cat-icon" style="background: rgba(59,130,246,0.15); color: #60a5fa;"><i class="fa-solid fa-bullhorn"></i></div><div class="admin-cat-name">Новости</div><div class="admin-cat-desc">Создать</div></div>
+        <div class="admin-cat-item" onclick="openAdminGiveNumber()"><div class="admin-cat-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;"><i class="fa-solid fa-gift"></i></div><div class="admin-cat-name">Выдать номер</div><div class="admin-cat-desc">Поиск и выдача</div></div>
     </div>
 </div>
 
@@ -1099,6 +1100,21 @@
     </div>
     <div class="promo-list-title">Созданные промокоды</div>
     <div class="promo-list" id="promoList"></div>
+</div>
+<!-- ЭКРАН ВЫДАЧИ НОМЕРА -->
+<div class="admin-promo-screen" id="adminGiveNumberScreen">
+    <div class="admin-sub-header"><div class="nav-left" onclick="closeAdminGiveNumber()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
+    <div class="admin-sub-title">Выдача номера</div>
+    
+    <div class="promo-form">
+        <div class="promo-form-label">Поиск номера</div>
+        <div class="promo-form-input">
+            <input type="text" id="adminGiveNumInput" placeholder="+7 999 777-77-77">
+            <button class="promo-gen-btn" onclick="searchAdminNumber()"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+    </div>
+
+    <div id="adminGiveNumResult" style="padding: 0 16px;"></div>
 </div>
 
 <!-- МОДАЛКА ТЕГА -->
@@ -3117,6 +3133,118 @@ async function openNewsCreator() {
             });
         });
     }
+    // ВЫДАЧА НОМЕРА (АДМИНКА)
+function openAdminGiveNumber() {
+    document.getElementById('adminGiveNumberScreen').classList.add('active');
+    document.getElementById('adminGiveNumInput').value = '';
+    document.getElementById('adminGiveNumResult').innerHTML = '';
+}
+function closeAdminGiveNumber() {
+    document.getElementById('adminGiveNumberScreen').classList.remove('active');
+}
+
+let adminFoundNumber = null;
+
+async function searchAdminNumber() {
+    const input = document.getElementById('adminGiveNumInput').value.trim();
+    if (!input) return;
+    
+    const resEl = document.getElementById('adminGiveNumResult');
+    resEl.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Проверяем...</div>';
+    
+    const digits = input.replace(/\D/g, '');
+    if (digits.length < 10) { resEl.innerHTML = '<div style="color:#ef4444;text-align:center;">Неверный формат</div>'; return; }
+    
+    const cd = (digits.startsWith('7') || digits.startsWith('8')) ? digits.slice(1, 11) : digits.slice(0, 10);
+    const formatted = `+7 ${cd.slice(0,3)} ${cd.slice(3,6)}-${cd.slice(6,8)}-${cd.slice(8,10)}`;
+
+    const { data } = await sb.from('saved_numbers').select('*').eq('formatted', formatted).limit(1);
+    
+    if (data && data.length > 0) {
+        const num = data[0];
+        adminFoundNumber = null;
+        const owner = allPlayersList.find(p => p.id === num.user_id);
+        const ownerName = owner ? owner.username : 'Неизвестно';
+        
+        resEl.innerHTML = `
+            <div class="check-result visible" style="margin: 0; background: #1c1c1c; border-radius: 20px;">
+                <div class="check-result-number">${num.formatted}</div>
+                <div class="check-status busy">Занят</div>
+                <div class="check-info-row">
+                    <div class="check-info-col"><div class="check-info-label">Редкость</div><div class="check-info-value" style="color:${getRarityColor(num.rarity_key)};">${getRarityName(num.rarity_key)}</div></div>
+                    <div class="check-info-col"><div class="check-info-label">Владелец</div><div class="check-info-value">${ownerName}</div></div>
+                </div>
+            </div>
+        `;
+    } else {
+        adminFoundNumber = formatted;
+        resEl.innerHTML = `
+            <div class="check-result visible" style="margin: 0; background: #1c1c1c; border-radius: 20px; margin-bottom: 16px;">
+                <div class="check-result-number">${formatted}</div>
+                <div class="check-status free">Свободен</div>
+                <div class="check-info-row" style="margin-top: 10px;">
+                    <div class="check-info-col">
+                        <div class="check-info-label">Кому выдать? (Ник или ID)</div>
+                        <input type="text" id="adminGiveTarget" style="background:#0f0f0f; border:1px solid #2a2a2a; border-radius:8px; padding:10px; color:#fff; width:100%; margin-top:4px;">
+                    </div>
+                </div>
+            </div>
+            <button class="admin-btn green" onclick="confirmGiveNumber()" style="width:100%; margin-bottom:20px;">Выдать этот номер</button>
+        `;
+    }
+}
+
+async function confirmGiveNumber() {
+    const target = document.getElementById('adminGiveTarget').value.trim();
+    if (!target) { showToast('error', 'Введите ник или ID', ''); return; }
+    if (!adminFoundNumber) return;
+
+    // Ищем игрока по нику или ID
+    const { data: profiles } = await sb.from('profiles').select('*').or(`username.ilike.%${target}%,telegram_id.eq.${target}`).limit(1);
+    
+    if (!profiles || profiles.length === 0) {
+        showToast('error', 'Игрок не найден', '');
+        return;
+    }
+    
+    const player = profiles[0];
+    
+    // Считаем редкость и цену
+    const cleanDigits = adminFoundNumber.replace(/\D/g, '');
+    let digitsArray = cleanDigits.slice(1).split('').map(Number); 
+    while (digitsArray.length < 7) digitsArray.push(0);
+    if (digitsArray.length > 7) digitsArray = digitsArray.slice(0, 7);
+
+    const rarityKey = classifyByPattern(digitsArray);
+    const rarityObj = RARITIES.find(r => r.key === rarityKey) || RARITIES[5];
+    const opCode = cleanDigits.slice(1, 4);
+    let opName = 'МТС';
+    if (['928', '924', '926'].includes(opCode)) opName = 'Мегафон';
+    if (['977', '905', '900'].includes(opCode)) opName = 'Билайн';
+
+    const calculatedPrice = calculatePrice(rarityObj, { digits: digitsArray, opObj: { name: opName }, rarity: rarityObj });
+
+    const newNumData = {
+        user_id: player.id,
+        formatted: adminFoundNumber,
+        op: opCode,
+        op_name: opName,
+        digits: digitsArray,
+        rarity_key: rarityKey,
+        rarity_name: getRarityName(rarityKey).toLowerCase(),
+        price: calculatedPrice,
+        is_secret_variant: null
+    };
+
+    const { error } = await sb.from('saved_numbers').insert(newNumData);
+    
+    if (error) {
+        showToast('error', 'Ошибка базы', error.message);
+    } else {
+        showToast('success', 'Номер выдан!', `Игроку: ${player.username}`);
+        closeAdminGiveNumber();
+    }
+}
     </script>
 </body>
 </html>
