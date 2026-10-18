@@ -1091,6 +1091,13 @@
     <div class="admin-cat-item" onclick="openAdminReset()"><div class="admin-cat-icon reset"><i class="fa-solid fa-rotate-left"></i></div><div class="admin-cat-name">Сброс</div><div class="admin-cat-desc">Опасно</div></div>
     <div class="admin-cat-item" onclick="openAdminNews()"><div class="admin-cat-icon" style="background: rgba(59,130,246,0.15); color: #60a5fa;"><i class="fa-solid fa-bullhorn"></i></div><div class="admin-cat-name">Новости</div><div class="admin-cat-desc">Управление</div></div>
     <div class="admin-cat-item" onclick="openAdminGiveNumber()"><div class="admin-cat-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;"><i class="fa-solid fa-gift"></i></div><div class="admin-cat-name">Выдать номер</div><div class="admin-cat-desc">Поиск и выдача</div></div>
+    <div class="admin-cat-item" onclick="toggleMaintenance()">
+    <div class="admin-cat-icon" id="maintenanceIcon" style="background: rgba(239,68,68,0.15); color: #ef4444;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <div class="admin-cat-name">Тех. работы</div>
+    <div class="admin-cat-desc" id="maintenanceStatus">Выключены</div>
+</div>
 </div>
 </div>
 
@@ -3081,7 +3088,11 @@ function renderNotifications() {
     function closeCheckNumber() { document.getElementById('checkScreen').classList.remove('active'); }
     function openNotifications() { closeMenu(); renderNotifications(); setTimeout(() => document.getElementById('notificationsScreen').classList.add('active'), 300); }
     function closeNotifications() { document.getElementById('notificationsScreen').classList.remove('active'); }
-    function openAdmin() { closeMenu(); setTimeout(() => document.getElementById('adminScreen').classList.add('active'), 300); }
+function openAdmin() { 
+    closeMenu(); 
+    updateMaintenanceButtonUI(); 
+    setTimeout(() => document.getElementById('adminScreen').classList.add('active'), 300); 
+}
     function closeAdmin() { document.getElementById('adminScreen').classList.remove('active'); }
     function openAdminPlayers() { renderAdminPlayersList(); document.getElementById('adminPlayersScreen').classList.add('active'); }
     function closeAdminPlayers() { document.getElementById('adminPlayersScreen').classList.remove('active'); }
@@ -3233,6 +3244,7 @@ async function deleteNews(id) {
             updateBalance(); updateProfileUI(); updateLuckUI(); updateRollButtons();
             renderMiniCards(); renderChancesScreen(); startLuckTimer(); updateAdminVisibility();
             subscribeToNotifications();
+            await checkMaintenance();
         } catch (e) {
             console.error(e);
             document.getElementById('loadingText').textContent = 'Ошибка: ' + (e.message || 'Не удалось');
@@ -3507,6 +3519,75 @@ async function renderAdminLogs() {
             </div>
         </div>`;
     }).join('');
+}
+// ==================== ТЕХ. РАБОТЫ ====================
+
+// Проверка режима при запуске игры
+async function checkMaintenance() {
+    const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
+    if (data && data.maintenance_mode) {
+        if (currentUser && currentUser.is_owner) {
+            showToast('error', 'Внимание!', 'Включен режим тех. работ (вы админ)');
+            return;
+        }
+        
+        document.getElementById('gameRoot').style.display = 'none';
+        document.getElementById('loadingScreen').classList.add('hidden');
+        
+        let overlay = document.getElementById('maintenanceOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'maintenanceOverlay';
+            overlay.style.cssText = 'position: fixed; inset: 0; background: #0d0d0d; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; gap: 20px;';
+            document.body.appendChild(overlay);
+        }
+        overlay.innerHTML = `
+            <div style="font-size: 60px;">🛠️</div>
+            <div style="font-size: 24px; font-weight: 800; color: #fff;">Технические работы</div>
+            <div style="font-size: 15px; color: #aaa; line-height: 1.6;">${data.maintenance_text || 'Скоро вернёмся!'}</div>
+            <button onclick="location.reload()" style="margin-top: 20px; background: #2a2a2a; color: #fff; border: none; border-radius: 12px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer;">Обновить</button>
+        `;
+        overlay.style.display = 'flex';
+    } else {
+        const overlay = document.getElementById('maintenanceOverlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+}
+
+// Переключатель в админке
+async function toggleMaintenance() {
+    const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
+    if (!data) return;
+    
+    const newStatus = !data.maintenance_mode;
+    if (newStatus && !confirm('Включить тех. работы? Все игроки будут выкинуты из игры!')) return;
+    
+    await sb.from('app_settings').update({ maintenance_mode: newStatus }).eq('id', 1);
+    
+    updateMaintenanceButtonUI(newStatus);
+    showToast('success', newStatus ? 'Тех. работы включены' : 'Тех. работы выключены', '');
+}
+
+// Обновление кнопки в админке
+async function updateMaintenanceButtonUI(status) {
+    const statusEl = document.getElementById('maintenanceStatus');
+    const iconEl = document.getElementById('maintenanceIcon');
+    if (!statusEl) return;
+    
+    if (status === undefined) {
+        const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
+        status = data ? data.maintenance_mode : false;
+    }
+    
+    if (status) {
+        statusEl.textContent = 'ВКЛЮЧЕНЫ (игроки заблокированы)';
+        statusEl.style.color = '#ef4444';
+        iconEl.style.background = 'rgba(239,68,68,0.3)';
+    } else {
+        statusEl.textContent = 'Выключены';
+        statusEl.style.color = '#888';
+        iconEl.style.background = 'rgba(239,68,68,0.15)';
+    }
 }
     </script>
 </body>
