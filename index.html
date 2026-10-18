@@ -37,6 +37,12 @@
     .icon-circle img { width: 100%; height: 100%; object-fit: cover; }
     .icon-circle.red-dot::after { content: ''; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 8px rgba(239,68,68,0.8); }
     .icon-circle.avatar { background: linear-gradient(135deg, #2a2200, #1a1500); border: 1px solid #5c4400; color: var(--gold); }
+    
+    .icon-circle.avatar.frame-gold { border: 3px solid #f59e0b; box-shadow: 0 0 15px rgba(245,158,11,0.6); }
+    .icon-circle.avatar.frame-neon { border: 3px solid #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.8); }
+    .icon-circle.avatar.frame-fire { border: 3px solid #ef4444; box-shadow: 0 0 15px rgba(239,68,68,0.8); animation: firePulse 1.5s infinite alternate; }
+    @keyframes firePulse { 0% { box-shadow: 0 0 5px #ef4444; } 100% { box-shadow: 0 0 25px #f97316; } }
+
     .level-box { background: #1c1c1c; padding: 8px 14px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #ccc; }
     .progress-mini { width: 50px; height: 5px; background: #333; border-radius: 3px; overflow: hidden; }
     .progress-mini-fill { width: 40%; height: 100%; background: linear-gradient(90deg, #4caf50, #22c55e); border-radius: 3px; }
@@ -281,6 +287,10 @@
     .profile-avatar-wrap { display: flex; flex-direction: column; align-items: center; padding: 10px 0 20px 0; gap: 12px; }
     .profile-avatar { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, #2a2200, #1a1500); border: 2px solid #5c4400; display: flex; align-items: center; justify-content: center; font-size: 40px; color: var(--gold); overflow: hidden; box-shadow: 0 0 30px rgba(230,184,0,0.3); }
     .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-avatar.frame-gold { border: 3px solid #f59e0b; box-shadow: 0 0 15px rgba(245,158,11,0.6); }
+    .profile-avatar.frame-neon { border: 3px solid #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.8); }
+    .profile-avatar.frame-fire { border: 3px solid #ef4444; box-shadow: 0 0 15px rgba(239,68,68,0.8); animation: firePulse 1.5s infinite alternate; }
+    
     .profile-username { font-size: 15px; color: #aaa; font-weight: 500; text-align: center; }
     .profile-username b { color: #fff; }
     .profile-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 16px 24px 16px; }
@@ -628,6 +638,14 @@
     .rarity-breakdown .rb-title { font-size: 13px; color: #aaa; font-weight: 700; text-transform: uppercase; margin-bottom: 10px; }
     .rb-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
     .rb-row b { color: #fff; }
+
+    /* НОВЫЕ СТИЛИ ДЛЯ АНИМАЦИИ И МАГАЗИНА */
+    .roll-modal-box { background: #0d0d0d; border: 2px solid #333; align-items: center; justify-content: center; text-align: center; }
+    .roll-anim-number { font-family: 'Courier New', monospace; font-size: 32px; font-weight: 900; color: #a855f7; min-height: 40px; text-shadow: 0 0 20px rgba(168,85,247,0.5); margin: 15px 0; }
+    .shop-item { background: #1c1c1c; border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid #2a2a2a; margin-bottom: 10px; }
+    .shop-item:active { transform: scale(0.98); }
+    .shop-item-left { display: flex; align-items: center; gap: 12px; }
+    .shop-item-price { font-weight: 800; color: #f59e0b; }
 </style>
 </head>
 <body>
@@ -691,6 +709,45 @@
         </div>
     </div>
 
+    <!-- МОДАЛКИ НОВЫЕ -->
+    <div class="choice-modal" id="rollAnimModal">
+        <div class="choice-box roll-modal-box">
+            <div style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 10px;" id="rollAnimTitle">Крутка...</div>
+            <div class="roll-anim-number" id="rollAnimNumber">...</div>
+            <div id="rollAnimRarity" style="font-size: 16px; font-weight: 800; margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <div class="choice-modal" id="dailyModal">
+        <div class="choice-box">
+            <div style="text-align: center; font-size: 20px; font-weight: 800; color: #fff;">🎁 Ежедневный бонус</div>
+            <div id="dailyContent" style="text-align: center; color: #aaa; font-size: 14px; margin: 10px 0;">Загрузка...</div>
+            <button class="choice-btn choice-save" onclick="claimDailyReward()" id="dailyBtn" style="height: 48px;">Забрать</button>
+            <button class="choice-btn" onclick="document.getElementById('dailyModal').classList.remove('active')" style="background: #2a2a2a; color: #aaa; height: 40px;">Закрыть</button>
+        </div>
+    </div>
+
+    <div class="choice-modal" id="shopModal">
+        <div class="choice-box" style="max-height: 80vh; overflow-y: auto;">
+            <div style="text-align: center; font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 10px;">🛒 Магазин рамок</div>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <div class="shop-item" onclick="buyFrame('frame-gold')" style="border-color: #f59e0b;">
+                    <div class="shop-item-left"><div class="icon-circle avatar frame-gold" style="width:34px;height:34px;"><i class="fa-solid fa-crown" style="font-size:14px;"></i></div><span>Золотая рамка</span></div>
+                    <span class="shop-item-price">50 ⭐</span>
+                </div>
+                <div class="shop-item" onclick="buyFrame('frame-neon')" style="border-color: #a855f7;">
+                    <div class="shop-item-left"><div class="icon-circle avatar frame-neon" style="width:34px;height:34px;"><i class="fa-solid fa-bolt" style="font-size:14px;"></i></div><span>Неоновая рамка</span></div>
+                    <span class="shop-item-price">100 ⭐</span>
+                </div>
+                <div class="shop-item" onclick="buyFrame('frame-fire')" style="border-color: #ef4444;">
+                    <div class="shop-item-left"><div class="icon-circle avatar frame-fire" style="width:34px;height:34px;"><i class="fa-solid fa-fire" style="font-size:14px;"></i></div><span>Огненная рамка</span></div>
+                    <span class="shop-item-price">250 ⭐</span>
+                </div>
+            </div>
+            <button class="choice-btn" onclick="document.getElementById('shopModal').classList.remove('active')" style="background: #2a2a2a; color: #aaa; margin-top: 15px; height: 40px;">Закрыть</button>
+        </div>
+    </div>
+
     <!-- МЕНЮ -->
     <div class="overlay" id="overlay" onclick="closeMenu()"></div>
     <div class="menu-sheet" id="menuSheet">
@@ -698,11 +755,11 @@
         <div class="grid-4">
             <div class="btn-tile tile-krutka" onclick="closeMenu()"><div class="btn-icon"><i class="fa-solid fa-dice"></i></div><div class="btn-label">Крутка</div></div>
             <div class="btn-tile tile-collection" onclick="openCollection()"><div class="btn-icon"><i class="fa-solid fa-layer-group"></i></div><div class="btn-label">Коллекция</div></div>
-            <div class="btn-tile tile-roulette" onclick="alert('Рулетка')"><div class="btn-icon"><i class="fa-solid fa-dharmachakra"></i></div><div class="btn-label">Рулетка</div></div>
+            <div class="btn-tile tile-roulette" onclick="alert('Рулетка в разработке')"><div class="btn-icon"><i class="fa-solid fa-dharmachakra"></i></div><div class="btn-label">Рулетка</div></div>
             <div class="btn-tile tile-games" onclick="openGames()"><div class="btn-icon"><i class="fa-solid fa-gamepad"></i></div><div class="btn-label">Игры</div></div>
         </div>
         <div class="grid-4">
-            <div class="btn-tile tile-rewards" onclick="alert('Награды')"><div class="btn-icon"><i class="fa-solid fa-gift"></i></div><div class="btn-label">Награды</div></div>
+            <div class="btn-tile tile-rewards" onclick="openDailyReward()"><div class="btn-icon"><i class="fa-solid fa-gift"></i></div><div class="btn-label">Награды</div></div>
             <div class="btn-tile tile-skills" onclick="alert('Навыки')"><div class="btn-icon"><i class="fa-solid fa-bolt"></i></div><div class="btn-label">Навыки</div></div>
             <div class="btn-tile tile-trade" onclick="openAuction()"><div class="btn-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></div><div class="btn-label">Торговля</div></div>
             <div class="btn-tile tile-phones" onclick="alert('Телефоны')"><div class="btn-icon"><i class="fa-solid fa-mobile-screen"></i></div><div class="btn-label">Телефоны</div></div>
@@ -783,6 +840,7 @@
             <div class="rarity-row"><div class="rarity-name secret">Супер секретный</div><div class="rarity-bar"><div class="rarity-bar-fill secret" id="profBarSecret"></div></div><div class="rarity-count" id="profCountSecret">0</div></div>
         </div>
         <div class="admin-actions" style="padding: 0 16px 24px;">
+            <button class="admin-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; margin-bottom:10px;" onclick="document.getElementById('shopModal').classList.add('active')"><i class="fa-solid fa-store"></i> Магазин рамок</button>
             <button class="admin-btn blue" onclick="shareBot()"><i class="fa-solid fa-share"></i> Пригласить друга</button>
         </div>
     </div>
@@ -1295,8 +1353,6 @@
     }
     function calculatePrice(rarity, numberObj) {
         const key = rarity.key;
-        
-        // Секретные — фиксированные диапазоны
         if (key === 'secret') {
             const isJackpot = numberObj && numberObj.isSecretVariant === '0123456789';
             return isJackpot ? 900000000 : Math.floor(400000000 + Math.random() * 100000000);
@@ -1306,18 +1362,15 @@
         const opMult = (numberObj && numberObj.opObj) ? (OPERATOR_MULT[numberObj.opObj.name] || 1.0) : 1.0;
         const digitBonus = numberObj && numberObj.digits ? getDigitBonus(numberObj.digits) : 1.0;
 
-        // Жесткие рамки для редкостей (гарантируют, что легендарка будет дороже эпика)
         if (key === 'legendary') {
             const base = 100000 + Math.random() * 600000;
             const finalPrice = Math.floor(base * patternMult * opMult * digitBonus);
-            // Ограничиваем максимум 750к, минимум 106к
             return Math.min(750000, Math.max(106000, finalPrice));
         }
 
         if (key === 'epic') {
             const base = 25000 + Math.random() * 75000;
             const finalPrice = Math.floor(base * patternMult * opMult * digitBonus);
-            // Ограничиваем максимум 120к (чтобы всегда было меньше легендарки)
             return Math.min(120000, Math.max(30000, finalPrice));
         }
 
@@ -1326,7 +1379,6 @@
             return Math.floor(base * patternMult * digitBonus);
         }
 
-        // Обычные и редкие
         const base = BASE_PRICES[key] || BASE_PRICES.common;
         const jitter = 0.95 + Math.random() * 0.10;
         const minFloor = Math.floor(BASE_PRICES[key] * 0.85); 
@@ -1496,7 +1548,7 @@
             { key: 'common', name: 'Обычный', color: '#6b7280', percent: chances.common, example: '+7 928 135-53-24', price: 'от 100 ₽', tirage: '∞' },
             { key: 'rare', name: 'Редкий', color: '#3b82f6', percent: chances.rare, example: '+7 964 343-34-43', price: 'от 2 500 ₽', tirage: '∞' },
             { key: 'epic', name: 'Эпический', color: '#a855f7', percent: chances.epic, example: '+7 910 030-30-21', price: 'от 30 000 ₽', tirage: '∞' },
-            { key: 'legendary', name: 'Легендарный', color: '#f59e0b', percent: chances.legendary, example: '+7 905 700-00-00', price: 'от 250 000 ₽', tirage: '5 раз' },
+            { key: 'legendary', name: 'Легендарный', color: '#f59e0b', percent: chances.legendary, example: '+7 905 700-00-00', price: 'от 106 000 ₽', tirage: '5 раз' },
             { key: 'mythic', name: 'Мифический', color: '#ef4444', percent: chances.mythic, example: '+7 999 888-88-88', price: 'от 4 000 000 ₽', tirage: '1 раз' },
             { key: 'secret', name: 'Секретный', color: '#c084fc', percent: chances.secret, example: '0, 0123456789', price: 'от 400 000 000 ₽', tirage: '1 раз' }
         ];
@@ -1552,6 +1604,8 @@
             usedPromoCodes = []; 
             const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
             if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
+
+            await checkTaxes();
 
             updateBalance(); updateProfileUI(); updateLuckUI(); updateRollButtons();
             renderMiniCards(); renderChancesScreen(); startLuckTimer(); updateAdminVisibility();
@@ -1654,14 +1708,29 @@
             pn.innerHTML = `<b>${currentUser.username}</b> ${renderTag(currentUser.tag)}<br><span style="color:#555;font-size:12px;">${tgName}</span>`;
         }
         if (levelDisplay) levelDisplay.textContent = 'Ур. ' + (currentUser.level || 1);
-        if (currentUser.avatar_url) {
-            document.getElementById('headerAvatar').innerHTML = `<img src="${currentUser.avatar_url}" alt="">`;
-            document.getElementById('profileAvatarEl').innerHTML = `<img src="${currentUser.avatar_url}" alt="">`;
+        
+        const avatarHtml = currentUser.avatar_url ? `<img src="${currentUser.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
+        const headerAv = document.getElementById('headerAvatar');
+        const profAv = document.getElementById('profileAvatarEl');
+        if (headerAv) {
+            headerAv.className = 'icon-circle avatar'; 
+            if (currentUser.avatar_frame) headerAv.classList.add(currentUser.avatar_frame);
+            headerAv.innerHTML = avatarHtml;
+        }
+        if (profAv) {
+            profAv.className = 'profile-avatar'; 
+            if (currentUser.avatar_frame) profAv.classList.add(currentUser.avatar_frame);
+            profAv.innerHTML = avatarHtml;
         }
     }
 
     function handleX5Click() { x5Armed = !x5Armed; updateRollButtons(); }
-    function handleMainClick() { const c = x5Armed ? 5 : 1; startRoll(c); x5Armed = false; updateRollButtons(); }
+    function handleMainClick() { 
+        const c = x5Armed ? 5 : 1; 
+        startRollWithAnimation(c); 
+        x5Armed = false; 
+        updateRollButtons(); 
+    }
 
     function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
     function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
@@ -1705,6 +1774,10 @@
     }
 
     function pickRarity() {
+        if (currentUser && currentUser.pity_counter >= 50) {
+            currentUser.pity_counter = 0;
+            return RARITIES[2];
+        }
         const c = calculateChances();
         const r = Math.random() * 100;
         let cum = 0;
@@ -1715,6 +1788,7 @@
         cum += c.rare; if (r < cum) return RARITIES[4];
         return RARITIES[5];
     }
+
     function renderMainNumber(n) {
         const card = document.getElementById('simCard');
         const isSecret = n.rarity.key === 'secret';
@@ -1770,27 +1844,6 @@
     function closeDropOverlay() { document.getElementById('dropOverlay').classList.remove('active'); dropPendingNumber = null; document.getElementById('saveSellRow').classList.add('visible'); }
     async function dropSave() { if (!dropPendingNumber) return; await saveNumberToDB(dropPendingNumber); recentNumbers = recentNumbers.filter(n => n !== dropPendingNumber); closeDropOverlay(); renderMiniCards(); }
 
-    async function rollOne() {
-        const finalRarity = pickRarity();
-        const finalNumber = await generateUniqueNumber(finalRarity);
-        const price = calculatePrice(finalNumber.rarity, finalNumber);
-        return new Promise(async (resolve) => {
-            const card = document.getElementById('simCard');
-            if (card.classList.contains('start-card')) { renderMainNumber(finalNumber); resolve({ ...finalNumber, price, rarity: finalNumber.rarity }); return; }
-            const numEl = document.getElementById('simNumber');
-            if (!numEl) { renderMainNumber(finalNumber); resolve({ ...finalNumber, price, rarity: finalNumber.rarity }); return; }
-            numEl.className = 'sim-number';
-            let frames = 0;
-            const interval = setInterval(() => {
-                frames++;
-                const rd = [];
-                for (let i = 0; i < 7; i++) rd.push(Math.floor(Math.random() * 10));
-                const op = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
-                numEl.textContent = `+7 ${op.code} ${rd[0]}${rd[1]}${rd[2]}-${rd[3]}${rd[4]}-${rd[5]}${rd[6]}`;
-                if (frames >= 20) { clearInterval(interval); renderMainNumber(finalNumber); resolve({ ...finalNumber, price, rarity: finalNumber.rarity }); }
-            }, 60);
-        });
-    }
     function renderMiniCards() {
         const row = document.getElementById('miniCardsRow');
         if (!row) return;
@@ -1841,40 +1894,6 @@
         if (i > -1) recentNumbers.splice(i, 1);
         if (currentRolledNumber === modalTargetNumber) { currentRolledNumber = null; document.getElementById('saveSellRow').classList.remove('visible'); }
         renderMiniCards(); closeChoiceModal();
-    }
-    async function startRoll(count) {
-        if (isRolling) return;
-        let freeUsed = Math.min(freeRolls, count);
-        let paidRolls = count - freeUsed;
-        let cost = ROLL_PRICE * paidRolls;
-        if (balance < cost) { showToast('error', 'Мало средств', `Нужно ${formatPrice(cost)}`); return; }
-        isRolling = true;
-        document.getElementById('rollBtn').disabled = true;
-        document.getElementById('rollX5Btn').disabled = true;
-        document.getElementById('saveSellRow').classList.remove('visible');
-        balance -= cost;
-        freeRolls -= freeUsed;
-        currentUser.total_rolls = (currentUser.total_rolls || 0) + count;
-        updateBalance(); updateRollButtons();
-        const results = [];
-        for (let i = 0; i < count; i++) {
-            const r = await rollOne();
-            results.push(r);
-            if (count > 1 && i < count - 1) await new Promise(res => setTimeout(res, 200));
-        }
-        currentRolledNumber = results[results.length - 1];
-        results.reverse().forEach(r => recentNumbers.unshift(r));
-        recentNumbers = recentNumbers.slice(0, 5);
-        renderMiniCards();
-        const order = ['common', 'rare', 'epic', 'legendary', 'mythic', 'secret'];
-        const best = results.reduce((b, r) => order.indexOf(r.rarity.key) > order.indexOf(b.rarity.key) ? r : b, results[0]);
-        if (['legendary', 'mythic', 'secret'].includes(best.rarity.key)) showDropOverlay(best);
-        else document.getElementById('saveSellRow').classList.add('visible');
-        isRolling = false;
-        document.getElementById('rollBtn').disabled = false;
-        document.getElementById('rollX5Btn').disabled = false;
-        updateRollButtons();
-        await saveUserData();
     }
     async function saveNumber() {
         if (!currentRolledNumber) return;
@@ -2098,14 +2117,12 @@
     const input = document.getElementById('promoInput').value.trim().toUpperCase();
     if (!input) { showToast('error', 'Введите промокод', ''); return; }
 
-    // 1. Проверяем в БД, использовал ли этот юзер данный код
     const { data: used, error: checkErr } = await sb.from('used_promocodes')
         .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
     
     if (checkErr) { showToast('error', 'Ошибка БД', checkErr.message); return; }
     if (used) { showToast('error', 'Уже использован', 'Этот код уже активирован'); return; }
 
-    // 2. Проверяем существование промокода и его лимиты
     const { data: promos, error: promoErr } = await sb.from('promo_codes').select('*').eq('code', input).limit(1);
     if (promoErr) { showToast('error', 'Ошибка БД', promoErr.message); return; }
     if (!promos || !promos.length) { showToast('error', 'Неверный промокод', ''); return; }
@@ -2114,7 +2131,6 @@
     if (p.uses_left <= 0) { showToast('error', 'Исчерпан', ''); return; }
     if (p.expires_at && new Date(p.expires_at) < new Date()) { showToast('error', 'Истёк', ''); return; }
 
-    // 3. Записываем в БД, что игрок использовал код (защита от повторного ввода)
     const { error: insertErr } = await sb.from('used_promocodes')
         .insert({ user_id: currentUser.id, code: input });
         
@@ -2123,14 +2139,12 @@
         return; 
     }
 
-    // 4. Выдаем награды (только если запись прошла успешно)
     const r = p.rewards || {};
     const applied = [];
     if (r.money) { balance += r.money; applied.push(`+${r.money} ₽`); }
     if (r.rolls) { freeRolls += r.rolls; applied.push(`+${r.rolls} круток`); }
     ['x2','x5','x10','x15'].forEach(k => { if (r[k]) { activateLuckBoost(k, r[k]); applied.push(`×${k.slice(1)} на ${r[k]} мин`); } });
 
-    // 5. Уменьшаем кол-во оставшихся активаций
     await sb.from('promo_codes').update({ uses_left: p.uses_left - 1 }).eq('id', p.id);
     
     usedPromoCodes.push(input);
@@ -2696,6 +2710,164 @@
         showToast('success', 'Забрал!', formatPrice(np));
         minesState.active = false;
         setTimeout(() => { resetMinesState(); renderMinesField(); updateMinesUI(); updateMinesBetCard(); }, 1500);
+    }
+
+    // ==================== НОВЫЕ ФУНКЦИИ ====================
+
+    async function checkTaxes() {
+        if (!currentUser) return;
+        const now = Date.now();
+        const lastTax = currentUser.last_tax_time ? new Date(currentUser.last_tax_time).getTime() : 0;
+        const DAY = 24 * 60 * 60 * 1000;
+        
+        if (now - lastTax > DAY) {
+            if (balance > 1000000) {
+                const tax = Math.floor(balance * 0.05);
+                balance -= tax;
+                updateBalance();
+                showToast('error', 'Налог списан', `Вычли 5%: ${formatPrice(tax)}`);
+            }
+            currentUser.last_tax_time = new Date().toISOString();
+            await sb.from('profiles').update({ last_tax_time: currentUser.last_tax_time }).eq('id', currentUser.id);
+        }
+    }
+
+    function openDailyReward() {
+        closeMenu();
+        const modal = document.getElementById('dailyModal');
+        const content = document.getElementById('dailyContent');
+        const btn = document.getElementById('dailyBtn');
+        
+        const now = Date.now();
+        const lastDaily = currentUser.last_daily ? new Date(currentUser.last_daily).getTime() : 0;
+        const DAY = 24 * 60 * 60 * 1000;
+        
+        if (now - lastDaily < DAY) {
+            const left = DAY - (now - lastDaily);
+            const h = Math.floor(left / 3600000);
+            const m = Math.floor((left % 3600000) / 60000);
+            content.innerHTML = `Следующая награда через<br><b style="color:#fff;font-size:20px;">${h}ч ${m}м</b>`;
+            btn.disabled = true;
+            btn.style.opacity = 0.5;
+        } else {
+            content.innerHTML = 'Вам доступна награда!<br>Забирайте 5 000 ₽ и 1 крутку.';
+            btn.disabled = false;
+            btn.style.opacity = 1;
+        }
+        modal.classList.add('active');
+    }
+
+    async function claimDailyReward() {
+        const btn = document.getElementById('dailyBtn');
+        if (btn.disabled) return;
+        
+        btn.disabled = true;
+        balance += 5000;
+        freeRolls += 1;
+        currentUser.last_daily = new Date().toISOString();
+        
+        updateBalance();
+        updateRollButtons();
+        await sb.from('profiles').update({ last_daily: currentUser.last_daily }).eq('id', currentUser.id);
+        await saveUserData();
+        
+        showToast('success', 'Бонус получен!', '+5 000 ₽ и 1 крутка');
+        document.getElementById('dailyModal').classList.remove('active');
+    }
+
+    async function buyFrame(frameId) {
+        if (!tg || !tg.showPopup) {
+            await applyFrame(frameId);
+            showToast('success', 'Куплено (тест)', '');
+            return;
+        }
+        const prices = { 'frame-gold': 50, 'frame-neon': 100, 'frame-fire': 250 };
+        const stars = prices[frameId];
+        
+        tg.showPopup({
+            title: 'Покупка рамки',
+            message: `Купить рамку за ${stars} ⭐? (Для теста - рамка выдастся бесплатно)`,
+            buttons: [{ id: 'buy', type: 'default', text: 'Купить' }, { id: 'cancel', type: 'cancel' }]
+        }, async (btnId) => {
+            if (btnId === 'buy') {
+                await applyFrame(frameId);
+                showToast('success', 'Куплено!', 'Рамка активирована');
+                document.getElementById('shopModal').classList.remove('active');
+            }
+        });
+    }
+
+    async function applyFrame(frameId) {
+        currentUser.avatar_frame = frameId;
+        await sb.from('profiles').update({ avatar_frame: frameId }).eq('id', currentUser.id);
+        updateProfileUI();
+    }
+
+    async function startRollWithAnimation(count) {
+        if (isRolling) return;
+        let freeUsed = Math.min(freeRolls, count);
+        let paidRolls = count - freeUsed;
+        let cost = ROLL_PRICE * paidRolls;
+        if (balance < cost) { showToast('error', 'Мало средств', `Нужно ${formatPrice(cost)}`); return; }
+        
+        isRolling = true;
+        document.getElementById('rollBtn').disabled = true;
+        document.getElementById('rollX5Btn').disabled = true;
+        document.getElementById('saveSellRow').classList.remove('visible');
+        balance -= cost;
+        freeRolls -= freeUsed;
+        currentUser.total_rolls = (currentUser.total_rolls || 0) + count;
+        updateBalance(); updateRollButtons();
+
+        const modal = document.getElementById('rollAnimModal');
+        const numEl = document.getElementById('rollAnimNumber');
+        const rarityEl = document.getElementById('rollAnimRarity');
+        modal.classList.add('active');
+
+        const finalRarity = pickRarity();
+        const finalNumber = await generateUniqueNumber(finalRarity);
+        const price = calculatePrice(finalNumber.rarity, finalNumber);
+
+        if (['legendary', 'mythic', 'secret'].includes(finalRarity.key)) {
+            currentUser.pity_counter = 0;
+        } else {
+            currentUser.pity_counter = (currentUser.pity_counter || 0) + 1;
+        }
+        await sb.from('profiles').update({ pity_counter: currentUser.pity_counter }).eq('id', currentUser.id);
+
+        let frames = 0;
+        const interval = setInterval(() => {
+            frames++;
+            const rd = [];
+            for (let i = 0; i < 7; i++) rd.push(Math.floor(Math.random() * 10));
+            const op = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
+            numEl.textContent = `+7 ${op.code} ${rd[0]}${rd[1]}${rd[2]}-${rd[3]}${rd[4]}-${rd[5]}${rd[6]}`;
+            numEl.style.color = '#a855f7'; 
+            
+            if (frames >= 25) {
+                clearInterval(interval);
+                numEl.textContent = finalNumber.formatted;
+                numEl.style.color = getRarityColor(finalNumber.rarity.key);
+                rarityEl.textContent = getRarityName(finalNumber.rarity.key).toUpperCase();
+                rarityEl.style.color = getRarityColor(finalNumber.rarity.key);
+                
+                setTimeout(() => {
+                    modal.classList.remove('active');
+                    renderMainNumber(finalNumber);
+                    currentRolledNumber = { ...finalNumber, price, rarity: finalNumber.rarity };
+                    recentNumbers.unshift(currentRolledNumber);
+                    renderMiniCards();
+                    document.getElementById('saveSellRow').classList.add('visible');
+                    isRolling = false;
+                    document.getElementById('rollBtn').disabled = false;
+                    document.getElementById('rollX5Btn').disabled = false;
+                    updateRollButtons();
+                    if (['legendary', 'mythic', 'secret'].includes(finalNumber.rarity.key)) showDropOverlay(currentRolledNumber);
+                }, 800);
+            }
+        }, 60);
+
+        await saveUserData();
     }
 
     bootstrap();
