@@ -3291,39 +3291,6 @@ if (tg && tg.onEvent) {
         });
     });
 }
-async function saveUserData() {
-    if (!currentUser) return;
-    try {
-        await sb.from('profiles').update({
-            balance: balance, total_rolls: currentUser.total_rolls || 0,
-            level: currentUser.level || 1, updated_at: new Date().toISOString()
-        }).eq('id', currentUser.id);
-    } catch (e) { console.error('Save error', e); }
-}
-async function loadSavedNumbers() {
-    const { data, error } = await sb.from('saved_numbers').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-    if (error) return;
-    savedNumbers = (data || []).map(row => ({
-        id: row.id, formatted: row.formatted, op: row.op,
-        opObj: row.op_name ? { code: row.op, name: row.op_name, country: row.op_name === 'SECRET' ? '🌌 Неизвестно' : '🇷🇺 Россия' } : null,
-        digits: row.digits || [],
-        rarity: RARITIES.find(r => r.key === row.rarity_key) || RARITIES[0],
-        price: row.price, isSecretVariant: row.is_secret_variant
-    }));
-}
-async function loadAllPlayers() {
-    const { data } = await sb.from('profiles').select('*').order('balance', { ascending: false }).limit(100);
-    allPlayersList = data || [];
-}
-
-bootstrap();
-if (tg && tg.onEvent) {
-    tg.onEvent('backButtonClicked', () => {
-        document.querySelectorAll('.active').forEach(el => {
-            if (el.id && el.id !== 'gameRoot' && !el.classList.contains('menu-sheet')) el.classList.remove('active');
-        });
-    });
-}
 
 // ОТКРЫТИЕ ЭКРАНОВ
 function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
