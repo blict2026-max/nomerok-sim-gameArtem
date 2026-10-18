@@ -671,8 +671,6 @@
 .news-card-title { font-size: 14px; font-weight: 800; color: #e9d5ff; display: flex; align-items: center; gap: 6px; }
 .news-card-desc { font-size: 12px; color: #ccc; line-height: 1.4; }
 #adminNewsScreen { z-index: 10000; }
-#adminLogsScreen { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); z-index: 99999 !important; display: flex; flex-direction: column; opacity: 0; visibility: hidden; transform: translateY(20px); transition: opacity 0.3s, transform 0.3s; max-width: 480px; margin: 0 auto; overflow-y: auto; }
-#adminLogsScreen.active { opacity: 1 !important; visibility: visible !important; transform: translateY(0) !important; }
 </style>
 </head>
 <body>
@@ -3449,7 +3447,9 @@ async function addLog(actionType, details) {
 
 // Открытие экрана логов
 function openAdminLogs() {
+    document.getElementById('adminLogsScreen').classList.add('active');
     renderAdminLogs();
+}
 }
 
 // Закрытие экрана логов
