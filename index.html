@@ -8,7 +8,7 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-    :root { --bg-color: #0d0d0d; --sheet-bg: #141414; --card-bg: #1e1e1e; --text-main: #ffffff; --text-muted: #8e8e93; --gold: #e6b800; --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); --ease-out: cubic-bezier(0.16, 1, 0.3, 1); }
+:root { --bg-color: #0d0d0d; --sheet-bg: #141414; --card-bg: #1e1e1e; --text-main: #ffffff; --text-muted: #8e8e93; --gold: #e6b800; --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); --ease-out: cubic-bezier(0.16, 1, 0.3, 1); }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg-color); color: var(--text-main); max-width: 480px; margin: 0 auto; min-height: 100vh; overflow-x: hidden; position: relative; }
 
@@ -629,7 +629,6 @@
     .rb-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
     .rb-row b { color: #fff; }
 
-    /* СТИЛИ ДЛЯ МАГАЗИНА И ПРОПУСКА */
     .shop-tabs { display: flex; gap: 8px; padding: 0 16px 16px; overflow-x: auto; scrollbar-width: none; }
     .shop-tab { padding: 10px 18px; background: #1c1c1c; border-radius: 20px; font-size: 14px; font-weight: 600; color: #ccc; cursor: pointer; border: 1px solid transparent; white-space: nowrap; }
     .shop-tab.active { background: #fff; color: #0d0d0d; border-color: #fff; }
@@ -664,14 +663,14 @@
     .icon-circle.avatar.frame-neon { border: 3px solid #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.8); }
     .icon-circle.avatar.frame-fire { border: 3px solid #ef4444; box-shadow: 0 0 15px rgba(239,68,68,0.8); animation: firePulse 1.5s infinite alternate; }
     @keyframes firePulse { 0% { box-shadow: 0 0 5px #ef4444; } 100% { box-shadow: 0 0 25px #f97316; } }
-    /* СТИЛИ ДЛЯ НОВОСТЕЙ (КАРУСЕЛЬ) */
-.news-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 16px 16px; scrollbar-width: none; scroll-behavior: smooth; }
-.news-carousel::-webkit-scrollbar { display: none; }
-.news-card { min-width: 85%; scroll-snap-align: center; background: linear-gradient(135deg, #2a1a3a, #1a0f2a); border: 1px solid #a855f7; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
-.news-card-title { font-size: 14px; font-weight: 800; color: #e9d5ff; display: flex; align-items: center; gap: 6px; }
-.news-card-desc { font-size: 12px; color: #ccc; line-height: 1.4; }
-#adminNewsScreen { z-index: 10000; }
-#adminLogsScreen { z-index: 10001 !important; }
+    .news-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 16px 16px; scrollbar-width: none; scroll-behavior: smooth; }
+    .news-carousel::-webkit-scrollbar { display: none; }
+    .news-card { min-width: 85%; scroll-snap-align: center; background: linear-gradient(135deg, #2a1a3a, #1a0f2a); border: 1px solid #a855f7; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .news-card-title { font-size: 14px; font-weight: 800; color: #e9d5ff; display: flex; align-items: center; gap: 6px; }
+    .news-card-desc { font-size: 12px; color: #ccc; line-height: 1.4; }
+    #adminNewsScreen { z-index: 10000; }
+    #adminLogsScreen { z-index: 10001 !important; }
+</style>
 </style>
 </head>
 <body>
@@ -735,7 +734,6 @@
     </div>
 </div>
 
-<!-- ЕЖЕДНЕВНЫЙ БОНУС -->
 <div class="choice-modal" id="dailyModal">
     <div class="choice-box">
         <div style="text-align: center; font-size: 20px; font-weight: 800; color: #fff;">🎁 Ежедневный бонус</div>
@@ -745,17 +743,14 @@
     </div>
 </div>
 
-<!-- МАГАЗИН -->
 <div class="shop-screen" id="shopScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeShop()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="screen-title">Магазин</div>
-    
     <div class="shop-tabs">
         <div class="shop-tab active" data-tab="main" onclick="switchShopTab('main')">Главное</div>
         <div class="shop-tab" data-tab="rolls" onclick="switchShopTab('rolls')">Крутки</div>
         <div class="shop-tab" data-tab="style" onclick="switchShopTab('style')">Стиль</div>
     </div>
-
     <div id="shopTab-main" class="shop-tab-content">
         <div class="vip-banner">
             <div class="vip-title"><i class="fa-solid fa-crown"></i> VIP Статус</div>
@@ -771,7 +766,6 @@
             </div>
         </div>
     </div>
-
     <div id="shopTab-rolls" class="shop-tab-content" style="display: none;">
         <div class="shop-grid">
             <div class="shop-card">
@@ -786,7 +780,6 @@
             </div>
         </div>
     </div>
-
     <div id="shopTab-style" class="shop-tab-content" style="display: none;">
         <div class="shop-grid">
             <div class="shop-card">
@@ -808,7 +801,6 @@
     </div>
 </div>
 
-<!-- БОЕВОЙ ПРОПУСК -->
 <div class="bp-screen" id="battlePassScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeBattlePass()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="screen-title">Боевой пропуск</div>
@@ -819,7 +811,6 @@
     <div class="bp-grid" id="bpGrid"></div>
 </div>
 
-<!-- МЕНЮ -->
 <div class="overlay" id="overlay" onclick="closeMenu()"></div>
 <div class="menu-sheet" id="menuSheet">
     <div class="sheet-handle" onclick="closeMenu()"></div>
@@ -861,7 +852,6 @@
     </div>
 </div>
 
-<!-- КОЛЛЕКЦИЯ -->
 <div class="collection-screen" id="collectionScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeCollection()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="screen-title">Коллекция</div>
@@ -884,7 +874,6 @@
     <div class="sim-grid" id="collectionGrid"></div>
 </div>
 
-<!-- ПРОФИЛЬ -->
 <div class="profile-screen" id="profileScreen">
     <div class="profile-header"><div class="nav-left" onclick="closeProfile()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="profile-avatar-wrap">
@@ -915,7 +904,6 @@
     </div>
 </div>
 
-<!-- ПРОМОКОД -->
 <div class="promo-screen" id="promoScreen">
     <div class="screen-header"><div class="nav-left" onclick="closePromo()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="promo-title">Промокод</div>
@@ -924,14 +912,12 @@
     <button class="promo-activate" onclick="activatePromo()">Активировать</button>
 </div>
 
-<!-- УВЕДОМЛЕНИЯ -->
 <div class="notifications-screen" id="notificationsScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeNotifications()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="screen-title">Уведомления</div>
     <div id="notificationsList"></div>
 </div>
 
-<!-- РЕЙТИНГ -->
 <div class="rating-screen" id="ratingScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeRating()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="rating-title">Рейтинг</div>
@@ -945,7 +931,6 @@
     <div class="rating-list" id="ratingList"></div>
 </div>
 
-<!-- ПРОВЕРКА НОМЕРА -->
 <div class="check-screen" id="checkScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeCheckNumber()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="check-title">Проверка номера</div>
@@ -959,7 +944,6 @@
     <div class="check-result" id="checkResult"></div>
 </div>
 
-<!-- ШАНСЫ -->
 <div class="chances-screen" id="chancesScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeChances()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="chances-title">Шансы</div>
@@ -967,7 +951,6 @@
     <div class="chances-list" id="chancesList"></div>
 </div>
 
-<!-- ИГРЫ -->
 <div class="games-screen" id="gamesScreen">
     <div class="games-top-bar"><div class="games-back" onclick="closeGames()"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>Назад</div></div>
     <div class="game-card">
@@ -982,7 +965,6 @@
     </div>
 </div>
 
-<!-- АУКЦИОН -->
 <div class="auction-screen" id="auctionScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeAuction()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="screen-title">🏛 Аукцион</div>
@@ -998,7 +980,6 @@
     <div class="auction-list" id="auctionList"></div>
 </div>
 
-<!-- ЛОТ -->
 <div class="lot-modal" id="lotModal">
     <div class="lot-sheet">
         <div class="lot-handle" onclick="closeCreateLot()"></div>
@@ -1013,7 +994,6 @@
     </div>
 </div>
 
-<!-- МОДАЛКА SIM-КАРТОЧКИ -->
 <div class="sim-detail-modal" id="simDetailModal">
     <div class="sim-detail-box">
         <div class="sim-detail-card" id="simDetailCard">
@@ -1034,7 +1014,7 @@
         </div>
     </div>
 </div>
-<!-- ЭКРАН УПРАВЛЕНИЯ НОВОСТЯМИ -->
+
 <div class="admin-player-detail" id="adminNewsScreen" style="z-index: 10000;">
     <div class="admin-sub-header">
         <div class="nav-left" onclick="closeAdminNews()">
@@ -1042,44 +1022,28 @@
         </div>
     </div>
     <div class="admin-sub-title">Управление новостями</div>
-    
     <div class="promo-form">
         <div class="promo-form-label">Заголовок</div>
-        <div class="promo-form-input">
-            <input type="text" id="newsTitleInput" placeholder="Например: Двойная удача!">
-        </div>
+        <div class="promo-form-input"><input type="text" id="newsTitleInput" placeholder="Например: Двойная удача!"></div>
         <div class="promo-form-label">Текст</div>
-        <div class="promo-form-input">
-            <input type="text" id="newsDescInput" placeholder="Например: Действует х2 на час">
-        </div>
+        <div class="promo-form-input"><input type="text" id="newsDescInput" placeholder="Например: Действует х2 на час"></div>
         <div class="promo-form-label">Время (часов, 0 = навсегда)</div>
-        <div class="promo-form-input">
-            <input type="number" id="newsHoursInput" value="24" min="0">
-        </div>
-        <button class="admin-btn green" onclick="createNews()" style="margin-top: 10px;">
-            <i class="fa-solid fa-plus"></i> Опубликовать
-        </button>
+        <div class="promo-form-input"><input type="number" id="newsHoursInput" value="24" min="0"></div>
+        <button class="admin-btn green" onclick="createNews()" style="margin-top: 10px;"><i class="fa-solid fa-plus"></i> Опубликовать</button>
     </div>
-
     <div class="promo-list-title">Активные новости</div>
     <div class="promo-list" id="adminNewsList"></div>
 </div>
-<!-- ЭКРАН ЛОГОВ -->
+
 <div class="admin-promo-screen" id="adminLogsScreen">
     <div class="admin-sub-header">
-        <div class="nav-left" onclick="closeAdminLogs()">
-            <i class="fa-solid fa-arrow-left"></i><span>Назад</span>
-        </div>
-        <div class="nav-left" onclick="renderAdminLogs()" style="color: #f59e0b;">
-            <i class="fa-solid fa-rotate-right"></i><span>Обновить</span>
-        </div>
+        <div class="nav-left" onclick="closeAdminLogs()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div>
+        <div class="nav-left" onclick="renderAdminLogs()" style="color: #f59e0b;"><i class="fa-solid fa-rotate-right"></i><span>Обновить</span></div>
     </div>
     <div class="admin-sub-title">Логи действий</div>
-    <div class="promo-list" id="adminLogsList" style="padding-bottom: 40px;">
-        <!-- Сюда будут загружаться логи -->
-    </div>
+    <div class="promo-list" id="adminLogsList" style="padding-bottom: 40px;"></div>
 </div>
-<!-- АДМИНКА -->
+
 <div class="admin-screen" id="adminScreen">
     <div class="admin-header"><div class="nav-left" onclick="closeAdmin()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="admin-title">Админ-панель</div>
@@ -1155,30 +1119,25 @@
     <div class="promo-list-title">Созданные промокоды</div>
     <div class="promo-list" id="promoList"></div>
 </div>
-<!-- ЭКРАН ВЫДАЧИ НОМЕРА -->
+
 <div class="admin-promo-screen" id="adminGiveNumberScreen">
     <div class="admin-sub-header"><div class="nav-left" onclick="closeAdminGiveNumber()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="admin-sub-title">Выдача номера</div>
-    
     <div class="promo-form">
         <div class="promo-form-label">Поиск обычного номера</div>
         <div class="promo-form-input">
             <input type="text" id="adminGiveNumInput" placeholder="+7 999 777-77-77">
             <button class="promo-gen-btn" onclick="searchAdminNumber()"><i class="fa-solid fa-magnifying-glass"></i></button>
         </div>
-        <div style="font-size: 11px; color: #888; margin-top: 8px; text-align: center;">
-            Или введите секретный номер (0-9, 0123456789):
-        </div>
+        <div style="font-size: 11px; color: #888; margin-top: 8px; text-align: center;">Или введите секретный номер (0-9, 0123456789):</div>
         <div class="promo-form-input" style="margin-top: 4px;">
             <input type="text" id="adminGiveSecretInput" placeholder="Секретный номер">
             <button class="promo-gen-btn" onclick="searchAdminSecretNumber()" style="border-color: #ef4444; color: #ef4444;"><i class="fa-solid fa-mask"></i></button>
         </div>
     </div>
-
     <div id="adminGiveNumResult" style="padding: 0 16px;"></div>
 </div>
 
-<!-- МОДАЛКА ТЕГА -->
 <div class="tag-modal" id="tagModal">
     <div class="tag-modal-box">
         <div class="tag-modal-title">Тег</div>
@@ -1195,7 +1154,6 @@
     </div>
 </div>
 
-<!-- МОДАЛКА ПОДАРКА -->
 <div class="tag-modal" id="giftModal">
     <div class="tag-modal-box">
         <div class="tag-modal-title">🎁 Подарок</div>
@@ -1207,7 +1165,6 @@
     </div>
 </div>
 
-<!-- DROP OVERLAY -->
 <div class="drop-overlay" id="dropOverlay">
     <div class="drop-bg" onclick="closeDropOverlay()"></div>
     <div class="drop-title" id="dropTitle"></div>
@@ -1225,7 +1182,6 @@
     </div>
 </div>
 
-<!-- CHOICE MODAL -->
 <div class="choice-modal" id="choiceModal">
     <div class="choice-box">
         <div class="choice-number" id="choiceNumber"></div>
@@ -1239,7 +1195,6 @@
     </div>
 </div>
 
-<!-- ИГРА АПГРЕЙД -->
 <div class="upgrade-game-screen" id="upgradeGameScreen">
     <div class="upgrade-game-inner">
         <div class="ug-top-bar"><div class="ug-back-btn" onclick="closeUpgradeGame()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>Назад</div></div>
@@ -1261,7 +1216,6 @@
     </div>
 </div>
 
-<!-- ИГРА САПЁР -->
 <div class="mines-game-screen" id="minesGameScreen">
     <div class="mines-game-inner">
         <div class="ug-top-bar"><div class="ug-back-btn" onclick="closeMinesGame()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>Назад</div></div>
@@ -1283,11 +1237,9 @@
     </div>
 </div>
 
-<!-- МОДАЛКИ ВЫБОРА -->
 <div class="game-collection-modal" id="minesCollectionModal"><div class="game-collection-sheet"><div class="game-collection-handle" onclick="closeMinesCollection()"></div><div class="game-collection-title">Выбери номер</div><div class="game-collection-list" id="minesCollectionList"></div></div></div>
 <div class="game-collection-modal" id="gameCollectionModal"><div class="game-collection-sheet"><div class="game-collection-handle" onclick="closeGameCollection()"></div><div class="game-collection-title">Выбери номер</div><div class="game-collection-list" id="gameCollectionList"></div></div></div>
 
-<!-- TOAST -->
 <div class="toast" id="toast">
     <div class="toast-icon" id="toastIcon"><i class="fa-solid fa-check"></i></div>
     <div class="toast-text"><div class="toast-title" id="toastTitle">Готово</div><div class="toast-sub" id="toastSub"></div></div>
@@ -1365,6 +1317,17 @@ const TAGS = {
     yard: { label: 'Лярд', class: 'tag-yard' }
 };
 
+// ===== ПРАВКА 1: безопасный UUID =====
+function uuidv4() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        try { return crypto.randomUUID(); } catch(_) {}
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
+
 function getRarityColor(key) {
     return { common: '#9ca3af', rare: '#3b82f6', epic: '#a855f7', legendary: '#f59e0b', mythic: '#ef4444', secret: '#c084fc' }[key] || '#fff';
 }
@@ -1427,22 +1390,23 @@ function showToast(type, title, sub) {
     setTimeout(() => toast.classList.remove('active'), 3000);
 }
 
-// ЗВУКИ
-const sounds = {
-    click: new Audio('https://actions.google.com/sounds/v1/ui/click_002.ogg'),
-    win: new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg'),
-    drop: new Audio('https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate.ogg')
-};
-sounds.click.volume = 0.2;
-sounds.win.volume = 0.5;
-sounds.drop.volume = 0.5;
+// ===== ПРАВКА 2: безопасная инициализация Audio =====
+let sounds = { click: null, win: null, drop: null };
+try {
+    sounds.click = new Audio('https://actions.google.com/sounds/v1/ui/click_002.ogg');
+    sounds.win = new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg');
+    sounds.drop = new Audio('https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate.ogg');
+    sounds.click.volume = 0.2;
+    sounds.win.volume = 0.5;
+    sounds.drop.volume = 0.5;
+} catch (e) { console.warn('Audio init failed:', e); }
+function safePlay(snd) { try { if (snd) snd.play().catch(()=>{}); } catch(_) {} }
 document.addEventListener('click', (e) => {
     if (e.target.closest('button') || e.target.closest('.btn-tile') || e.target.closest('.menu-item')) {
-        sounds.click.play().catch(()=>{});
+        safePlay(sounds.click);
     }
 });
 
-// ЛЕНТА НОВОСТЕЙ
 function initNewsFeed() {
     sb.channel('news_channel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'news_feed' }, payload => {
@@ -1450,18 +1414,15 @@ function initNewsFeed() {
       }).subscribe();
     loadNewsFeed();
 }
-// АВТО-ПРОКРУТКА НОВОСТЕЙ
 let newsAutoScrollInterval = null;
 function startNewsAutoScroll() {
     const carousel = document.getElementById('newsCarousel');
     if (!carousel) return;
     if (newsAutoScrollInterval) clearInterval(newsAutoScrollInterval);
-    
     newsAutoScrollInterval = setInterval(() => {
         if (document.getElementById('gameRoot').style.display === 'none') return;
         const scrollAmount = carousel.offsetWidth * 0.85;
         const maxScroll = carousel.scrollWidth - carousel.clientWidth;
-        
         if (carousel.scrollLeft >= maxScroll - 10) {
             carousel.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
@@ -1469,37 +1430,30 @@ function startNewsAutoScroll() {
         }
     }, 3000);
 }
-
 async function loadNewsFeed() {
     const { data } = await sb.from('news_feed').select('*').order('created_at', { ascending: false });
     const carousel = document.getElementById('newsCarousel');
     if (!carousel) return;
-    
     const now = new Date();
-    // Фильтруем: показываем только те, у которых нет времени конца, или время еще не пришло
     const activeNews = (data || []).filter(n => !n.expires_at || new Date(n.expires_at) > now);
-    
     if (activeNews.length === 0) {
         carousel.innerHTML = `<div class="news-card"><div class="news-card-title">📢 Добро пожаловать!</div><div class="news-card-desc">Скоро здесь появятся новости от администрации.</div></div>`;
         return;
     }
-    
     carousel.innerHTML = activeNews.map(n => `
         <div class="news-card">
             <div class="news-card-title">${n.icon || '📢'} ${n.title}</div>
             <div class="news-card-desc">${n.description}</div>
         </div>
     `).join('');
-    
     startNewsAutoScroll();
 }
-// СИСТЕМА УРОВНЕЙ
+
 async function addXP(amount) {
     if (!currentUser) return;
     currentUser.xp = (currentUser.xp || 0) + amount;
     let xpNeeded = currentUser.level * 1000;
     let leveledUp = false;
-    
     while (currentUser.xp >= xpNeeded) {
         currentUser.level += 1;
         currentUser.xp -= xpNeeded;
@@ -1507,18 +1461,15 @@ async function addXP(amount) {
         leveledUp = true;
         balance += currentUser.level * 1000;
     }
-    
     if (leveledUp) {
         showToast('success', 'Новый уровень!', `Ур. ${currentUser.level}`);
-        sounds.win.play().catch(()=>{});
+        safePlay(sounds.win);
         updateBalance();
     }
-    
     await sb.from('profiles').update({ level: currentUser.level, xp: currentUser.xp }).eq('id', currentUser.id);
     updateProfileUI();
 }
 
-// БОЕВОЙ ПРОПУСК
 const BP_REWARDS = [
     { pts: 10, type: 'money', val: 5000, icon: '💵', label: '5 000 ₽' },
     { pts: 25, type: 'roll', val: 1, icon: '🎲', label: '1 Крутка' },
@@ -1534,7 +1485,6 @@ async function renderBattlePass() {
     const grid = document.getElementById('bpGrid');
     const { data } = await sb.from('battle_pass').select('*').eq('user_id', currentUser.id).maybeSingle();
     let claimed = data ? data.claimed_rewards : [];
-    
     grid.innerHTML = BP_REWARDS.map((r, i) => {
         const isClaimed = claimed.includes(i);
         const canClaim = (currentUser.bp_points || 0) >= r.pts && !isClaimed;
@@ -1555,20 +1505,17 @@ async function claimBP(index) {
     if (r.type === 'roll') { freeRolls += r.val; updateRollButtons(); }
     if (r.type === 'luck') { activateLuckBoost('x2', 60); }
     if (r.type === 'frame') { applyFrame(r.val); }
-
     const { data } = await sb.from('battle_pass').select('*').eq('user_id', currentUser.id).maybeSingle();
     let claimed = data ? data.claimed_rewards : [];
     claimed.push(index);
     if (data) await sb.from('battle_pass').update({ claimed_rewards: claimed }).eq('user_id', currentUser.id);
     else await sb.from('battle_pass').insert({ user_id: currentUser.id, points: 0, claimed_rewards: claimed });
-    
     await saveUserData();
     showToast('success', 'Награда получена!', r.label);
-    sounds.win.play().catch(()=>{});
+    safePlay(sounds.win);
     renderBattlePass();
 }
 
-// МАГАЗИН
 function openShop() { closeMenu(); document.getElementById('shopScreen').classList.add('active'); }
 function closeShop() { document.getElementById('shopScreen').classList.remove('active'); }
 function switchShopTab(tab) {
@@ -1613,7 +1560,6 @@ async function applyFrame(frameId) {
     updateProfileUI();
 }
 
-// НАЛОГИ
 async function checkTaxes() {
     if (!currentUser) return;
     const now = Date.now();
@@ -1631,7 +1577,6 @@ async function checkTaxes() {
     }
 }
 
-// ЕЖЕДНЕВНЫЙ БОНУС
 function openDailyReward() {
     closeMenu();
     const modal = document.getElementById('dailyModal');
@@ -1664,7 +1609,7 @@ async function claimDailyReward() {
     showToast('success', 'Бонус получен!', '+5 000 ₽ и 1 крутка');
     document.getElementById('dailyModal').classList.remove('active');
 }
-// ==================== ГЕНЕРАЦИЯ И ЦЕНЫ ====================
+
 function getPatternMultiplier(digits) {
     if (!digits || digits.length !== 7) return 1.0;
     const d = digits; const s = digits.join('');
@@ -1745,7 +1690,6 @@ function calculatePrice(rarity, numberObj) {
     const patternMult = numberObj && numberObj.digits ? getPatternMultiplier(numberObj.digits) : 1.0;
     const opMult = (numberObj && numberObj.opObj) ? (OPERATOR_MULT[numberObj.opObj.name] || 1.0) : 1.0;
     const digitBonus = numberObj && numberObj.digits ? getDigitBonus(numberObj.digits) : 1.0;
-
     if (key === 'legendary') {
         const base = 100000 + Math.random() * 600000;
         const finalPrice = Math.floor(base * patternMult * opMult * digitBonus);
@@ -1762,7 +1706,7 @@ function calculatePrice(rarity, numberObj) {
     }
     const base = BASE_PRICES[key] || BASE_PRICES.common;
     const jitter = 0.95 + Math.random() * 0.10;
-    const minFloor = Math.floor(BASE_PRICES[key] * 0.85); 
+    const minFloor = Math.floor(BASE_PRICES[key] * 0.85);
     const calculated = Math.floor(base * patternMult * opMult * digitBonus * jitter);
     return Math.max(minFloor, calculated);
 }
@@ -1841,7 +1785,6 @@ async function generateUniqueNumber(rarity) {
     return generateUniqueNumber(RARITIES[3]);
 }
 
-// УДАЧА И ШАНСЫ
 const LUCK_TIERS = [
     { key: 'x15', mult: 15, tier: 3 }, { key: 'x10', mult: 10, tier: 3 },
     { key: 'x5', mult: 5, tier: 2 }, { key: 'x2', mult: 2, tier: 1 },
@@ -1955,7 +1898,6 @@ function pickRarity() {
     return RARITIES[5];
 }
 
-// РЕНДЕР И КРУТКА
 function renderMainNumber(n) {
     const card = document.getElementById('simCard');
     const isSecret = n.rarity.key === 'secret';
@@ -2002,7 +1944,7 @@ function showDropOverlay(n) {
     document.getElementById('dropPriceValue').textContent = formatPrice(n.price);
     overlay.classList.add('active');
     renderPatternBadge(cardInner, n);
-    sounds.drop.play().catch(()=>{});
+    safePlay(sounds.drop);
     if (navigator.vibrate) {
         if (key === 'mythic') navigator.vibrate([120, 60, 120, 60, 250]);
         else if (key === 'legendary') navigator.vibrate([80, 40, 150]);
@@ -2036,9 +1978,7 @@ async function rollOne() {
 
 async function startRoll(count) {
     if (isRolling) return;
-    const rollSound = new Audio('https://actions.google.com/sounds/v1/foley/playing_cards_flick_1.ogg');
-rollSound.volume = 0.4;
-rollSound.play().catch(()=>{});
+    try { new Audio('https://actions.google.com/sounds/v1/foley/playing_cards_flick_1.ogg').play().catch(()=>{}); } catch(_) {}
     let freeUsed = Math.min(freeRolls, count);
     let paidRolls = count - freeUsed;
     let cost = ROLL_PRICE * paidRolls;
@@ -2063,27 +2003,21 @@ rollSound.play().catch(()=>{});
     if (['legendary', 'mythic', 'secret'].includes(best.rarity.key)) currentUser.pity_counter = 0;
     else currentUser.pity_counter = (currentUser.pity_counter || 0) + count;
     await sb.from('profiles').update({ pity_counter: currentUser.pity_counter }).eq('id', currentUser.id);
-
     results.reverse().forEach(r => recentNumbers.unshift(r));
     recentNumbers = recentNumbers.slice(0, 5);
     renderMiniCards();
-    
     if (['legendary', 'mythic', 'secret'].includes(best.rarity.key)) showDropOverlay(best);
     else document.getElementById('saveSellRow').classList.add('visible');
-    
     isRolling = false;
     document.getElementById('rollBtn').disabled = false;
     document.getElementById('rollX5Btn').disabled = false;
     updateRollButtons();
-
     await addXP(count * 10);
     currentUser.bp_points = (currentUser.bp_points || 0) + (count * 2);
     await sb.from('profiles').update({ bp_points: currentUser.bp_points }).eq('id', currentUser.id);
-    
     await saveUserData();
     addLog('roll', `Сделал ${count} круток. Лучшее: ${best.rarity.name} ${best.formatted}`);
 }
-// МИНИ-КАРТОЧКИ И ВЫБОР
 function renderMiniCards() {
     const row = document.getElementById('miniCardsRow');
     if (!row) return;
@@ -2179,7 +2113,6 @@ async function sellAll() {
     await saveUserData();
 }
 
-// КОЛЛЕКЦИЯ
 function updateCollection() {
     const grid = document.getElementById('collectionGrid');
     if (!grid) return;
@@ -2262,7 +2195,6 @@ async function simDetailDelete() {
     closeSimDetail();
 }
 
-// РЕЙТИНГ
 function renderRating() {
     const list = document.getElementById('ratingList');
     if (!list) return;
@@ -2289,7 +2221,6 @@ function renderRating() {
     }).join('');
 }
 
-// ПРОВЕРКА НОМЕРА
 let currentCountry = 'ru';
 function selectCountry(c) {
     currentCountry = c;
@@ -2357,41 +2288,26 @@ async function checkNumber() {
     }
 }
 
-// ПРОМОКОДЫ
 async function activatePromo() {
     const input = document.getElementById('promoInput').value.trim().toUpperCase();
     if (!input) { showToast('error', 'Введите промокод', ''); return; }
-
-    const { data: used, error: checkErr } = await sb.from('used_promocodes')
-        .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
-    
+    const { data: used, error: checkErr } = await sb.from('used_promocodes').select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
     if (checkErr) { showToast('error', 'Ошибка БД', checkErr.message); return; }
     if (used) { showToast('error', 'Уже использован', 'Этот код уже активирован'); return; }
-
     const { data: promos, error: promoErr } = await sb.from('promo_codes').select('*').eq('code', input).limit(1);
     if (promoErr) { showToast('error', 'Ошибка БД', promoErr.message); return; }
     if (!promos || !promos.length) { showToast('error', 'Неверный промокод', ''); return; }
-    
     const p = promos[0];
     if (p.uses_left <= 0) { showToast('error', 'Исчерпан', ''); return; }
     if (p.expires_at && new Date(p.expires_at) < new Date()) { showToast('error', 'Истёк', ''); return; }
-
-    const { error: insertErr } = await sb.from('used_promocodes')
-        .insert({ user_id: currentUser.id, code: input });
-        
-    if (insertErr) { 
-        showToast('error', 'Ошибка базы', 'Не удалось сохранить: ' + insertErr.message); 
-        return; 
-    }
-
+    const { error: insertErr } = await sb.from('used_promocodes').insert({ user_id: currentUser.id, code: input });
+    if (insertErr) { showToast('error', 'Ошибка базы', 'Не удалось сохранить: ' + insertErr.message); return; }
     const r = p.rewards || {};
     const applied = [];
     if (r.money) { balance += r.money; applied.push(`+${r.money} ₽`); }
     if (r.rolls) { freeRolls += r.rolls; applied.push(`+${r.rolls} круток`); }
     ['x2','x5','x10','x15'].forEach(k => { if (r[k]) { activateLuckBoost(k, r[k]); applied.push(`×${k.slice(1)} на ${r[k]} мин`); } });
-
     await sb.from('promo_codes').update({ uses_left: p.uses_left - 1 }).eq('id', p.id);
-    
     usedPromoCodes.push(input);
     updateBalance(); updateLuckUI(); updateRollButtons();
     document.getElementById('promoInput').value = '';
@@ -2399,7 +2315,6 @@ async function activatePromo() {
     await saveUserData();
 }
 
-// УВЕДОМЛЕНИЯ
 function subscribeToNotifications() {
     if (notificationRealtimeChannel) sb.removeChannel(notificationRealtimeChannel);
     notificationRealtimeChannel = sb.channel('notif_' + currentUser.id)
@@ -2617,7 +2532,6 @@ function renderNotifications() {
         await loadAuctionLots(); switchAuctionTab('my');
     }
 
-    // АДМИНКА
     async function renderAdminPlayersList() {
         await loadAllPlayers();
         const list = document.getElementById('adminPlayersList');
@@ -2634,12 +2548,10 @@ function renderNotifications() {
     adminTargetPlayerId = id;
     const p = allPlayersList.find(x => x.id === id);
     if (!p) return;
-    
     const av = p.avatar_url ? '<img src="' + p.avatar_url + '" alt="">' : '<i class="fa-solid fa-crown"></i>';
     const tgName = p.tg_username ? '@' + p.tg_username : '';
     const playerTag = renderTag(p.tag);
     const ownerIcon = p.is_owner ? '👑' : '';
-    
     let html = '';
     html += '<div class="player-detail-header">';
     html += '  <div class="player-detail-avatar">' + av + '</div>';
@@ -2647,19 +2559,16 @@ function renderNotifications() {
     html += '  <div class="player-detail-username">' + tgName + '</div>';
     html += '  <div style="font-size: 11px; color: #a855f7; margin-top: 4px; font-weight: 700; letter-spacing: 1px;">[ID: ' + p.telegram_id + ']</div>';
     html += '</div>';
-    
     html += '<div class="player-detail-stats">';
     html += '  <div class="player-detail-stat"><span class="label">Баланс</span><span class="value">' + (p.balance || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
     html += '  <div class="player-detail-stat"><span class="label">Круток</span><span class="value">' + (p.total_rolls || 0).toLocaleString('ru-RU') + '</span></div>';
     html += '</div>';
-    
     html += '<div class="admin-actions">';
     html += '  <button class="admin-btn blue" onclick="adminViewCollection()"><i class="fa-solid fa-folder-open"></i> Коллекция</button>';
     html += '  <button class="admin-btn orange" onclick="document.getElementById(\'tagModal\').classList.add(\'active\')"><i class="fa-solid fa-tag"></i> Тег</button>';
     html += '  <button class="admin-btn green" onclick="adminGiveMoney()"><i class="fa-solid fa-coins"></i> Выдать 10 000 ₽</button>';
     html += '  <button class="admin-btn" style="background:linear-gradient(135deg,#a855f7,#7c3aed); color:#fff;" onclick="document.getElementById(\'giftModal\').classList.add(\'active\')"><i class="fa-solid fa-gift"></i> Подарок</button>';
     html += '</div>';
-    
     document.getElementById('adminPlayerDetailContent').innerHTML = html;
 }
     async function adminViewCollection() {
@@ -2753,7 +2662,6 @@ function renderNotifications() {
         showToast('success', 'Сезон сброшен', ''); closeAdminReset(); location.reload();
     }
 
-    // ПРОМОКОДЫ АДМИН
     function generateRandomCode() {
         const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code = '';
         for (let i = 0; i < 8; i++) code += c[Math.floor(Math.random() * c.length)];
@@ -2795,7 +2703,6 @@ function renderNotifications() {
     }
     async function deletePromo(id) { await sb.from('promo_codes').delete().eq('id', id); await renderPromoList(); showToast('success', 'Удалён', ''); }
 
-    // ИГРЫ (АПГРЕЙД И САПЁР)
     const slider = document.getElementById('slider');
     const upgradeBtn = document.getElementById('upgradeBtn');
     const resultText = document.getElementById('resultText');
@@ -2864,7 +2771,7 @@ function renderNotifications() {
             updateCollection(); updateProfileUI(); updateGameBetCard();
             addLog('upgrade', `Апгрейд удачный: ${gameBetNumber.formatted} (теперь ${formatPrice(gameBetNumber.price)})`);
             showToast('success', 'Выигрыш!', formatPrice(np));
-            sounds.win.play().catch(()=>{});
+            safePlay(sounds.win);
         } else {
             resultText.textContent = "💀 ПРОИГРАЛ!";
             resultText.className = 'result-text result-fail visible';
@@ -2973,12 +2880,11 @@ function renderNotifications() {
         await sb.from('saved_numbers').update({ price: np }).eq('id', num.id);
         num.price = np; updateCollection(); updateProfileUI();
         showToast('success', 'Забрал!', formatPrice(np));
-        sounds.win.play().catch(()=>{});
+        safePlay(sounds.win);
         minesState.active = false;
         setTimeout(() => { resetMinesState(); renderMinesField(); updateMinesUI(); updateMinesBetCard(); }, 1500);
     }
 
-    // ПРОФИЛЬ И ОБНОВЛЕНИЕ UI
     function updateBalance() {
         balanceDisplay.innerHTML = balance.toLocaleString('ru-RU') + ' <span>₽</span>';
         if (profileBalance) profileBalance.textContent = balance.toLocaleString('ru-RU');
@@ -3019,11 +2925,9 @@ function renderNotifications() {
         document.getElementById('profRolls').textContent = (currentUser.total_rolls || 0).toLocaleString('ru-RU');
         document.getElementById('profEarned').textContent = formatRatingValue(balance);
         document.getElementById('profLevel').textContent = currentUser.level || 1;
-        
         const xpNeeded = (currentUser.level || 1) * 1000;
         const xpPercent = Math.min(100, ((currentUser.xp || 0) / xpNeeded) * 100);
         if (xpMiniBar) xpMiniBar.style.width = xpPercent + '%';
-
         const counts = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
         savedNumbers.forEach(n => counts[n.rarity.key]++);
         document.getElementById('profCountCommon').textContent = counts.common;
@@ -3049,7 +2953,6 @@ function renderNotifications() {
             pn.innerHTML = `<b>${currentUser.username}</b> ${renderTag(currentUser.tag)}<br><span style="color:#555;font-size:12px;">${tgName}</span>`;
         }
         if (levelDisplay) levelDisplay.textContent = 'Ур. ' + (currentUser.level || 1);
-        
         const avatarHtml = currentUser.avatar_url ? `<img src="${currentUser.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
         const headerAv = document.getElementById('headerAvatar');
         const profAv = document.getElementById('profileAvatarEl');
@@ -3067,7 +2970,6 @@ function renderNotifications() {
     function handleX5Click() { x5Armed = !x5Armed; updateRollButtons(); }
     function handleMainClick() { const c = x5Armed ? 5 : 1; startRoll(c); x5Armed = false; updateRollButtons(); }
 
-    // ОТКРЫТИЕ ЭКРАНОВ
     function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
     function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
     function openCollection() { closeMenu(); currentFilter = 'all'; updateCollection(); setTimeout(() => document.getElementById('collectionScreen').classList.add('active'), 300); }
@@ -3114,68 +3016,46 @@ function openAdmin() {
     }
 function openAdminNews() {
     document.getElementById('adminScreen').classList.remove('active');
-    
-    const newsScreen = document.getElementById('adminNewsScreen');
-    newsScreen.classList.add('active');
-    
+    document.getElementById('adminNewsScreen').classList.add('active');
     document.getElementById('newsTitleInput').value = '';
     document.getElementById('newsDescInput').value = '';
     document.getElementById('newsHoursInput').value = '24';
     renderAdminNewsList();
 }
-
 function closeAdminNews() {
-    const newsScreen = document.getElementById('adminNewsScreen');
-    newsScreen.classList.remove('active');
-    
+    document.getElementById('adminNewsScreen').classList.remove('active');
     document.getElementById('adminScreen').classList.add('active');
 }
 async function createNews() {
     const title = document.getElementById('newsTitleInput').value.trim();
     const desc = document.getElementById('newsDescInput').value.trim();
     const hours = parseInt(document.getElementById('newsHoursInput').value) || 0;
-    
     if (!title || !desc) { showToast('error', 'Заполните все поля', ''); return; }
-    
     const expiresAt = hours > 0 ? new Date(Date.now() + hours * 3600000).toISOString() : null;
-    
-    const { error } = await sb.from('news_feed').insert({ 
-        title, description: desc, icon: '📢', expires_at: expiresAt 
-    });
-    
+    const { error } = await sb.from('news_feed').insert({ title, description: desc, icon: '📢', expires_at: expiresAt });
     if (error) { showToast('error', 'Ошибка', error.message); return; }
-    
     showToast('success', 'Новость создана!', '');
     document.getElementById('newsTitleInput').value = '';
     document.getElementById('newsDescInput').value = '';
     loadNewsFeed();
     renderAdminNewsList();
 }
-
 async function renderAdminNewsList() {
     const list = document.getElementById('adminNewsList');
     list.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Загрузка...</div>';
-    
     const { data } = await sb.from('news_feed').select('*').order('created_at', { ascending: false });
-    
     if (!data || data.length === 0) {
         list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Новостей нет</div>';
         return;
     }
-    
     list.innerHTML = data.map(n => {
         let timeText = 'Навсегда';
         let isExpired = false;
         if (n.expires_at) {
             const expDate = new Date(n.expires_at);
-            if (expDate < new Date()) {
-                isExpired = true;
-                timeText = 'Истекла';
-            } else {
-                timeText = 'До ' + expDate.toLocaleString('ru-RU');
-            }
+            if (expDate < new Date()) { isExpired = true; timeText = 'Истекла'; }
+            else { timeText = 'До ' + expDate.toLocaleString('ru-RU'); }
         }
-        
         return `<div class="promo-list-item">
             <div class="promo-list-header">
                 <div class="promo-list-code" style="font-size: 14px;">${n.title}</div>
@@ -3188,7 +3068,6 @@ async function renderAdminNewsList() {
         </div>`;
     }).join('');
 }
-
 async function deleteNews(id) {
     if (!confirm('Удалить новость?')) return;
     await sb.from('news_feed').delete().eq('id', id);
@@ -3196,8 +3075,9 @@ async function deleteNews(id) {
     loadNewsFeed();
     renderAdminNewsList();
 }
-    // ЗАПУСК
-    async function bootstrap() {
+
+// ===== ПРАВКА 3+4: bootstrap с try/catch и правильным uuid =====
+async function bootstrap() {
     if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
         document.getElementById('loadingScreen').classList.add('hidden');
         document.getElementById('errorScreen').classList.add('active');
@@ -3211,7 +3091,7 @@ async function deleteNews(id) {
         const fullName = telegramUser.first_name + (telegramUser.last_name ? ' ' + telegramUser.last_name : '');
         if (!profile) {
             const { data: newProfile, error } = await sb.from('profiles').insert({
-                id: crypto.randomUUID(), username: fullName,
+                id: uuidv4(), username: fullName,
                 telegram_id: telegramUser.id, tg_username: telegramUser.username || null,
                 avatar_url: telegramUser.photo_url || null,
                 balance: STARTING_BALANCE, level: 1, total_rolls: 0
@@ -3230,24 +3110,23 @@ async function deleteNews(id) {
         currentUser = profile;
         balance = profile.balance || 0;
 
-        // Сначала проверяем тех. работы
-        await checkMaintenance();
+        try { await checkMaintenance(); } catch(e) { console.warn('checkMaintenance failed:', e); }
 
-        // Показываем игру только если тех. работы выключены
         if (document.getElementById('gameRoot').style.display !== 'none') {
             document.getElementById('gameRoot').style.display = 'block';
             document.getElementById('loadingScreen').classList.add('hidden');
         }
 
-        // Запускаем загрузку данных в фоне
         loadSavedNumbers();
         loadAllPlayers();
         
         usedPromoCodes = []; 
-        const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
-        if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
+        try {
+            const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
+            if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
+        } catch(e) { console.warn('usedPromos failed:', e); }
 
-        await checkTaxes();
+        try { await checkTaxes(); } catch(e) { console.warn('checkTaxes failed:', e); }
         initNewsFeed();
 
         updateBalance(); updateProfileUI(); updateLuckUI(); updateRollButtons();
@@ -3283,57 +3162,7 @@ async function loadAllPlayers() {
     allPlayersList = data || [];
 }
 
-bootstrap();
-if (tg && tg.onEvent) {
-    tg.onEvent('backButtonClicked', () => {
-        document.querySelectorAll('.active').forEach(el => {
-            if (el.id && el.id !== 'gameRoot' && !el.classList.contains('menu-sheet')) el.classList.remove('active');
-        });
-    });
-}
-
-// ОТКРЫТИЕ ЭКРАНОВ
-function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
-function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
-function openCollection() { closeMenu(); currentFilter = 'all'; updateCollection(); setTimeout(() => document.getElementById('collectionScreen').classList.add('active'), 300); }
-function closeCollection() { document.getElementById('collectionScreen').classList.remove('active'); }
-function openProfile() { closeMenu(); updateProfileUI(); setTimeout(() => document.getElementById('profileScreen').classList.add('active'), 300); }
-function closeProfile() { document.getElementById('profileScreen').classList.remove('active'); }
-function openChances() { closeMenu(); renderChancesScreen(); setTimeout(() => document.getElementById('chancesScreen').classList.add('active'), 300); }
-function closeChances() { document.getElementById('chancesScreen').classList.remove('active'); }
-function openRating() { closeMenu(); renderRating(); setTimeout(() => document.getElementById('ratingScreen').classList.add('active'), 300); }
-function closeRating() { document.getElementById('ratingScreen').classList.remove('active'); }
-function openGames() { closeMenu(); setTimeout(() => document.getElementById('gamesScreen').classList.add('active'), 300); }
-function closeGames() { document.getElementById('gamesScreen').classList.remove('active'); }
-function openUpgradeGame() { document.getElementById('upgradeGameScreen').classList.add('active'); }
-function closeUpgradeGame() { document.getElementById('upgradeGameScreen').classList.remove('active'); }
-function openPromo() { closeMenu(); setTimeout(() => document.getElementById('promoScreen').classList.add('active'), 300); }
-function closePromo() { document.getElementById('promoScreen').classList.remove('active'); }
-function openCheckNumber() { closeMenu(); document.getElementById('checkScreen').classList.add('active'); }
-function closeCheckNumber() { document.getElementById('checkScreen').classList.remove('active'); }
-function openNotifications() { closeMenu(); renderNotifications(); setTimeout(() => document.getElementById('notificationsScreen').classList.add('active'), 300); }
-function closeNotifications() { document.getElementById('notificationsScreen').classList.remove('active'); }
-function openAdmin() { closeMenu(); updateMaintenanceButtonUI(); setTimeout(() => document.getElementById('adminScreen').classList.add('active'), 300); }
-function closeAdmin() { document.getElementById('adminScreen').classList.remove('active'); }
-function openAdminPlayers() { renderAdminPlayersList(); document.getElementById('adminPlayersScreen').classList.add('active'); }
-function closeAdminPlayers() { document.getElementById('adminPlayersScreen').classList.remove('active'); }
-function openAdminPlayerDetail(id) { renderAdminPlayerDetail(id); document.getElementById('adminPlayerDetail').classList.add('active'); }
-function closeAdminPlayerDetail() { document.getElementById('adminPlayerDetail').classList.remove('active'); }
-function closeAdminCollection() { document.getElementById('adminCollectionScreen').classList.remove('active'); }
-function openAdminStats() { renderAdminStats(); document.getElementById('adminStatsScreen').classList.add('active'); }
-function closeAdminStats() { document.getElementById('adminStatsScreen').classList.remove('active'); }
-function openAdminReset() { document.getElementById('adminResetScreen').classList.add('active'); }
-function closeAdminReset() { document.getElementById('adminResetScreen').classList.remove('active'); }
-function openAdminPromo() { document.getElementById('adminPromoScreen').classList.add('active'); renderPromoList(); }
-function closeAdminPromo() { document.getElementById('adminPromoScreen').classList.remove('active'); }
-function shareBot() {
-    const link = 'https://t.me/NomerokGameSim_bot';
-    const text = '🎮 Играй в Sim Card Game!';
-    const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
-    if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
-    else window.open(url, '_blank');
-}
-    // ВЫДАЧА НОМЕРА (АДМИНКА)
+// ВЫДАЧА НОМЕРА (АДМИНКА)
 function openAdminGiveNumber() {
     document.getElementById('adminGiveNumberScreen').classList.add('active');
     document.getElementById('adminGiveNumInput').value = '';
@@ -3343,11 +3172,8 @@ function openAdminGiveNumber() {
 function closeAdminGiveNumber() {
     document.getElementById('adminGiveNumberScreen').classList.remove('active');
 }
-
 let adminFoundNumber = null;
 let adminFoundSecret = null;
-
-// Функция, которая рисует карточку выдачи (чтобы не дублировать код)
 function renderAdminGiveCard(formatted, ownerName = null, isSecret = false) {
     const resEl = document.getElementById('adminGiveNumResult');
     if (ownerName) {
@@ -3376,22 +3202,16 @@ function renderAdminGiveCard(formatted, ownerName = null, isSecret = false) {
         `;
     }
 }
-
 async function searchAdminNumber() {
     const input = document.getElementById('adminGiveNumInput').value.trim();
     if (!input) return;
-    
     const resEl = document.getElementById('adminGiveNumResult');
     resEl.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Проверяем...</div>';
-    
     const digits = input.replace(/\D/g, '');
     if (digits.length < 10) { resEl.innerHTML = '<div style="color:#ef4444;text-align:center;">Неверный формат</div>'; return; }
-    
     const cd = (digits.startsWith('7') || digits.startsWith('8')) ? digits.slice(1, 11) : digits.slice(0, 10);
     const formatted = `+7 ${cd.slice(0,3)} ${cd.slice(3,6)}-${cd.slice(6,8)}-${cd.slice(8,10)}`;
-
     const { data } = await sb.from('saved_numbers').select('*').eq('formatted', formatted).limit(1);
-    
     if (data && data.length > 0) {
         const num = data[0];
         adminFoundNumber = null;
@@ -3403,16 +3223,12 @@ async function searchAdminNumber() {
         renderAdminGiveCard(formatted, null, false);
     }
 }
-
 async function searchAdminSecretNumber() {
     const input = document.getElementById('adminGiveSecretInput').value.trim();
     if (!input) return;
-    
     const resEl = document.getElementById('adminGiveNumResult');
     resEl.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Проверяем...</div>';
-
     const { data } = await sb.from('saved_numbers').select('*').eq('rarity_key', 'secret').eq('formatted', input).limit(1);
-    
     if (data && data.length > 0) {
         const num = data[0];
         adminFoundSecret = null;
@@ -3424,55 +3240,35 @@ async function searchAdminSecretNumber() {
         renderAdminGiveCard(input, null, true);
     }
 }
-
 async function confirmGiveNumber(isSecret = false) {
     const target = document.getElementById('adminGiveTarget').value.trim();
     if (!target) { showToast('error', 'Введите ID игрока', ''); return; }
-    
     let formatted = isSecret ? adminFoundSecret : adminFoundNumber;
     if (!formatted) return;
-
-    // Ищем игрока по Telegram ID (так как ID - это уникальный номер)
     const { data: profiles } = await sb.from('profiles').select('*').eq('telegram_id', target).limit(1);
-    
-    if (!profiles || profiles.length === 0) {
-        showToast('error', 'Игрок не найден', 'Проверьте Telegram ID');
-        return;
-    }
-    
+    if (!profiles || profiles.length === 0) { showToast('error', 'Игрок не найден', 'Проверьте Telegram ID'); return; }
     const player = profiles[0];
-    
-    let newNumData = {
-        user_id: player.id,
-        formatted: formatted,
-        is_secret_variant: null
-    };
-
+    let newNumData = { user_id: player.id, formatted: formatted, is_secret_variant: null };
     if (isSecret) {
-        // Логика для секретного номера
         newNumData.op = '-';
         newNumData.op_name = 'SECRET';
         newNumData.digits = formatted.split('').map(Number);
         newNumData.rarity_key = 'secret';
         newNumData.rarity_name = 'супер секретный';
-        
         const isJackpot = formatted === '0123456789';
         newNumData.price = isJackpot ? 900000000 : Math.floor(400000000 + Math.random() * 100000000);
         newNumData.is_secret_variant = formatted;
     } else {
-        // Логика для обычного номера
         const cleanDigits = formatted.replace(/\D/g, '');
         let digitsArray = cleanDigits.slice(1).split('').map(Number); 
         while (digitsArray.length < 7) digitsArray.push(0);
         if (digitsArray.length > 7) digitsArray = digitsArray.slice(0, 7);
-
         const rarityKey = classifyByPattern(digitsArray);
         const rarityObj = RARITIES.find(r => r.key === rarityKey) || RARITIES[5];
         const opCode = cleanDigits.slice(1, 4);
         let opName = 'МТС';
         if (['928', '924', '926'].includes(opCode)) opName = 'Мегафон';
         if (['977', '905', '900'].includes(opCode)) opName = 'Билайн';
-
         newNumData.op = opCode;
         newNumData.op_name = opName;
         newNumData.digits = digitsArray;
@@ -3480,98 +3276,49 @@ async function confirmGiveNumber(isSecret = false) {
         newNumData.rarity_name = getRarityName(rarityKey).toLowerCase();
         newNumData.price = calculatePrice(rarityObj, { digits: digitsArray, opObj: { name: opName }, rarity: rarityObj });
     }
-
     const { error } = await sb.from('saved_numbers').insert(newNumData);
-    
-    if (error) {
-        showToast('error', 'Ошибка базы', error.message);
-    } else {
-        showToast('success', 'Номер выдан!', `Игроку с ID: ${player.telegram_id}`);
-        closeAdminGiveNumber();
-    }
+    if (error) { showToast('error', 'Ошибка базы', error.message); }
+    else { showToast('success', 'Номер выдан!', `Игроку с ID: ${player.telegram_id}`); closeAdminGiveNumber(); }
 }
-// ==================== СИСТЕМА ЛОГОВ ====================
 
-// Запись лога в БД
 async function addLog(actionType, details) {
     if (!currentUser) return;
     try {
-        await sb.from('admin_logs').insert({
-            user_id: currentUser.id,
-            username: currentUser.username,
-            action_type: actionType,
-            details: details
-        });
-    } catch (e) {
-        console.error('Log error:', e);
-    }
+        await sb.from('admin_logs').insert({ user_id: currentUser.id, username: currentUser.username, action_type: actionType, details: details });
+    } catch (e) { console.error('Log error:', e); }
 }
-
-// Открытие экрана логов
 function openAdminLogs() {
     document.getElementById('adminScreen').classList.remove('active');
     document.getElementById('adminLogsScreen').classList.add('active');
     renderAdminLogs();
 }
-
-// Закрытие экрана логов
 function closeAdminLogs() {
     document.getElementById('adminLogsScreen').classList.remove('active');
     document.getElementById('adminScreen').classList.add('active');
 }
-
-// Отрисовка списка логов
 async function renderAdminLogs() {
     const list = document.getElementById('adminLogsList');
     list.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Загрузка логов...</div>';
-    
-    // Запрашиваем последние 100 записей
-    const { data, error } = await sb.from('admin_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-    if (error) {
-        list.innerHTML = '<div style="color:#ef4444;padding:20px;">Ошибка: ' + error.message + '</div>';
-        return;
-    }
-
-    if (!data || data.length === 0) {
-        list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Логов пока нет</div>';
-        return;
-    }
-
+    const { data, error } = await sb.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(100);
+    if (error) { list.innerHTML = '<div style="color:#ef4444;padding:20px;">Ошибка: ' + error.message + '</div>'; return; }
+    if (!data || data.length === 0) { list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Логов пока нет</div>'; return; }
     list.innerHTML = data.map(log => {
-        let icon = 'fa-info-circle';
-        let color = '#888';
-        
-        // Красим иконки в зависимости от действия
+        let icon = 'fa-info-circle'; let color = '#888';
         if (log.action_type === 'roll') { icon = 'fa-dice'; color = '#a855f7'; }
         if (log.action_type === 'sell') { icon = 'fa-coins'; color = '#f59e0b'; }
         if (log.action_type === 'upgrade') { icon = 'fa-arrow-up'; color = '#22c55e'; }
         if (log.action_type === 'admin_gift') { icon = 'fa-gift'; color = '#ef4444'; }
-
-        const date = new Date(log.created_at).toLocaleString('ru-RU', { 
-            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
-        });
-
+        const date = new Date(log.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
         return `<div class="promo-list-item" style="border-left: 3px solid ${color};">
             <div class="promo-list-header">
-                <div style="font-size: 13px; font-weight: 700; color: #fff;">
-                    <i class="fa-solid ${icon}" style="color: ${color}; margin-right: 6px;"></i>
-                    ${log.username}
-                </div>
+                <div style="font-size: 13px; font-weight: 700; color: #fff;"><i class="fa-solid ${icon}" style="color: ${color}; margin-right: 6px;"></i>${log.username}</div>
                 <div style="font-size: 11px; color: #888;">${date}</div>
             </div>
-            <div style="font-size: 12px; color: #ccc; margin-top: 4px;">
-                ${log.details}
-            </div>
+            <div style="font-size: 12px; color: #ccc; margin-top: 4px;">${log.details}</div>
         </div>`;
     }).join('');
 }
-// ==================== ТЕХ. РАБОТЫ ====================
 
-// Проверка режима при запуске игры
 async function checkMaintenance() {
     const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
     if (data && data.maintenance_mode) {
@@ -3579,10 +3326,8 @@ async function checkMaintenance() {
             showToast('error', 'Внимание!', 'Включен режим тех. работ (вы админ)');
             return;
         }
-        
         document.getElementById('gameRoot').style.display = 'none';
         document.getElementById('loadingScreen').classList.add('hidden');
-        
         let overlay = document.getElementById('maintenanceOverlay');
         if (!overlay) {
             overlay = document.createElement('div');
@@ -3602,32 +3347,23 @@ async function checkMaintenance() {
         if (overlay) overlay.style.display = 'none';
     }
 }
-
-// Переключатель в админке
 async function toggleMaintenance() {
     const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
     if (!data) return;
-    
     const newStatus = !data.maintenance_mode;
     if (newStatus && !confirm('Включить тех. работы? Все игроки будут выкинуты из игры!')) return;
-    
     await sb.from('app_settings').update({ maintenance_mode: newStatus }).eq('id', 1);
-    
     updateMaintenanceButtonUI(newStatus);
     showToast('success', newStatus ? 'Тех. работы включены' : 'Тех. работы выключены', '');
 }
-
-// Обновление кнопки в админке
 async function updateMaintenanceButtonUI(status) {
     const statusEl = document.getElementById('maintenanceStatus');
     const iconEl = document.getElementById('maintenanceIcon');
     if (!statusEl) return;
-    
     if (status === undefined) {
         const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
         status = data ? data.maintenance_mode : false;
     }
-    
     if (status) {
         statusEl.textContent = 'ВКЛЮЧЕНЫ (игроки заблокированы)';
         statusEl.style.color = '#ef4444';
@@ -3638,6 +3374,13 @@ async function updateMaintenanceButtonUI(status) {
         iconEl.style.background = 'rgba(239,68,68,0.15)';
     }
 }
+
+// ⬇️ ВЫЗОВ BOOTSTRAP В САМОМ КОНЦЕ (после всех объявлений)
+bootstrap().catch(e => {
+    console.error('BOOTSTRAP FAIL', e);
+    const lt = document.getElementById('loadingText');
+    if (lt) lt.textContent = 'BOOTSTRAP FAIL: ' + (e.message || 'Неизвестно');
+});
     </script>
 </body>
 </html>
