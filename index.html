@@ -670,6 +670,7 @@
 .news-card { min-width: 85%; scroll-snap-align: center; background: linear-gradient(135deg, #2a1a3a, #1a0f2a); border: 1px solid #a855f7; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
 .news-card-title { font-size: 14px; font-weight: 800; color: #e9d5ff; display: flex; align-items: center; gap: 6px; }
 .news-card-desc { font-size: 12px; color: #ccc; line-height: 1.4; }
+#adminNewsScreen { z-index: 10000; }
 </style>
 </head>
 <body>
@@ -1033,7 +1034,7 @@
     </div>
 </div>
 <!-- ЭКРАН УПРАВЛЕНИЯ НОВОСТЯМИ -->
-<div class="admin-player-detail" id="adminNewsScreen" style="z-index: 10000; position: fixed; inset: 0; background: var(--bg-color); display: none;">
+<div class="admin-player-detail" id="adminNewsScreen" style="z-index: 10000;">
     <div class="admin-sub-header">
         <div class="nav-left" onclick="closeAdminNews()">
             <i class="fa-solid fa-arrow-left"></i><span>Назад</span>
@@ -3080,28 +3081,21 @@ function renderNotifications() {
         else window.open(url, '_blank');
     }
 function openAdminNews() {
-    // Скрываем меню админки
     document.getElementById('adminScreen').classList.remove('active');
-    document.getElementById('adminScreen').style.display = 'none';
     
-    // Показываем новости поверх всего
     const newsScreen = document.getElementById('adminNewsScreen');
     newsScreen.classList.add('active');
-    newsScreen.style.display = 'flex';
     
     document.getElementById('newsTitleInput').value = '';
     document.getElementById('newsDescInput').value = '';
     document.getElementById('newsHoursInput').value = '24';
     renderAdminNewsList();
 }
+
 function closeAdminNews() {
-    // Скрываем новости
     const newsScreen = document.getElementById('adminNewsScreen');
     newsScreen.classList.remove('active');
-    newsScreen.style.display = 'none';
     
-    // Возвращаем админку
-    document.getElementById('adminScreen').style.display = 'flex';
     document.getElementById('adminScreen').classList.add('active');
 }
 async function createNews() {
