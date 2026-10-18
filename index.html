@@ -1064,7 +1064,7 @@
     <div class="promo-list" id="adminNewsList"></div>
 </div>
 <!-- ЭКРАН ЛОГОВ -->
-<div class="admin-stats-screen" id="adminLogsScreen">
+<div class="admin-promo-screen" id="adminLogsScreen">
     <div class="admin-sub-header">
         <div class="nav-left" onclick="closeAdminLogs()">
             <i class="fa-solid fa-arrow-left"></i><span>Назад</span>
@@ -3447,7 +3447,6 @@ async function addLog(actionType, details) {
 
 // Открытие экрана логов
 function openAdminLogs() {
-    document.getElementById('adminLogsScreen').classList.add('active');
     renderAdminLogs();
 }
 
