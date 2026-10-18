@@ -1033,8 +1033,12 @@
     </div>
 </div>
 <!-- ЭКРАН УПРАВЛЕНИЯ НОВОСТЯМИ -->
-<div class="admin-player-detail" id="adminNewsScreen">
-    <div class="admin-sub-header"><div class="nav-left" onclick="closeAdminNews()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
+<div class="admin-player-detail" id="adminNewsScreen" style="z-index: 10000; position: fixed; inset: 0; background: var(--bg-color); display: none;">
+    <div class="admin-sub-header">
+        <div class="nav-left" onclick="closeAdminNews()">
+            <i class="fa-solid fa-arrow-left"></i><span>Назад</span>
+        </div>
+    </div>
     <div class="admin-sub-title">Управление новостями</div>
     
     <div class="promo-form">
@@ -1046,11 +1050,13 @@
         <div class="promo-form-input">
             <input type="text" id="newsDescInput" placeholder="Например: Действует х2 на час">
         </div>
-        <div class="promo-form-label">Время (в часах, 0 = навсегда)</div>
+        <div class="promo-form-label">Время (часов, 0 = навсегда)</div>
         <div class="promo-form-input">
             <input type="number" id="newsHoursInput" value="24" min="0">
         </div>
-        <button class="admin-btn green" onclick="createNews()" style="margin-top: 10px;"><i class="fa-solid fa-plus"></i> Опубликовать</button>
+        <button class="admin-btn green" onclick="createNews()" style="margin-top: 10px;">
+            <i class="fa-solid fa-plus"></i> Опубликовать
+        </button>
     </div>
 
     <div class="promo-list-title">Активные новости</div>
@@ -3073,20 +3079,31 @@ function renderNotifications() {
         if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
         else window.open(url, '_blank');
     }
-// УПРАВЛЕНИЕ НОВОСТЯМИ (АДМИН)
 function openAdminNews() {
-    closeAdmin(); // Скрываем главное меню админки
-    document.getElementById('adminNewsScreen').classList.add('active');
+    // Скрываем меню админки
+    document.getElementById('adminScreen').classList.remove('active');
+    document.getElementById('adminScreen').style.display = 'none';
+    
+    // Показываем новости поверх всего
+    const newsScreen = document.getElementById('adminNewsScreen');
+    newsScreen.classList.add('active');
+    newsScreen.style.display = 'flex';
+    
     document.getElementById('newsTitleInput').value = '';
     document.getElementById('newsDescInput').value = '';
     document.getElementById('newsHoursInput').value = '24';
     renderAdminNewsList();
 }
-function closeAdminNews() { 
-    document.getElementById('adminNewsScreen').classList.remove('active'); 
-    openAdmin(); // Возвращаем в меню админки
+function closeAdminNews() {
+    // Скрываем новости
+    const newsScreen = document.getElementById('adminNewsScreen');
+    newsScreen.classList.remove('active');
+    newsScreen.style.display = 'none';
+    
+    // Возвращаем админку
+    document.getElementById('adminScreen').style.display = 'flex';
+    document.getElementById('adminScreen').classList.add('active');
 }
-
 async function createNews() {
     const title = document.getElementById('newsTitleInput').value.trim();
     const desc = document.getElementById('newsDescInput').value.trim();
