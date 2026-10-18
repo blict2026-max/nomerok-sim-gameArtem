@@ -3198,98 +3198,174 @@ async function deleteNews(id) {
 }
     // ЗАПУСК
     async function bootstrap() {
-        if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-            document.getElementById('loadingScreen').classList.add('hidden');
-            document.getElementById('errorScreen').classList.add('active');
-            return;
-        }
-        tg.ready(); tg.expand();
-        telegramUser = tg.initDataUnsafe.user;
-        document.getElementById('loadingText').textContent = 'Вход...';
-        try {
-            let { data: profile } = await sb.from('profiles').select('*').eq('telegram_id', telegramUser.id).maybeSingle();
-            const fullName = telegramUser.first_name + (telegramUser.last_name ? ' ' + telegramUser.last_name : '');
-            if (!profile) {
-                const { data: newProfile, error } = await sb.from('profiles').insert({
-                    id: crypto.randomUUID(), username: fullName,
-                    telegram_id: telegramUser.id, tg_username: telegramUser.username || null,
-                    avatar_url: telegramUser.photo_url || null,
-                    balance: STARTING_BALANCE, level: 1, total_rolls: 0
-                }).select().single();
-                if (error) { document.getElementById('loadingText').textContent = 'Ошибка: ' + error.message; return; }
-                profile = newProfile;
-            } else {
-                await sb.from('profiles').update({
-                    username: fullName, tg_username: telegramUser.username || null,
-                    avatar_url: telegramUser.photo_url || null
-                }).eq('id', profile.id);
-                profile.username = fullName;
-                profile.tg_username = telegramUser.username || null;
-                profile.avatar_url = telegramUser.photo_url || null;
-            }
-            currentUser = profile;
-balance = profile.balance || 0;
-
-// Сначала проверяем тех. работы
-await checkMaintenance();
-
-// Показываем игру только если тех. работы выключены
-if (document.getElementById('gameRoot').style.display !== 'none') {
-    document.getElementById('gameRoot').style.display = 'block';
-    document.getElementById('loadingScreen').classList.add('hidden');
-}
-           loadSavedNumbers();
-            loadAllPlayers();
-            
-            usedPromoCodes = []; 
-            const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
-            if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
-
-            await checkTaxes();
-            initNewsFeed();
-
-            updateBalance(); updateProfileUI(); updateLuckUI(); updateRollButtons();
-            renderMiniCards(); renderChancesScreen(); startLuckTimer(); updateAdminVisibility();
-            subscribeToNotifications();
-        } catch (e) {
-            console.error(e);
-            document.getElementById('loadingText').textContent = 'Ошибка: ' + (e.message || 'Не удалось');
-        }
+    if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('errorScreen').classList.add('active');
+        return;
     }
-
-    async function saveUserData() {
-        if (!currentUser) return;
-        try {
+    tg.ready(); tg.expand();
+    telegramUser = tg.initDataUnsafe.user;
+    document.getElementById('loadingText').textContent = 'Вход...';
+    try {
+        let { data: profile } = await sb.from('profiles').select('*').eq('telegram_id', telegramUser.id).maybeSingle();
+        const fullName = telegramUser.first_name + (telegramUser.last_name ? ' ' + telegramUser.last_name : '');
+        if (!profile) {
+            const { data: newProfile, error } = await sb.from('profiles').insert({
+                id: crypto.randomUUID(), username: fullName,
+                telegram_id: telegramUser.id, tg_username: telegramUser.username || null,
+                avatar_url: telegramUser.photo_url || null,
+                balance: STARTING_BALANCE, level: 1, total_rolls: 0
+            }).select().single();
+            if (error) { document.getElementById('loadingText').textContent = 'Ошибка: ' + error.message; return; }
+            profile = newProfile;
+        } else {
             await sb.from('profiles').update({
-                balance: balance, total_rolls: currentUser.total_rolls || 0,
-                level: currentUser.level || 1, updated_at: new Date().toISOString()
-            }).eq('id', currentUser.id);
-        } catch (e) { console.error('Save error', e); }
-    }
-    async function loadSavedNumbers() {
-        const { data, error } = await sb.from('saved_numbers').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-        if (error) return;
-        savedNumbers = (data || []).map(row => ({
-            id: row.id, formatted: row.formatted, op: row.op,
-            opObj: row.op_name ? { code: row.op, name: row.op_name, country: row.op_name === 'SECRET' ? '🌌 Неизвестно' : '🇷🇺 Россия' } : null,
-            digits: row.digits || [],
-            rarity: RARITIES.find(r => r.key === row.rarity_key) || RARITIES[0],
-            price: row.price, isSecretVariant: row.is_secret_variant
-        }));
-    }
-    async function loadAllPlayers() {
-        const { data } = await sb.from('profiles').select('*').order('balance', { ascending: false }).limit(100);
-        allPlayersList = data || [];
-    }
+                username: fullName, tg_username: telegramUser.username || null,
+                avatar_url: telegramUser.photo_url || null
+            }).eq('id', profile.id);
+            profile.username = fullName;
+            profile.tg_username = telegramUser.username || null;
+            profile.avatar_url = telegramUser.photo_url || null;
+        }
+        currentUser = profile;
+        balance = profile.balance || 0;
 
-    bootstrap();
-    if (tg && tg.onEvent) {
-        tg.onEvent('backButtonClicked', () => {
-            document.querySelectorAll('.active').forEach(el => {
-                if (el.id && el.id !== 'gameRoot' && !el.classList.contains('menu-sheet')) el.classList.remove('active');
-            });
-        });
+        // Сначала проверяем тех. работы
+        await checkMaintenance();
+
+        // Показываем игру только если тех. работы выключены
+        if (document.getElementById('gameRoot').style.display !== 'none') {
+            document.getElementById('gameRoot').style.display = 'block';
+            document.getElementById('loadingScreen').classList.add('hidden');
+        }
+
+        // Запускаем загрузку данных в фоне
+        loadSavedNumbers();
+        loadAllPlayers();
+        
+        usedPromoCodes = []; 
+        const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
+        if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
+
+        await checkTaxes();
+        initNewsFeed();
+
+        updateBalance(); updateProfileUI(); updateLuckUI(); updateRollButtons();
+        renderMiniCards(); renderChancesScreen(); startLuckTimer(); updateAdminVisibility();
+        subscribeToNotifications();
+    } catch (e) {
+        console.error(e);
+        document.getElementById('loadingText').textContent = 'Ошибка: ' + (e.message || 'Не удалось');
     }
+}
+async function saveUserData() {
+    if (!currentUser) return;
+    try {
+        await sb.from('profiles').update({
+            balance: balance, total_rolls: currentUser.total_rolls || 0,
+            level: currentUser.level || 1, updated_at: new Date().toISOString()
+        }).eq('id', currentUser.id);
+    } catch (e) { console.error('Save error', e); }
+}
+async function loadSavedNumbers() {
+    const { data, error } = await sb.from('saved_numbers').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    if (error) return;
+    savedNumbers = (data || []).map(row => ({
+        id: row.id, formatted: row.formatted, op: row.op,
+        opObj: row.op_name ? { code: row.op, name: row.op_name, country: row.op_name === 'SECRET' ? '🌌 Неизвестно' : '🇷🇺 Россия' } : null,
+        digits: row.digits || [],
+        rarity: RARITIES.find(r => r.key === row.rarity_key) || RARITIES[0],
+        price: row.price, isSecretVariant: row.is_secret_variant
+    }));
+}
+async function loadAllPlayers() {
+    const { data } = await sb.from('profiles').select('*').order('balance', { ascending: false }).limit(100);
+    allPlayersList = data || [];
+}
+
+bootstrap();
+if (tg && tg.onEvent) {
+    tg.onEvent('backButtonClicked', () => {
+        document.querySelectorAll('.active').forEach(el => {
+            if (el.id && el.id !== 'gameRoot' && !el.classList.contains('menu-sheet')) el.classList.remove('active');
+        });
+    });
+}
+async function saveUserData() {
+    if (!currentUser) return;
+    try {
+        await sb.from('profiles').update({
+            balance: balance, total_rolls: currentUser.total_rolls || 0,
+            level: currentUser.level || 1, updated_at: new Date().toISOString()
+        }).eq('id', currentUser.id);
+    } catch (e) { console.error('Save error', e); }
+}
+async function loadSavedNumbers() {
+    const { data, error } = await sb.from('saved_numbers').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    if (error) return;
+    savedNumbers = (data || []).map(row => ({
+        id: row.id, formatted: row.formatted, op: row.op,
+        opObj: row.op_name ? { code: row.op, name: row.op_name, country: row.op_name === 'SECRET' ? '🌌 Неизвестно' : '🇷🇺 Россия' } : null,
+        digits: row.digits || [],
+        rarity: RARITIES.find(r => r.key === row.rarity_key) || RARITIES[0],
+        price: row.price, isSecretVariant: row.is_secret_variant
+    }));
+}
+async function loadAllPlayers() {
+    const { data } = await sb.from('profiles').select('*').order('balance', { ascending: false }).limit(100);
+    allPlayersList = data || [];
+}
+
+bootstrap();
+if (tg && tg.onEvent) {
+    tg.onEvent('backButtonClicked', () => {
+        document.querySelectorAll('.active').forEach(el => {
+            if (el.id && el.id !== 'gameRoot' && !el.classList.contains('menu-sheet')) el.classList.remove('active');
+        });
+    });
+}
+
+// ОТКРЫТИЕ ЭКРАНОВ
+function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
+function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
+function openCollection() { closeMenu(); currentFilter = 'all'; updateCollection(); setTimeout(() => document.getElementById('collectionScreen').classList.add('active'), 300); }
+function closeCollection() { document.getElementById('collectionScreen').classList.remove('active'); }
+function openProfile() { closeMenu(); updateProfileUI(); setTimeout(() => document.getElementById('profileScreen').classList.add('active'), 300); }
+function closeProfile() { document.getElementById('profileScreen').classList.remove('active'); }
+function openChances() { closeMenu(); renderChancesScreen(); setTimeout(() => document.getElementById('chancesScreen').classList.add('active'), 300); }
+function closeChances() { document.getElementById('chancesScreen').classList.remove('active'); }
+function openRating() { closeMenu(); renderRating(); setTimeout(() => document.getElementById('ratingScreen').classList.add('active'), 300); }
+function closeRating() { document.getElementById('ratingScreen').classList.remove('active'); }
+function openGames() { closeMenu(); setTimeout(() => document.getElementById('gamesScreen').classList.add('active'), 300); }
+function closeGames() { document.getElementById('gamesScreen').classList.remove('active'); }
+function openUpgradeGame() { document.getElementById('upgradeGameScreen').classList.add('active'); }
+function closeUpgradeGame() { document.getElementById('upgradeGameScreen').classList.remove('active'); }
+function openPromo() { closeMenu(); setTimeout(() => document.getElementById('promoScreen').classList.add('active'), 300); }
+function closePromo() { document.getElementById('promoScreen').classList.remove('active'); }
+function openCheckNumber() { closeMenu(); document.getElementById('checkScreen').classList.add('active'); }
+function closeCheckNumber() { document.getElementById('checkScreen').classList.remove('active'); }
+function openNotifications() { closeMenu(); renderNotifications(); setTimeout(() => document.getElementById('notificationsScreen').classList.add('active'), 300); }
+function closeNotifications() { document.getElementById('notificationsScreen').classList.remove('active'); }
+function openAdmin() { closeMenu(); updateMaintenanceButtonUI(); setTimeout(() => document.getElementById('adminScreen').classList.add('active'), 300); }
+function closeAdmin() { document.getElementById('adminScreen').classList.remove('active'); }
+function openAdminPlayers() { renderAdminPlayersList(); document.getElementById('adminPlayersScreen').classList.add('active'); }
+function closeAdminPlayers() { document.getElementById('adminPlayersScreen').classList.remove('active'); }
+function openAdminPlayerDetail(id) { renderAdminPlayerDetail(id); document.getElementById('adminPlayerDetail').classList.add('active'); }
+function closeAdminPlayerDetail() { document.getElementById('adminPlayerDetail').classList.remove('active'); }
+function closeAdminCollection() { document.getElementById('adminCollectionScreen').classList.remove('active'); }
+function openAdminStats() { renderAdminStats(); document.getElementById('adminStatsScreen').classList.add('active'); }
+function closeAdminStats() { document.getElementById('adminStatsScreen').classList.remove('active'); }
+function openAdminReset() { document.getElementById('adminResetScreen').classList.add('active'); }
+function closeAdminReset() { document.getElementById('adminResetScreen').classList.remove('active'); }
+function openAdminPromo() { document.getElementById('adminPromoScreen').classList.add('active'); renderPromoList(); }
+function closeAdminPromo() { document.getElementById('adminPromoScreen').classList.remove('active'); }
+function shareBot() {
+    const link = 'https://t.me/NomerokGameSim_bot';
+    const text = '🎮 Играй в Sim Card Game!';
+    const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+    if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
+    else window.open(url, '_blank');
+}
     // ВЫДАЧА НОМЕРА (АДМИНКА)
 function openAdminGiveNumber() {
     document.getElementById('adminGiveNumberScreen').classList.add('active');
