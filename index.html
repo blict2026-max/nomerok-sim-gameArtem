@@ -3448,6 +3448,7 @@ async function addLog(actionType, details) {
 
 // Открытие экрана логов
 function openAdminLogs() {
+    document.getElementById('adminScreen').classList.remove('active');
     document.getElementById('adminLogsScreen').classList.add('active');
     renderAdminLogs();
 }
@@ -3455,6 +3456,7 @@ function openAdminLogs() {
 // Закрытие экрана логов
 function closeAdminLogs() {
     document.getElementById('adminLogsScreen').classList.remove('active');
+    document.getElementById('adminScreen').classList.add('active');
 }
 
 // Отрисовка списка логов
