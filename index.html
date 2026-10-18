@@ -3372,11 +3372,11 @@ async function updateMaintenanceButtonUI(status) {
     }
 }
 
-// ⬇️ ВЫЗОВ BOOTSTRAP В САМОМ КОНЦЕ (после всех объявлений)
 bootstrap().catch(e => {
-    console.error('BOOTSTRAP FAIL', e);
+    console.error(e);
     const lt = document.getElementById('loadingText');
-    if (lt) lt.textContent = 'BOOTSTRAP FAIL: ' + (e.message || 'Неизвестно');
+    if (lt) lt.textContent = 'ОШИБКА: ' + (e.message || 'Неизвестно');
+    alert('ОШИБКА: ' + (e.message || 'Неизвестно')); // ЭТО ВЫВЕДЕТ ОКНО С ОШИБКОЙ
 });
     </script>
 </body>
