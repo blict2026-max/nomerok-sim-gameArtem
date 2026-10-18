@@ -3238,9 +3238,8 @@ if (document.getElementById('gameRoot').style.display !== 'none') {
     document.getElementById('gameRoot').style.display = 'block';
     document.getElementById('loadingScreen').classList.add('hidden');
 }
-
-await loadSavedNumbers();
-            await loadAllPlayers();
+           loadSavedNumbers();
+            loadAllPlayers();
             
             usedPromoCodes = []; 
             const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
@@ -3252,7 +3251,6 @@ await loadSavedNumbers();
             updateBalance(); updateProfileUI(); updateLuckUI(); updateRollButtons();
             renderMiniCards(); renderChancesScreen(); startLuckTimer(); updateAdminVisibility();
             subscribeToNotifications();
-            await checkMaintenance();
         } catch (e) {
             console.error(e);
             document.getElementById('loadingText').textContent = 'Ошибка: ' + (e.message || 'Не удалось');
