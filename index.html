@@ -1107,10 +1107,17 @@
     <div class="admin-sub-title">Выдача номера</div>
     
     <div class="promo-form">
-        <div class="promo-form-label">Поиск номера</div>
+        <div class="promo-form-label">Поиск обычного номера</div>
         <div class="promo-form-input">
             <input type="text" id="adminGiveNumInput" placeholder="+7 999 777-77-77">
             <button class="promo-gen-btn" onclick="searchAdminNumber()"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+        <div style="font-size: 11px; color: #888; margin-top: 8px; text-align: center;">
+            Или введите секретный номер (0-9, 0123456789):
+        </div>
+        <div class="promo-form-input" style="margin-top: 4px;">
+            <input type="text" id="adminGiveSecretInput" placeholder="Секретный номер">
+            <button class="promo-gen-btn" onclick="searchAdminSecretNumber()" style="border-color: #ef4444; color: #ef4444;"><i class="fa-solid fa-mask"></i></button>
         </div>
     </div>
 
@@ -2570,7 +2577,7 @@ function renderNotifications() {
         const av = p.avatar_url ? `<img src="${p.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
         const tgName = p.tg_username ? `@${p.tg_username}` : '';
         document.getElementById('adminPlayerDetailContent').innerHTML = `
-            <div class="player-detail-header"><div class="player-detail-avatar">${av}</div><div class="player-detail-name">${p.username} ${renderTag(p.tag)} ${p.is_owner ? '👑' : ''}</div><div class="player-detail-username">${tgName}</div></div>
+            <div class="player-name">${p.username} ${renderTag(p.tag)} ${p.is_owner ? '👑' : ''} <span style="color:#a855f7; font-size:10px;">[ID: ${p.telegram_id}]</span></div>
             <div class="player-detail-stats">
                 <div class="player-detail-stat"><span class="label">Баланс</span><span class="value">${(p.balance || 0).toLocaleString('ru-RU')} ₽</span></div>
                 <div class="player-detail-stat"><span class="label">Круток</span><span class="value">${(p.total_rolls || 0).toLocaleString('ru-RU')}</span></div>
@@ -3137,6 +3144,7 @@ async function openNewsCreator() {
 function openAdminGiveNumber() {
     document.getElementById('adminGiveNumberScreen').classList.add('active');
     document.getElementById('adminGiveNumInput').value = '';
+    document.getElementById('adminGiveSecretInput').value = '';
     document.getElementById('adminGiveNumResult').innerHTML = '';
 }
 function closeAdminGiveNumber() {
@@ -3144,6 +3152,37 @@ function closeAdminGiveNumber() {
 }
 
 let adminFoundNumber = null;
+let adminFoundSecret = null;
+
+// Функция, которая рисует карточку выдачи (чтобы не дублировать код)
+function renderAdminGiveCard(formatted, ownerName = null, isSecret = false) {
+    const resEl = document.getElementById('adminGiveNumResult');
+    if (ownerName) {
+        resEl.innerHTML = `
+            <div class="check-result visible" style="margin: 0; background: #1c1c1c; border-radius: 20px;">
+                <div class="check-result-number">${formatted}</div>
+                <div class="check-status busy">Занят</div>
+                <div class="check-info-row">
+                    <div class="check-info-col"><div class="check-info-label">Владелец</div><div class="check-info-value">${ownerName}</div></div>
+                </div>
+            </div>
+        `;
+    } else {
+        resEl.innerHTML = `
+            <div class="check-result visible" style="margin: 0; background: #1c1c1c; border-radius: 20px; margin-bottom: 16px;">
+                <div class="check-result-number">${formatted}</div>
+                <div class="check-status free">Свободен</div>
+                <div class="check-info-row" style="margin-top: 10px;">
+                    <div class="check-info-col">
+                        <div class="check-info-label">Кому выдать? (Введите Telegram ID)</div>
+                        <input type="text" id="adminGiveTarget" style="background:#0f0f0f; border:1px solid #2a2a2a; border-radius:8px; padding:10px; color:#fff; width:100%; margin-top:4px;" placeholder="123456789">
+                    </div>
+                </div>
+            </div>
+            <button class="admin-btn green" onclick="confirmGiveNumber(${isSecret})" style="width:100%; margin-bottom:20px;">Выдать этот номер</button>
+        `;
+    }
+}
 
 async function searchAdminNumber() {
     const input = document.getElementById('adminGiveNumInput').value.trim();
@@ -3164,51 +3203,101 @@ async function searchAdminNumber() {
         const num = data[0];
         adminFoundNumber = null;
         const owner = allPlayersList.find(p => p.id === num.user_id);
-        const ownerName = owner ? owner.username : 'Неизвестно';
-        
-        resEl.innerHTML = `
-            <div class="check-result visible" style="margin: 0; background: #1c1c1c; border-radius: 20px;">
-                <div class="check-result-number">${num.formatted}</div>
-                <div class="check-status busy">Занят</div>
-                <div class="check-info-row">
-                    <div class="check-info-col"><div class="check-info-label">Редкость</div><div class="check-info-value" style="color:${getRarityColor(num.rarity_key)};">${getRarityName(num.rarity_key)}</div></div>
-                    <div class="check-info-col"><div class="check-info-label">Владелец</div><div class="check-info-value">${ownerName}</div></div>
-                </div>
-            </div>
-        `;
+        renderAdminGiveCard(num.formatted, owner ? owner.username : 'Неизвестно');
     } else {
         adminFoundNumber = formatted;
-        resEl.innerHTML = `
-            <div class="check-result visible" style="margin: 0; background: #1c1c1c; border-radius: 20px; margin-bottom: 16px;">
-                <div class="check-result-number">${formatted}</div>
-                <div class="check-status free">Свободен</div>
-                <div class="check-info-row" style="margin-top: 10px;">
-                    <div class="check-info-col">
-                        <div class="check-info-label">Кому выдать? (Ник или ID)</div>
-                        <input type="text" id="adminGiveTarget" style="background:#0f0f0f; border:1px solid #2a2a2a; border-radius:8px; padding:10px; color:#fff; width:100%; margin-top:4px;">
-                    </div>
-                </div>
-            </div>
-            <button class="admin-btn green" onclick="confirmGiveNumber()" style="width:100%; margin-bottom:20px;">Выдать этот номер</button>
-        `;
+        adminFoundSecret = null;
+        renderAdminGiveCard(formatted, null, false);
     }
 }
 
-async function confirmGiveNumber() {
-    const target = document.getElementById('adminGiveTarget').value.trim();
-    if (!target) { showToast('error', 'Введите ник или ID', ''); return; }
-    if (!adminFoundNumber) return;
+async function searchAdminSecretNumber() {
+    const input = document.getElementById('adminGiveSecretInput').value.trim();
+    if (!input) return;
+    
+    const resEl = document.getElementById('adminGiveNumResult');
+    resEl.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Проверяем...</div>';
 
-    // Ищем игрока по нику или ID
-    const { data: profiles } = await sb.from('profiles').select('*').or(`username.ilike.%${target}%,telegram_id.eq.${target}`).limit(1);
+    const { data } = await sb.from('saved_numbers').select('*').eq('rarity_key', 'secret').eq('formatted', input).limit(1);
+    
+    if (data && data.length > 0) {
+        const num = data[0];
+        adminFoundSecret = null;
+        const owner = allPlayersList.find(p => p.id === num.user_id);
+        renderAdminGiveCard(num.formatted, owner ? owner.username : 'Неизвестно');
+    } else {
+        adminFoundSecret = input;
+        adminFoundNumber = null;
+        renderAdminGiveCard(input, null, true);
+    }
+}
+
+async function confirmGiveNumber(isSecret = false) {
+    const target = document.getElementById('adminGiveTarget').value.trim();
+    if (!target) { showToast('error', 'Введите ID игрока', ''); return; }
+    
+    let formatted = isSecret ? adminFoundSecret : adminFoundNumber;
+    if (!formatted) return;
+
+    // Ищем игрока по Telegram ID (так как ID - это уникальный номер)
+    const { data: profiles } = await sb.from('profiles').select('*').eq('telegram_id', target).limit(1);
     
     if (!profiles || profiles.length === 0) {
-        showToast('error', 'Игрок не найден', '');
+        showToast('error', 'Игрок не найден', 'Проверьте Telegram ID');
         return;
     }
     
     const player = profiles[0];
     
+    let newNumData = {
+        user_id: player.id,
+        formatted: formatted,
+        is_secret_variant: null
+    };
+
+    if (isSecret) {
+        // Логика для секретного номера
+        newNumData.op = '-';
+        newNumData.op_name = 'SECRET';
+        newNumData.digits = formatted.split('').map(Number);
+        newNumData.rarity_key = 'secret';
+        newNumData.rarity_name = 'супер секретный';
+        
+        const isJackpot = formatted === '0123456789';
+        newNumData.price = isJackpot ? 900000000 : Math.floor(400000000 + Math.random() * 100000000);
+        newNumData.is_secret_variant = formatted;
+    } else {
+        // Логика для обычного номера
+        const cleanDigits = formatted.replace(/\D/g, '');
+        let digitsArray = cleanDigits.slice(1).split('').map(Number); 
+        while (digitsArray.length < 7) digitsArray.push(0);
+        if (digitsArray.length > 7) digitsArray = digitsArray.slice(0, 7);
+
+        const rarityKey = classifyByPattern(digitsArray);
+        const rarityObj = RARITIES.find(r => r.key === rarityKey) || RARITIES[5];
+        const opCode = cleanDigits.slice(1, 4);
+        let opName = 'МТС';
+        if (['928', '924', '926'].includes(opCode)) opName = 'Мегафон';
+        if (['977', '905', '900'].includes(opCode)) opName = 'Билайн';
+
+        newNumData.op = opCode;
+        newNumData.op_name = opName;
+        newNumData.digits = digitsArray;
+        newNumData.rarity_key = rarityKey;
+        newNumData.rarity_name = getRarityName(rarityKey).toLowerCase();
+        newNumData.price = calculatePrice(rarityObj, { digits: digitsArray, opObj: { name: opName }, rarity: rarityObj });
+    }
+
+    const { error } = await sb.from('saved_numbers').insert(newNumData);
+    
+    if (error) {
+        showToast('error', 'Ошибка базы', error.message);
+    } else {
+        showToast('success', 'Номер выдан!', `Игроку с ID: ${player.telegram_id}`);
+        closeAdminGiveNumber();
+    }
+}
+
     // Считаем редкость и цену
     const cleanDigits = adminFoundNumber.replace(/\D/g, '');
     let digitsArray = cleanDigits.slice(1).split('').map(Number); 
