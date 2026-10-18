@@ -664,6 +664,18 @@
     .icon-circle.avatar.frame-neon { border: 3px solid #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.8); }
     .icon-circle.avatar.frame-fire { border: 3px solid #ef4444; box-shadow: 0 0 15px rgba(239,68,68,0.8); animation: firePulse 1.5s infinite alternate; }
     @keyframes firePulse { 0% { box-shadow: 0 0 5px #ef4444; } 100% { box-shadow: 0 0 25px #f97316; } }
+    /* НОВАЯ ГРАФИКА ИЗ СКРИНШОТА */
+body { background: #000 !important; font-family: 'Inter', sans-serif !important; }
+.menu-sheet { background: #111 !important; border-top: 1px solid #222 !important; }
+.btn-tile { background: #1a1a1a !important; border: 1px solid #2a2a2a !important; border-radius: 16px !important; }
+.btn-icon { background: transparent !important; border: none !important; color: #888 !important; font-size: 24px !important; }
+.btn-label { color: #eee !important; font-weight: 600 !important; }
+.menu-item { background: #1a1a1a !important; border: 1px solid #2a2a2a !important; border-radius: 12px !important; }
+.menu-item-icon { background: #222 !important; color: #888 !important; border: none !important; }
+.menu-item-text { font-weight: 600 !important; }
+.section-title { color: #555 !important; font-weight: 700 !important; letter-spacing: 1px !important; margin-top: 24px !important; }
+.grid-4 { gap: 12px !important; }
+.grid-menu { gap: 10px !important; }
 </style>
 </head>
 <body>
@@ -906,7 +918,6 @@
         <div class="rarity-row"><div class="rarity-name secret">Супер секретный</div><div class="rarity-bar"><div class="rarity-bar-fill secret" id="profBarSecret"></div></div><div class="rarity-count" id="profCountSecret">0</div></div>
     </div>
     <div class="admin-actions" style="padding: 0 16px 24px;">
-        <button class="admin-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; margin-bottom:10px;" onclick="openShop()"><i class="fa-solid fa-store"></i> Магазин</button>
         <button class="admin-btn blue" onclick="shareBot()"><i class="fa-solid fa-share"></i> Пригласить друга</button>
     </div>
 </div>
@@ -1040,6 +1051,7 @@
         <div class="admin-cat-item" onclick="openAdminStats()"><div class="admin-cat-icon stats"><i class="fa-solid fa-chart-simple"></i></div><div class="admin-cat-name">Статистика</div><div class="admin-cat-desc">Общая сводка</div></div>
         <div class="admin-cat-item" onclick="openAdminPromo()"><div class="admin-cat-icon promo"><i class="fa-solid fa-ticket"></i></div><div class="admin-cat-name">Промокоды</div><div class="admin-cat-desc">Создать</div></div>
         <div class="admin-cat-item" onclick="openAdminReset()"><div class="admin-cat-icon reset"><i class="fa-solid fa-rotate-left"></i></div><div class="admin-cat-name">Сброс</div><div class="admin-cat-desc">Опасно</div></div>
+        <div class="admin-cat-item" onclick="openNewsCreator()"><div class="admin-cat-icon" style="background: rgba(59,130,246,0.15); color: #60a5fa;"><i class="fa-solid fa-bullhorn"></i></div><div class="admin-cat-name">Новости</div><div class="admin-cat-desc">Создать</div></div>
     </div>
 </div>
 
@@ -1923,6 +1935,9 @@ async function rollOne() {
 
 async function startRoll(count) {
     if (isRolling) return;
+    const rollSound = new Audio('https://actions.google.com/sounds/v1/foley/playing_cards_flick_1.ogg');
+rollSound.volume = 0.4;
+rollSound.play().catch(()=>{});
     let freeUsed = Math.min(freeRolls, count);
     let paidRolls = count - freeUsed;
     let cost = ROLL_PRICE * paidRolls;
@@ -2975,7 +2990,22 @@ function renderNotifications() {
         if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
         else window.open(url, '_blank');
     }
-
+// СОЗДАНИЕ НОВОСТИ (Админка)
+function openNewsCreator() {
+    const title = prompt("Введите заголовок новости (например: Двойная удача!):");
+    if (!title) return;
+    const desc = prompt("Введите текст новости (например: Действует х2 удачи на 2 часа):");
+    if (!desc) return;
+    
+    sb.from('news_feed').insert({
+        title: title,
+        description: desc,
+        icon: '📢'
+    }).then(({ error }) => {
+        if (error) showToast('error', 'Ошибка', error.message);
+        else showToast('success', 'Новость создана!', 'Она появится у всех в ленте');
+    });
+}
     // ЗАПУСК
     async function bootstrap() {
         if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
