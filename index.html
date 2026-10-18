@@ -36,8 +36,8 @@
     .icon-circle { width: 44px; height: 44px; background: #1c1c1c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #aaa; position: relative; cursor: pointer; overflow: hidden; }
     .icon-circle img { width: 100%; height: 100%; object-fit: cover; }
     .icon-circle.red-dot::after { content: ''; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 8px rgba(239,68,68,0.8); }
-    .icon-circle.avatar { background: linear-gradient(135deg, #2a2200, #1a1500); border: 1px solid #5c4400; color: var(--gold); }
     
+    .icon-circle.avatar { background: linear-gradient(135deg, #2a2200, #1a1500); border: 1px solid #5c4400; color: var(--gold); }
     .icon-circle.avatar.frame-gold { border: 3px solid #f59e0b; box-shadow: 0 0 15px rgba(245,158,11,0.6); }
     .icon-circle.avatar.frame-neon { border: 3px solid #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.8); }
     .icon-circle.avatar.frame-fire { border: 3px solid #ef4444; box-shadow: 0 0 15px rgba(239,68,68,0.8); animation: firePulse 1.5s infinite alternate; }
@@ -234,12 +234,12 @@
     .collection-screen, .check-screen, .chances-screen, .profile-screen, .promo-screen, .games-screen,
     .admin-screen, .admin-players-screen, .admin-reset-screen, .admin-player-detail, .rating-screen,
     .admin-promo-screen, .auction-screen, .admin-stats-screen, .admin-collection-screen,
-    .notifications-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); z-index: 200; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; overflow-y: auto; padding-bottom: 40px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: opacity 0.35s var(--ease-out), transform 0.35s var(--ease-out), visibility 0.35s; }
+    .notifications-screen, .shop-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-color); z-index: 200; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; overflow-y: auto; padding-bottom: 40px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: opacity 0.35s var(--ease-out), transform 0.35s var(--ease-out), visibility 0.35s; }
     .collection-screen.active, .check-screen.active, .chances-screen.active, .profile-screen.active,
     .promo-screen.active, .games-screen.active, .admin-screen.active, .admin-players-screen.active,
     .admin-reset-screen.active, .admin-player-detail.active, .rating-screen.active,
     .admin-promo-screen.active, .auction-screen.active, .admin-stats-screen.active,
-    .admin-collection-screen.active, .notifications-screen.active { opacity: 1; visibility: visible; transform: translateY(0); }
+    .admin-collection-screen.active, .notifications-screen.active, .shop-screen.active { opacity: 1; visibility: visible; transform: translateY(0); }
     .profile-screen { transform: translateX(30px); } .profile-screen.active { transform: translateX(0); }
     .screen-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; }
     .screen-header .nav-left { display: flex; align-items: center; gap: 12px; cursor: pointer; }
@@ -639,13 +639,25 @@
     .rb-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
     .rb-row b { color: #fff; }
 
-    /* НОВЫЕ СТИЛИ ДЛЯ АНИМАЦИИ И МАГАЗИНА */
-    .roll-modal-box { background: #0d0d0d; border: 2px solid #333; align-items: center; justify-content: center; text-align: center; }
-    .roll-anim-number { font-family: 'Courier New', monospace; font-size: 32px; font-weight: 900; color: #a855f7; min-height: 40px; text-shadow: 0 0 20px rgba(168,85,247,0.5); margin: 15px 0; }
-    .shop-item { background: #1c1c1c; border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid #2a2a2a; margin-bottom: 10px; }
-    .shop-item:active { transform: scale(0.98); }
-    .shop-item-left { display: flex; align-items: center; gap: 12px; }
-    .shop-item-price { font-weight: 800; color: #f59e0b; }
+    /* СТИЛИ ДЛЯ МАГАЗИНА */
+    .shop-tabs { display: flex; gap: 8px; padding: 0 16px 16px; overflow-x: auto; scrollbar-width: none; }
+    .shop-tab { padding: 10px 18px; background: #1c1c1c; border-radius: 20px; font-size: 14px; font-weight: 600; color: #ccc; cursor: pointer; border: 1px solid transparent; white-space: nowrap; }
+    .shop-tab.active { background: #fff; color: #0d0d0d; border-color: #fff; }
+    
+    .vip-banner { background: linear-gradient(135deg, #2a2200, #1a1500); border: 1px solid #5c4400; border-radius: 20px; margin: 0 16px 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px; position: relative; overflow: hidden; }
+    .vip-title { font-size: 24px; font-weight: 900; color: #fbbf24; display: flex; align-items: center; gap: 10px; }
+    .vip-desc { font-size: 13px; color: #aaa; line-height: 1.5; }
+    .vip-buy-row { display: flex; gap: 10px; }
+    .vip-btn { flex: 1; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; border: none; border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 800; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .vip-btn span { font-size: 11px; font-weight: 600; opacity: 0.8; }
+    
+    .shop-grid { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 0 16px; }
+    .shop-card { background: #1c1c1c; border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 16px; border: 1px solid #2a2a2a; }
+    .shop-card-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .shop-card-info { flex-grow: 1; }
+    .shop-card-title { font-size: 16px; font-weight: 700; color: #fff; }
+    .shop-card-desc { font-size: 12px; color: #888; margin-top: 4px; }
+    .shop-card-btn { background: #fff; color: #000; border: none; border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 </style>
 </head>
 <body>
@@ -709,15 +721,7 @@
         </div>
     </div>
 
-    <!-- МОДАЛКИ НОВЫЕ -->
-    <div class="choice-modal" id="rollAnimModal">
-        <div class="choice-box roll-modal-box">
-            <div style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 10px;" id="rollAnimTitle">Крутка...</div>
-            <div class="roll-anim-number" id="rollAnimNumber">...</div>
-            <div id="rollAnimRarity" style="font-size: 16px; font-weight: 800; margin-top: 10px;"></div>
-        </div>
-    </div>
-
+    <!-- НОВЫЕ МОДАЛКИ -->
     <div class="choice-modal" id="dailyModal">
         <div class="choice-box">
             <div style="text-align: center; font-size: 20px; font-weight: 800; color: #fff;">🎁 Ежедневный бонус</div>
@@ -727,24 +731,69 @@
         </div>
     </div>
 
-    <div class="choice-modal" id="shopModal">
-        <div class="choice-box" style="max-height: 80vh; overflow-y: auto;">
-            <div style="text-align: center; font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 10px;">🛒 Магазин рамок</div>
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <div class="shop-item" onclick="buyFrame('frame-gold')" style="border-color: #f59e0b;">
-                    <div class="shop-item-left"><div class="icon-circle avatar frame-gold" style="width:34px;height:34px;"><i class="fa-solid fa-crown" style="font-size:14px;"></i></div><span>Золотая рамка</span></div>
-                    <span class="shop-item-price">50 ⭐</span>
+    <!-- ЭКРАН МАГАЗИНА -->
+    <div class="shop-screen" id="shopScreen">
+        <div class="screen-header"><div class="nav-left" onclick="closeShop()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
+        <div class="screen-title">Магазин</div>
+        
+        <div class="shop-tabs">
+            <div class="shop-tab active" data-tab="main" onclick="switchShopTab('main')">Главное</div>
+            <div class="shop-tab" data-tab="rolls" onclick="switchShopTab('rolls')">Крутки</div>
+            <div class="shop-tab" data-tab="style" onclick="switchShopTab('style')">Стиль</div>
+        </div>
+
+        <!-- ВКЛАДКА ГЛАВНОЕ (VIP) -->
+        <div id="shopTab-main" class="shop-tab-content">
+            <div class="vip-banner">
+                <div class="vip-title"><i class="fa-solid fa-crown"></i> VIP Статус</div>
+                <div class="vip-desc">
+                    <div>✔️ Вторая дорожка наград в пропуске</div>
+                    <div>✔️ Больше мест в коллекции</div>
+                    <div>✔️ Значок VIP у ника</div>
                 </div>
-                <div class="shop-item" onclick="buyFrame('frame-neon')" style="border-color: #a855f7;">
-                    <div class="shop-item-left"><div class="icon-circle avatar frame-neon" style="width:34px;height:34px;"><i class="fa-solid fa-bolt" style="font-size:14px;"></i></div><span>Неоновая рамка</span></div>
-                    <span class="shop-item-price">100 ⭐</span>
-                </div>
-                <div class="shop-item" onclick="buyFrame('frame-fire')" style="border-color: #ef4444;">
-                    <div class="shop-item-left"><div class="icon-circle avatar frame-fire" style="width:34px;height:34px;"><i class="fa-solid fa-fire" style="font-size:14px;"></i></div><span>Огненная рамка</span></div>
-                    <span class="shop-item-price">250 ⭐</span>
+                <div class="vip-buy-row">
+                    <button class="vip-btn" onclick="buyItem('vip14')">14 дней <span>249 ⭐</span></button>
+                    <button class="vip-btn" onclick="buyItem('vip30')">30 дней <span>399 ⭐</span></button>
+                    <button class="vip-btn" onclick="buyItem('vip999')">Навсегда <span>799 ⭐</span></button>
                 </div>
             </div>
-            <button class="choice-btn" onclick="document.getElementById('shopModal').classList.remove('active')" style="background: #2a2a2a; color: #aaa; margin-top: 15px; height: 40px;">Закрыть</button>
+        </div>
+
+        <!-- ВКЛАДКА КРУТКИ -->
+        <div id="shopTab-rolls" class="shop-tab-content" style="display: none;">
+            <div class="shop-grid">
+                <div class="shop-card">
+                    <div class="shop-card-icon" style="background: rgba(168,85,247,0.15); color: #c084fc;"><i class="fa-solid fa-dice"></i></div>
+                    <div class="shop-card-info"><div class="shop-card-title">5 круток</div><div class="shop-card-desc">Быстрый старт</div></div>
+                    <button class="shop-card-btn" onclick="buyItem('rolls5')">50 ⭐</button>
+                </div>
+                <div class="shop-card">
+                    <div class="shop-card-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;"><i class="fa-solid fa-dice"></i></div>
+                    <div class="shop-card-info"><div class="shop-card-title">20 круток</div><div class="shop-card-desc">Выгодный пакет</div></div>
+                    <button class="shop-card-btn" onclick="buyItem('rolls20')">150 ⭐</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА СТИЛЬ (РАМКИ) -->
+        <div id="shopTab-style" class="shop-tab-content" style="display: none;">
+            <div class="shop-grid">
+                <div class="shop-card">
+                    <div class="shop-card-icon icon-circle avatar frame-gold" style="background:none;"><i class="fa-solid fa-crown" style="color:#f59e0b;"></i></div>
+                    <div class="shop-card-info"><div class="shop-card-title">Золотая рамка</div><div class="shop-card-desc">Эффект свечения</div></div>
+                    <button class="shop-card-btn" onclick="buyItem('frame-gold')">50 ⭐</button>
+                </div>
+                <div class="shop-card">
+                    <div class="shop-card-icon icon-circle avatar frame-neon" style="background:none;"><i class="fa-solid fa-bolt" style="color:#a855f7;"></i></div>
+                    <div class="shop-card-info"><div class="shop-card-title">Неоновая рамка</div><div class="shop-card-desc">Эффект свечения</div></div>
+                    <button class="shop-card-btn" onclick="buyItem('frame-neon')">100 ⭐</button>
+                </div>
+                <div class="shop-card">
+                    <div class="shop-card-icon icon-circle avatar frame-fire" style="background:none;"><i class="fa-solid fa-fire" style="color:#ef4444;"></i></div>
+                    <div class="shop-card-info"><div class="shop-card-title">Огненная рамка</div><div class="shop-card-desc">Пульсирующая анимация</div></div>
+                    <button class="shop-card-btn" onclick="buyItem('frame-fire')">250 ⭐</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -762,7 +811,7 @@
             <div class="btn-tile tile-rewards" onclick="openDailyReward()"><div class="btn-icon"><i class="fa-solid fa-gift"></i></div><div class="btn-label">Награды</div></div>
             <div class="btn-tile tile-skills" onclick="alert('Навыки')"><div class="btn-icon"><i class="fa-solid fa-bolt"></i></div><div class="btn-label">Навыки</div></div>
             <div class="btn-tile tile-trade" onclick="openAuction()"><div class="btn-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></div><div class="btn-label">Торговля</div></div>
-            <div class="btn-tile tile-phones" onclick="alert('Телефоны')"><div class="btn-icon"><i class="fa-solid fa-mobile-screen"></i></div><div class="btn-label">Телефоны</div></div>
+            <div class="btn-tile tile-phones" onclick="openShop()"><div class="btn-icon"><i class="fa-solid fa-store"></i></div><div class="btn-label">Магазин</div></div>
         </div>
         <div class="section-title">Игрок</div>
         <div class="grid-menu">
@@ -840,7 +889,7 @@
             <div class="rarity-row"><div class="rarity-name secret">Супер секретный</div><div class="rarity-bar"><div class="rarity-bar-fill secret" id="profBarSecret"></div></div><div class="rarity-count" id="profCountSecret">0</div></div>
         </div>
         <div class="admin-actions" style="padding: 0 16px 24px;">
-            <button class="admin-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; margin-bottom:10px;" onclick="document.getElementById('shopModal').classList.add('active')"><i class="fa-solid fa-store"></i> Магазин рамок</button>
+            <button class="admin-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; margin-bottom:10px;" onclick="openShop()"><i class="fa-solid fa-store"></i> Магазин</button>
             <button class="admin-btn blue" onclick="shareBot()"><i class="fa-solid fa-share"></i> Пригласить друга</button>
         </div>
     </div>
@@ -1181,6 +1230,7 @@
     let currentAuctionTab = 'all';
     let auctionTickInterval = null;
     let simDetailTarget = null;
+    let currentShopTab = 'main';
 
     const balanceDisplay = document.getElementById('balanceDisplay');
     const profileBalance = document.getElementById('profileBalance');
@@ -1725,12 +1775,7 @@
     }
 
     function handleX5Click() { x5Armed = !x5Armed; updateRollButtons(); }
-    function handleMainClick() { 
-        const c = x5Armed ? 5 : 1; 
-        startRollWithAnimation(c); 
-        x5Armed = false; 
-        updateRollButtons(); 
-    }
+    function handleMainClick() { const c = x5Armed ? 5 : 1; startRoll(c); x5Armed = false; updateRollButtons(); }
 
     function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
     function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
@@ -1773,6 +1818,138 @@
         else window.open(url, '_blank');
     }
 
+    // МАГАЗИН
+    function openShop() { closeMenu(); document.getElementById('shopScreen').classList.add('active'); }
+    function closeShop() { document.getElementById('shopScreen').classList.remove('active'); }
+    function switchShopTab(tab) {
+        currentShopTab = tab;
+        document.querySelectorAll('.shop-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+        document.querySelectorAll('.shop-tab-content').forEach(c => c.style.display = c.id === 'shopTab-' + tab ? 'block' : 'none');
+    }
+
+    // ПОКУПКА (ИНТЕГРАЦИЯ С TELEGRAM STARS)
+    async function buyItem(itemId) {
+        if (!tg || !tg.showPopup) {
+            if (itemId === 'vip14' || itemId === 'vip30' || itemId === 'vip999') {
+                await applyVIP(itemId);
+            } else if (itemId === 'rolls5' || itemId === 'rolls20') {
+                freeRolls += itemId === 'rolls5' ? 5 : 20;
+                updateRollButtons();
+            } else {
+                await applyFrame(itemId);
+            }
+            showToast('success', 'Куплено (тест)', '');
+            return;
+        }
+        
+        const prices = { vip14: 249, vip30: 399, vip999: 799, rolls5: 50, rolls20: 150, 'frame-gold': 50, 'frame-neon': 100, 'frame-fire': 250 };
+        const stars = prices[itemId];
+        
+        tg.showPopup({
+            title: 'Подтверждение покупки',
+            message: `Вы точно хотите приобрести этот товар за ${stars} звёзд?`,
+            buttons: [{ id: 'buy', type: 'default', text: 'Подтвердить и заплатить' }, { id: 'cancel', type: 'cancel' }]
+        }, async (btnId) => {
+            if (btnId === 'buy') {
+                if (itemId === 'vip14' || itemId === 'vip30' || itemId === 'vip999') {
+                    await applyVIP(itemId);
+                } else if (itemId === 'rolls5' || itemId === 'rolls20') {
+                    freeRolls += itemId === 'rolls5' ? 5 : 20;
+                    updateRollButtons();
+                    await saveUserData();
+                } else {
+                    await applyFrame(itemId);
+                }
+                showToast('success', 'Оплачено!', 'Товар активирован');
+            }
+        });
+    }
+
+    async function applyVIP(type) {
+        const now = new Date();
+        let days = 0;
+        if (type === 'vip14') days = 14;
+        else if (type === 'vip30') days = 30;
+        else days = 36500; // Навсегда
+        
+        let newDate = currentUser.vip_until ? new Date(currentUser.vip_until) : now;
+        if (newDate < now) newDate = now;
+        newDate.setDate(newDate.getDate() + days);
+        
+        currentUser.vip_until = newDate.toISOString();
+        await sb.from('profiles').update({ vip_until: currentUser.vip_until }).eq('id', currentUser.id);
+        updateProfileUI();
+    }
+
+    async function applyFrame(frameId) {
+        currentUser.avatar_frame = frameId;
+        await sb.from('profiles').update({ avatar_frame: frameId }).eq('id', currentUser.id);
+        updateProfileUI();
+    }
+
+    // ЕЖЕДНЕВНЫЙ БОНУС И НАЛОГИ
+    async function checkTaxes() {
+        if (!currentUser) return;
+        const now = Date.now();
+        const lastTax = currentUser.last_tax_time ? new Date(currentUser.last_tax_time).getTime() : 0;
+        const DAY = 24 * 60 * 60 * 1000;
+        
+        if (now - lastTax > DAY) {
+            if (balance > 1000000) {
+                const tax = Math.floor(balance * 0.05);
+                balance -= tax;
+                updateBalance();
+                showToast('error', 'Налог списан', `Вычли 5%: ${formatPrice(tax)}`);
+            }
+            currentUser.last_tax_time = new Date().toISOString();
+            await sb.from('profiles').update({ last_tax_time: currentUser.last_tax_time }).eq('id', currentUser.id);
+        }
+    }
+
+    function openDailyReward() {
+        closeMenu();
+        const modal = document.getElementById('dailyModal');
+        const content = document.getElementById('dailyContent');
+        const btn = document.getElementById('dailyBtn');
+        
+        const now = Date.now();
+        const lastDaily = currentUser.last_daily ? new Date(currentUser.last_daily).getTime() : 0;
+        const DAY = 24 * 60 * 60 * 1000;
+        
+        if (now - lastDaily < DAY) {
+            const left = DAY - (now - lastDaily);
+            const h = Math.floor(left / 3600000);
+            const m = Math.floor((left % 3600000) / 60000);
+            content.innerHTML = `Следующая награда через<br><b style="color:#fff;font-size:20px;">${h}ч ${m}м</b>`;
+            btn.disabled = true;
+            btn.style.opacity = 0.5;
+        } else {
+            content.innerHTML = 'Вам доступна награда!<br>Забирайте 5 000 ₽ и 1 крутку.';
+            btn.disabled = false;
+            btn.style.opacity = 1;
+        }
+        modal.classList.add('active');
+    }
+
+    async function claimDailyReward() {
+        const btn = document.getElementById('dailyBtn');
+        if (btn.disabled) return;
+        
+        btn.disabled = true;
+        balance += 5000;
+        freeRolls += 1;
+        currentUser.last_daily = new Date().toISOString();
+        
+        updateBalance();
+        updateRollButtons();
+        await sb.from('profiles').update({ last_daily: currentUser.last_daily }).eq('id', currentUser.id);
+        await saveUserData();
+        
+        showToast('success', 'Бонус получен!', '+5 000 ₽ и 1 крутка');
+        document.getElementById('dailyModal').classList.remove('active');
+    }
+
+    // ==================== ВОЗВРАЩАЕМ СТАРУЮ АНИМАЦИЮ КРУТКИ ====================
     function pickRarity() {
         if (currentUser && currentUser.pity_counter >= 50) {
             currentUser.pity_counter = 0;
@@ -1812,6 +1989,7 @@
         }
         renderPatternBadge(card, n);
     }
+    
     let dropPendingNumber = null;
     function showDropOverlay(n) {
         const key = n.rarity.key;
@@ -2114,45 +2292,45 @@
     }
 
     async function activatePromo() {
-    const input = document.getElementById('promoInput').value.trim().toUpperCase();
-    if (!input) { showToast('error', 'Введите промокод', ''); return; }
+        const input = document.getElementById('promoInput').value.trim().toUpperCase();
+        if (!input) { showToast('error', 'Введите промокод', ''); return; }
 
-    const { data: used, error: checkErr } = await sb.from('used_promocodes')
-        .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
-    
-    if (checkErr) { showToast('error', 'Ошибка БД', checkErr.message); return; }
-    if (used) { showToast('error', 'Уже использован', 'Этот код уже активирован'); return; }
-
-    const { data: promos, error: promoErr } = await sb.from('promo_codes').select('*').eq('code', input).limit(1);
-    if (promoErr) { showToast('error', 'Ошибка БД', promoErr.message); return; }
-    if (!promos || !promos.length) { showToast('error', 'Неверный промокод', ''); return; }
-    
-    const p = promos[0];
-    if (p.uses_left <= 0) { showToast('error', 'Исчерпан', ''); return; }
-    if (p.expires_at && new Date(p.expires_at) < new Date()) { showToast('error', 'Истёк', ''); return; }
-
-    const { error: insertErr } = await sb.from('used_promocodes')
-        .insert({ user_id: currentUser.id, code: input });
+        const { data: used, error: checkErr } = await sb.from('used_promocodes')
+            .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
         
-    if (insertErr) { 
-        showToast('error', 'Ошибка базы', 'Не удалось сохранить: ' + insertErr.message); 
-        return; 
+        if (checkErr) { showToast('error', 'Ошибка БД', checkErr.message); return; }
+        if (used) { showToast('error', 'Уже использован', 'Этот код уже активирован'); return; }
+
+        const { data: promos, error: promoErr } = await sb.from('promo_codes').select('*').eq('code', input).limit(1);
+        if (promoErr) { showToast('error', 'Ошибка БД', promoErr.message); return; }
+        if (!promos || !promos.length) { showToast('error', 'Неверный промокод', ''); return; }
+        
+        const p = promos[0];
+        if (p.uses_left <= 0) { showToast('error', 'Исчерпан', ''); return; }
+        if (p.expires_at && new Date(p.expires_at) < new Date()) { showToast('error', 'Истёк', ''); return; }
+
+        const { error: insertErr } = await sb.from('used_promocodes')
+            .insert({ user_id: currentUser.id, code: input });
+            
+        if (insertErr) { 
+            showToast('error', 'Ошибка базы', 'Не удалось сохранить: ' + insertErr.message); 
+            return; 
+        }
+
+        const r = p.rewards || {};
+        const applied = [];
+        if (r.money) { balance += r.money; applied.push(`+${r.money} ₽`); }
+        if (r.rolls) { freeRolls += r.rolls; applied.push(`+${r.rolls} круток`); }
+        ['x2','x5','x10','x15'].forEach(k => { if (r[k]) { activateLuckBoost(k, r[k]); applied.push(`×${k.slice(1)} на ${r[k]} мин`); } });
+
+        await sb.from('promo_codes').update({ uses_left: p.uses_left - 1 }).eq('id', p.id);
+        
+        usedPromoCodes.push(input);
+        updateBalance(); updateLuckUI(); updateRollButtons();
+        document.getElementById('promoInput').value = '';
+        showToast('success', 'Активирован!', applied.join(' · '));
+        await saveUserData();
     }
-
-    const r = p.rewards || {};
-    const applied = [];
-    if (r.money) { balance += r.money; applied.push(`+${r.money} ₽`); }
-    if (r.rolls) { freeRolls += r.rolls; applied.push(`+${r.rolls} круток`); }
-    ['x2','x5','x10','x15'].forEach(k => { if (r[k]) { activateLuckBoost(k, r[k]); applied.push(`×${k.slice(1)} на ${r[k]} мин`); } });
-
-    await sb.from('promo_codes').update({ uses_left: p.uses_left - 1 }).eq('id', p.id);
-    
-    usedPromoCodes.push(input);
-    updateBalance(); updateLuckUI(); updateRollButtons();
-    document.getElementById('promoInput').value = '';
-    showToast('success', 'Активирован!', applied.join(' · '));
-    await saveUserData();
-}
 
     function subscribeToNotifications() {
         if (notificationRealtimeChannel) sb.removeChannel(notificationRealtimeChannel);
@@ -2710,164 +2888,6 @@
         showToast('success', 'Забрал!', formatPrice(np));
         minesState.active = false;
         setTimeout(() => { resetMinesState(); renderMinesField(); updateMinesUI(); updateMinesBetCard(); }, 1500);
-    }
-
-    // ==================== НОВЫЕ ФУНКЦИИ ====================
-
-    async function checkTaxes() {
-        if (!currentUser) return;
-        const now = Date.now();
-        const lastTax = currentUser.last_tax_time ? new Date(currentUser.last_tax_time).getTime() : 0;
-        const DAY = 24 * 60 * 60 * 1000;
-        
-        if (now - lastTax > DAY) {
-            if (balance > 1000000) {
-                const tax = Math.floor(balance * 0.05);
-                balance -= tax;
-                updateBalance();
-                showToast('error', 'Налог списан', `Вычли 5%: ${formatPrice(tax)}`);
-            }
-            currentUser.last_tax_time = new Date().toISOString();
-            await sb.from('profiles').update({ last_tax_time: currentUser.last_tax_time }).eq('id', currentUser.id);
-        }
-    }
-
-    function openDailyReward() {
-        closeMenu();
-        const modal = document.getElementById('dailyModal');
-        const content = document.getElementById('dailyContent');
-        const btn = document.getElementById('dailyBtn');
-        
-        const now = Date.now();
-        const lastDaily = currentUser.last_daily ? new Date(currentUser.last_daily).getTime() : 0;
-        const DAY = 24 * 60 * 60 * 1000;
-        
-        if (now - lastDaily < DAY) {
-            const left = DAY - (now - lastDaily);
-            const h = Math.floor(left / 3600000);
-            const m = Math.floor((left % 3600000) / 60000);
-            content.innerHTML = `Следующая награда через<br><b style="color:#fff;font-size:20px;">${h}ч ${m}м</b>`;
-            btn.disabled = true;
-            btn.style.opacity = 0.5;
-        } else {
-            content.innerHTML = 'Вам доступна награда!<br>Забирайте 5 000 ₽ и 1 крутку.';
-            btn.disabled = false;
-            btn.style.opacity = 1;
-        }
-        modal.classList.add('active');
-    }
-
-    async function claimDailyReward() {
-        const btn = document.getElementById('dailyBtn');
-        if (btn.disabled) return;
-        
-        btn.disabled = true;
-        balance += 5000;
-        freeRolls += 1;
-        currentUser.last_daily = new Date().toISOString();
-        
-        updateBalance();
-        updateRollButtons();
-        await sb.from('profiles').update({ last_daily: currentUser.last_daily }).eq('id', currentUser.id);
-        await saveUserData();
-        
-        showToast('success', 'Бонус получен!', '+5 000 ₽ и 1 крутка');
-        document.getElementById('dailyModal').classList.remove('active');
-    }
-
-    async function buyFrame(frameId) {
-        if (!tg || !tg.showPopup) {
-            await applyFrame(frameId);
-            showToast('success', 'Куплено (тест)', '');
-            return;
-        }
-        const prices = { 'frame-gold': 50, 'frame-neon': 100, 'frame-fire': 250 };
-        const stars = prices[frameId];
-        
-        tg.showPopup({
-            title: 'Покупка рамки',
-            message: `Купить рамку за ${stars} ⭐? (Для теста - рамка выдастся бесплатно)`,
-            buttons: [{ id: 'buy', type: 'default', text: 'Купить' }, { id: 'cancel', type: 'cancel' }]
-        }, async (btnId) => {
-            if (btnId === 'buy') {
-                await applyFrame(frameId);
-                showToast('success', 'Куплено!', 'Рамка активирована');
-                document.getElementById('shopModal').classList.remove('active');
-            }
-        });
-    }
-
-    async function applyFrame(frameId) {
-        currentUser.avatar_frame = frameId;
-        await sb.from('profiles').update({ avatar_frame: frameId }).eq('id', currentUser.id);
-        updateProfileUI();
-    }
-
-    async function startRollWithAnimation(count) {
-        if (isRolling) return;
-        let freeUsed = Math.min(freeRolls, count);
-        let paidRolls = count - freeUsed;
-        let cost = ROLL_PRICE * paidRolls;
-        if (balance < cost) { showToast('error', 'Мало средств', `Нужно ${formatPrice(cost)}`); return; }
-        
-        isRolling = true;
-        document.getElementById('rollBtn').disabled = true;
-        document.getElementById('rollX5Btn').disabled = true;
-        document.getElementById('saveSellRow').classList.remove('visible');
-        balance -= cost;
-        freeRolls -= freeUsed;
-        currentUser.total_rolls = (currentUser.total_rolls || 0) + count;
-        updateBalance(); updateRollButtons();
-
-        const modal = document.getElementById('rollAnimModal');
-        const numEl = document.getElementById('rollAnimNumber');
-        const rarityEl = document.getElementById('rollAnimRarity');
-        modal.classList.add('active');
-
-        const finalRarity = pickRarity();
-        const finalNumber = await generateUniqueNumber(finalRarity);
-        const price = calculatePrice(finalNumber.rarity, finalNumber);
-
-        if (['legendary', 'mythic', 'secret'].includes(finalRarity.key)) {
-            currentUser.pity_counter = 0;
-        } else {
-            currentUser.pity_counter = (currentUser.pity_counter || 0) + 1;
-        }
-        await sb.from('profiles').update({ pity_counter: currentUser.pity_counter }).eq('id', currentUser.id);
-
-        let frames = 0;
-        const interval = setInterval(() => {
-            frames++;
-            const rd = [];
-            for (let i = 0; i < 7; i++) rd.push(Math.floor(Math.random() * 10));
-            const op = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
-            numEl.textContent = `+7 ${op.code} ${rd[0]}${rd[1]}${rd[2]}-${rd[3]}${rd[4]}-${rd[5]}${rd[6]}`;
-            numEl.style.color = '#a855f7'; 
-            
-            if (frames >= 25) {
-                clearInterval(interval);
-                numEl.textContent = finalNumber.formatted;
-                numEl.style.color = getRarityColor(finalNumber.rarity.key);
-                rarityEl.textContent = getRarityName(finalNumber.rarity.key).toUpperCase();
-                rarityEl.style.color = getRarityColor(finalNumber.rarity.key);
-                
-                setTimeout(() => {
-                    modal.classList.remove('active');
-                    renderMainNumber(finalNumber);
-                    currentRolledNumber = { ...finalNumber, price, rarity: finalNumber.rarity };
-                    recentNumbers.unshift(currentRolledNumber);
-                    renderMiniCards();
-                    document.getElementById('saveSellRow').classList.add('visible');
-                    isRolling = false;
-                    document.getElementById('rollBtn').disabled = false;
-                    document.getElementById('rollX5Btn').disabled = false;
-                    updateRollButtons();
-                    if (['legendary', 'mythic', 'secret'].includes(finalNumber.rarity.key)) showDropOverlay(currentRolledNumber);
-                }, 800);
-            }
-        }, 60);
-
-        await saveUserData();
     }
 
     bootstrap();
