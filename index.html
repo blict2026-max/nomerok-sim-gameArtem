@@ -3228,10 +3228,18 @@ async function deleteNews(id) {
                 profile.avatar_url = telegramUser.photo_url || null;
             }
             currentUser = profile;
-            balance = profile.balance || 0;
-            document.getElementById('gameRoot').style.display = 'block';
-            document.getElementById('loadingScreen').classList.add('hidden');
-            await loadSavedNumbers();
+balance = profile.balance || 0;
+
+// Сначала проверяем тех. работы
+await checkMaintenance();
+
+// Показываем игру только если тех. работы выключены
+if (document.getElementById('gameRoot').style.display !== 'none') {
+    document.getElementById('gameRoot').style.display = 'block';
+    document.getElementById('loadingScreen').classList.add('hidden');
+}
+
+await loadSavedNumbers();
             await loadAllPlayers();
             
             usedPromoCodes = []; 
