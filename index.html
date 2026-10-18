@@ -2575,26 +2575,32 @@ function renderNotifications() {
     const p = allPlayersList.find(x => x.id === id);
     if (!p) return;
     
-    const av = p.avatar_url ? `<img src="${p.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
-    const tgName = p.tg_username ? `@${p.tg_username}` : '';
+    const av = p.avatar_url ? '<img src="' + p.avatar_url + '" alt="">' : '<i class="fa-solid fa-crown"></i>';
+    const tgName = p.tg_username ? '@' + p.tg_username : '';
+    const playerTag = renderTag(p.tag);
+    const ownerIcon = p.is_owner ? '👑' : '';
     
-    document.getElementById('adminPlayerDetailContent').innerHTML = `
-        <div class="player-detail-header">
-            <div class="player-detail-avatar">${av}</div>
-            <div class="player-detail-name">${p.username} ${renderTag(p.tag)} ${p.is_owner ? '👑' : ''}</div>
-            <div class="player-detail-username">${tgName}</div>
-            <div style="font-size: 11px; color: #a855f7; margin-top: 4px; font-weight: 700; letter-spacing: 1px;">[ID: ${p.telegram_id}]</div>
-        </div>
-        <div class="player-detail-stats">
-            <div class="player-detail-stat"><span class="label">Баланс</span><span class="value">${(p.balance || 0).toLocaleString('ru-RU')} ₽</span></div>
-            <div class="player-detail-stat"><span class="label">Круток</span><span class="value">${(p.total_rolls || 0).toLocaleString('ru-RU')}</span></div>
-        </div>
-        <div class="admin-actions">
-            <button class="admin-btn blue" onclick="adminViewCollection()"><i class="fa-solid fa-folder-open"></i> Коллекция</button>
-            <button class="admin-btn orange" onclick="document.getElementById('tagModal').classList.add('active')"><i class="fa-solid fa-tag"></i> Тег</button>
-            <button class="admin-btn green" onclick="adminGiveMoney()"><i class="fa-solid fa-coins"></i> Выдать 10 000 ₽</button>
-            <button class="admin-btn" style="background:linear-gradient(135deg,#a855f7,#7c3aed); color:#fff;" onclick="document.getElementById('giftModal').classList.add('active')"><i class="fa-solid fa-gift"></i> Подарок</button>
-        </div>`;
+    let html = '';
+    html += '<div class="player-detail-header">';
+    html += '  <div class="player-detail-avatar">' + av + '</div>';
+    html += '  <div class="player-detail-name">' + p.username + ' ' + playerTag + ' ' + ownerIcon + '</div>';
+    html += '  <div class="player-detail-username">' + tgName + '</div>';
+    html += '  <div style="font-size: 11px; color: #a855f7; margin-top: 4px; font-weight: 700; letter-spacing: 1px;">[ID: ' + p.telegram_id + ']</div>';
+    html += '</div>';
+    
+    html += '<div class="player-detail-stats">';
+    html += '  <div class="player-detail-stat"><span class="label">Баланс</span><span class="value">' + (p.balance || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
+    html += '  <div class="player-detail-stat"><span class="label">Круток</span><span class="value">' + (p.total_rolls || 0).toLocaleString('ru-RU') + '</span></div>';
+    html += '</div>';
+    
+    html += '<div class="admin-actions">';
+    html += '  <button class="admin-btn blue" onclick="adminViewCollection()"><i class="fa-solid fa-folder-open"></i> Коллекция</button>';
+    html += '  <button class="admin-btn orange" onclick="document.getElementById(\'tagModal\').classList.add(\'active\')"><i class="fa-solid fa-tag"></i> Тег</button>';
+    html += '  <button class="admin-btn green" onclick="adminGiveMoney()"><i class="fa-solid fa-coins"></i> Выдать 10 000 ₽</button>';
+    html += '  <button class="admin-btn" style="background:linear-gradient(135deg,#a855f7,#7c3aed); color:#fff;" onclick="document.getElementById(\'giftModal\').classList.add(\'active\')"><i class="fa-solid fa-gift"></i> Подарок</button>';
+    html += '</div>';
+    
+    document.getElementById('adminPlayerDetailContent').innerHTML = html;
 }
     async function adminViewCollection() {
         if (!adminTargetPlayerId) return;
