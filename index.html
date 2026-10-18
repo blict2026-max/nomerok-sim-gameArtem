@@ -1033,7 +1033,7 @@
     </div>
 </div>
 <!-- ЭКРАН УПРАВЛЕНИЯ НОВОСТЯМИ -->
-<div class="admin-promo-screen" id="adminNewsScreen">
+<div class="admin-player-detail" id="adminNewsScreen">
     <div class="admin-sub-header"><div class="nav-left" onclick="closeAdminNews()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="admin-sub-title">Управление новостями</div>
     
@@ -3075,13 +3075,17 @@ function renderNotifications() {
     }
 // УПРАВЛЕНИЕ НОВОСТЯМИ (АДМИН)
 function openAdminNews() {
+    closeAdmin(); // Скрываем главное меню админки
     document.getElementById('adminNewsScreen').classList.add('active');
     document.getElementById('newsTitleInput').value = '';
     document.getElementById('newsDescInput').value = '';
     document.getElementById('newsHoursInput').value = '24';
     renderAdminNewsList();
 }
-function closeAdminNews() { document.getElementById('adminNewsScreen').classList.remove('active'); }
+function closeAdminNews() { 
+    document.getElementById('adminNewsScreen').classList.remove('active'); 
+    openAdmin(); // Возвращаем в меню админки
+}
 
 async function createNews() {
     const title = document.getElementById('newsTitleInput').value.trim();
