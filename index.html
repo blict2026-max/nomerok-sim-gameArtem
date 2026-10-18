@@ -3297,43 +3297,6 @@ async function confirmGiveNumber(isSecret = false) {
         closeAdminGiveNumber();
     }
 }
-
-    // Считаем редкость и цену
-    const cleanDigits = adminFoundNumber.replace(/\D/g, '');
-    let digitsArray = cleanDigits.slice(1).split('').map(Number); 
-    while (digitsArray.length < 7) digitsArray.push(0);
-    if (digitsArray.length > 7) digitsArray = digitsArray.slice(0, 7);
-
-    const rarityKey = classifyByPattern(digitsArray);
-    const rarityObj = RARITIES.find(r => r.key === rarityKey) || RARITIES[5];
-    const opCode = cleanDigits.slice(1, 4);
-    let opName = 'МТС';
-    if (['928', '924', '926'].includes(opCode)) opName = 'Мегафон';
-    if (['977', '905', '900'].includes(opCode)) opName = 'Билайн';
-
-    const calculatedPrice = calculatePrice(rarityObj, { digits: digitsArray, opObj: { name: opName }, rarity: rarityObj });
-
-    const newNumData = {
-        user_id: player.id,
-        formatted: adminFoundNumber,
-        op: opCode,
-        op_name: opName,
-        digits: digitsArray,
-        rarity_key: rarityKey,
-        rarity_name: getRarityName(rarityKey).toLowerCase(),
-        price: calculatedPrice,
-        is_secret_variant: null
-    };
-
-    const { error } = await sb.from('saved_numbers').insert(newNumData);
-    
-    if (error) {
-        showToast('error', 'Ошибка базы', error.message);
-    } else {
-        showToast('success', 'Номер выдан!', `Игроку: ${player.username}`);
-        closeAdminGiveNumber();
-    }
-}
     </script>
 </body>
 </html>
