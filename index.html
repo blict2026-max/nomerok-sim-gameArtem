@@ -1032,7 +1032,30 @@
         </div>
     </div>
 </div>
+<!-- ЭКРАН УПРАВЛЕНИЯ НОВОСТЯМИ -->
+<div class="admin-promo-screen" id="adminNewsScreen">
+    <div class="admin-sub-header"><div class="nav-left" onclick="closeAdminNews()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
+    <div class="admin-sub-title">Управление новостями</div>
+    
+    <div class="promo-form">
+        <div class="promo-form-label">Заголовок</div>
+        <div class="promo-form-input">
+            <input type="text" id="newsTitleInput" placeholder="Например: Двойная удача!">
+        </div>
+        <div class="promo-form-label">Текст</div>
+        <div class="promo-form-input">
+            <input type="text" id="newsDescInput" placeholder="Например: Действует х2 на час">
+        </div>
+        <div class="promo-form-label">Время (в часах, 0 = навсегда)</div>
+        <div class="promo-form-input">
+            <input type="number" id="newsHoursInput" value="24" min="0">
+        </div>
+        <button class="admin-btn green" onclick="createNews()" style="margin-top: 10px;"><i class="fa-solid fa-plus"></i> Опубликовать</button>
+    </div>
 
+    <div class="promo-list-title">Активные новости</div>
+    <div class="promo-list" id="adminNewsList"></div>
+</div>
 <!-- АДМИНКА -->
 <div class="admin-screen" id="adminScreen">
     <div class="admin-header"><div class="nav-left" onclick="closeAdmin()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
@@ -1042,7 +1065,7 @@
         <div class="admin-cat-item" onclick="openAdminStats()"><div class="admin-cat-icon stats"><i class="fa-solid fa-chart-simple"></i></div><div class="admin-cat-name">Статистика</div><div class="admin-cat-desc">Общая сводка</div></div>
         <div class="admin-cat-item" onclick="openAdminPromo()"><div class="admin-cat-icon promo"><i class="fa-solid fa-ticket"></i></div><div class="admin-cat-name">Промокоды</div><div class="admin-cat-desc">Создать</div></div>
         <div class="admin-cat-item" onclick="openAdminReset()"><div class="admin-cat-icon reset"><i class="fa-solid fa-rotate-left"></i></div><div class="admin-cat-name">Сброс</div><div class="admin-cat-desc">Опасно</div></div>
-        <div class="admin-cat-item" onclick="openNewsCreator()"><div class="admin-cat-icon" style="background: rgba(59,130,246,0.15); color: #60a5fa;"><i class="fa-solid fa-bullhorn"></i></div><div class="admin-cat-name">Новости</div><div class="admin-cat-desc">Создать</div></div>
+        <div class="admin-cat-item" onclick="openAdminNews()"><div class="admin-cat-icon" style="background: rgba(59,130,246,0.15); color: #60a5fa;"><i class="fa-solid fa-bullhorn"></i></div><div class="admin-cat-name">Новости</div><div class="admin-cat-desc">Управление</div></div>
         <div class="admin-cat-item" onclick="openAdminGiveNumber()"><div class="admin-cat-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;"><i class="fa-solid fa-gift"></i></div><div class="admin-cat-name">Выдать номер</div><div class="admin-cat-desc">Поиск и выдача</div></div>
     </div>
 </div>
@@ -1421,12 +1444,16 @@ async function loadNewsFeed() {
     const carousel = document.getElementById('newsCarousel');
     if (!carousel) return;
     
-    if (!data || data.length === 0) {
+    const now = new Date();
+    // Фильтруем: показываем только те, у которых нет времени конца, или время еще не пришло
+    const activeNews = (data || []).filter(n => !n.expires_at || new Date(n.expires_at) > now);
+    
+    if (activeNews.length === 0) {
         carousel.innerHTML = `<div class="news-card"><div class="news-card-title">📢 Добро пожаловать!</div><div class="news-card-desc">Скоро здесь появятся новости от администрации.</div></div>`;
         return;
     }
     
-    carousel.innerHTML = data.map(n => `
+    carousel.innerHTML = activeNews.map(n => `
         <div class="news-card">
             <div class="news-card-title">${n.icon || '📢'} ${n.title}</div>
             <div class="news-card-desc">${n.description}</div>
@@ -3046,25 +3073,81 @@ function renderNotifications() {
         if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
         else window.open(url, '_blank');
     }
-async function openNewsCreator() {
-    const action = prompt("Что хотите сделать?\n1 - Создать новость\n2 - Удалить все новости", "1");
+// УПРАВЛЕНИЕ НОВОСТЯМИ (АДМИН)
+function openAdminNews() {
+    document.getElementById('adminNewsScreen').classList.add('active');
+    document.getElementById('newsTitleInput').value = '';
+    document.getElementById('newsDescInput').value = '';
+    document.getElementById('newsHoursInput').value = '24';
+    renderAdminNewsList();
+}
+function closeAdminNews() { document.getElementById('adminNewsScreen').classList.remove('active'); }
+
+async function createNews() {
+    const title = document.getElementById('newsTitleInput').value.trim();
+    const desc = document.getElementById('newsDescInput').value.trim();
+    const hours = parseInt(document.getElementById('newsHoursInput').value) || 0;
     
-    if (action === "1") {
-        const title = prompt("Введите заголовок новости:");
-        if (!title) return;
-        const desc = prompt("Введите текст новости:");
-        if (!desc) return;
-        
-        await sb.from('news_feed').insert({ title, description: desc, icon: '📢' });
-        showToast('success', 'Новость создана!', '');
-        loadNewsFeed(); 
-        
-    } else if (action === "2") {
-        if (!confirm('Вы уверены, что хотите удалить ВСЕ новости?')) return;
-        await sb.from('news_feed').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        showToast('success', 'Новости удалены!', '');
-        loadNewsFeed(); 
+    if (!title || !desc) { showToast('error', 'Заполните все поля', ''); return; }
+    
+    const expiresAt = hours > 0 ? new Date(Date.now() + hours * 3600000).toISOString() : null;
+    
+    const { error } = await sb.from('news_feed').insert({ 
+        title, description: desc, icon: '📢', expires_at: expiresAt 
+    });
+    
+    if (error) { showToast('error', 'Ошибка', error.message); return; }
+    
+    showToast('success', 'Новость создана!', '');
+    document.getElementById('newsTitleInput').value = '';
+    document.getElementById('newsDescInput').value = '';
+    loadNewsFeed();
+    renderAdminNewsList();
+}
+
+async function renderAdminNewsList() {
+    const list = document.getElementById('adminNewsList');
+    list.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Загрузка...</div>';
+    
+    const { data } = await sb.from('news_feed').select('*').order('created_at', { ascending: false });
+    
+    if (!data || data.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Новостей нет</div>';
+        return;
     }
+    
+    list.innerHTML = data.map(n => {
+        let timeText = 'Навсегда';
+        let isExpired = false;
+        if (n.expires_at) {
+            const expDate = new Date(n.expires_at);
+            if (expDate < new Date()) {
+                isExpired = true;
+                timeText = 'Истекла';
+            } else {
+                timeText = 'До ' + expDate.toLocaleString('ru-RU');
+            }
+        }
+        
+        return `<div class="promo-list-item">
+            <div class="promo-list-header">
+                <div class="promo-list-code" style="font-size: 14px;">${n.title}</div>
+                <div class="promo-list-status ${isExpired ? 'expired' : 'active'}">${timeText}</div>
+            </div>
+            <div class="promo-list-info-row"><span style="color:#aaa;">${n.description}</span></div>
+            <div class="promo-list-actions">
+                <button class="promo-del-btn" onclick="deleteNews('${n.id}')"><i class="fa-solid fa-trash"></i> Удалить</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function deleteNews(id) {
+    if (!confirm('Удалить новость?')) return;
+    await sb.from('news_feed').delete().eq('id', id);
+    showToast('success', 'Удалена', '');
+    loadNewsFeed();
+    renderAdminNewsList();
 }
     // ЗАПУСК
     async function bootstrap() {
