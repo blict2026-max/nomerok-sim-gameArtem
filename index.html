@@ -1063,6 +1063,21 @@
     <div class="promo-list-title">Активные новости</div>
     <div class="promo-list" id="adminNewsList"></div>
 </div>
+<!-- ЭКРАН ЛОГОВ -->
+<div class="admin-stats-screen" id="adminLogsScreen">
+    <div class="admin-sub-header">
+        <div class="nav-left" onclick="closeAdminLogs()">
+            <i class="fa-solid fa-arrow-left"></i><span>Назад</span>
+        </div>
+        <div class="nav-left" onclick="renderAdminLogs()" style="color: #f59e0b;">
+            <i class="fa-solid fa-rotate-right"></i><span>Обновить</span>
+        </div>
+    </div>
+    <div class="admin-sub-title">Логи действий</div>
+    <div class="promo-list" id="adminLogsList" style="padding-bottom: 40px;">
+        <!-- Сюда будут загружаться логи -->
+    </div>
+</div>
 <!-- АДМИНКА -->
 <div class="admin-screen" id="adminScreen">
     <div class="admin-header"><div class="nav-left" onclick="closeAdmin()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
@@ -1070,6 +1085,11 @@
     <div class="admin-catalog">
         <div class="admin-cat-item" onclick="openAdminPlayers()"><div class="admin-cat-icon players"><i class="fa-solid fa-users"></i></div><div class="admin-cat-name">Игроки</div><div class="admin-cat-desc">Список</div></div>
         <div class="admin-cat-item" onclick="openAdminStats()"><div class="admin-cat-icon stats"><i class="fa-solid fa-chart-simple"></i></div><div class="admin-cat-name">Статистика</div><div class="admin-cat-desc">Общая сводка</div></div>
+        <div class="admin-cat-item" onclick="openAdminLogs()">
+    <div class="admin-cat-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;"><i class="fa-solid fa-list-ul"></i></div>
+    <div class="admin-cat-name">Логи</div>
+    <div class="admin-cat-desc">История действий</div>
+</div>
         <div class="admin-cat-item" onclick="openAdminPromo()"><div class="admin-cat-icon promo"><i class="fa-solid fa-ticket"></i></div><div class="admin-cat-name">Промокоды</div><div class="admin-cat-desc">Создать</div></div>
         <div class="admin-cat-item" onclick="openAdminReset()"><div class="admin-cat-icon reset"><i class="fa-solid fa-rotate-left"></i></div><div class="admin-cat-name">Сброс</div><div class="admin-cat-desc">Опасно</div></div>
         <div class="admin-cat-item" onclick="openAdminNews()"><div class="admin-cat-icon" style="background: rgba(59,130,246,0.15); color: #60a5fa;"><i class="fa-solid fa-bullhorn"></i></div><div class="admin-cat-name">Новости</div><div class="admin-cat-desc">Управление</div></div>
@@ -2057,6 +2077,7 @@ rollSound.play().catch(()=>{});
     await sb.from('profiles').update({ bp_points: currentUser.bp_points }).eq('id', currentUser.id);
     
     await saveUserData();
+    addLog('roll', `Сделал ${count} круток. Лучшее: ${best.rarity.name} ${best.formatted}`);
 }
 // МИНИ-КАРТОЧКИ И ВЫБОР
 function renderMiniCards() {
@@ -2223,6 +2244,7 @@ async function simDetailSell() {
     savedNumbers = savedNumbers.filter(x => x.id !== n.id);
     updateCollection(); updateProfileUI();
     showToast('success', 'Продан!', '+' + formatPrice(n.price));
+    addLog('sell', `Продал номер ${n.formatted} за ${formatPrice(n.price)}`);
     await saveUserData();
     closeSimDetail();
 }
@@ -2660,6 +2682,7 @@ function renderNotifications() {
         await sb.from('profiles').update({ balance: (p.balance || 0) + 10000 }).eq('id', adminTargetPlayerId);
         await sb.from('notifications').insert({ user_id: adminTargetPlayerId, type: 'gift', title: '+10 000 ₽ от владельца', body: 'Деньги зачислены', data: {} });
         await loadAllPlayers(); renderAdminPlayerDetail(adminTargetPlayerId);
+        addLog('admin_gift', `Выдал 10 000 ₽ игроку ${p.username}`);
         showToast('success', '+10 000 ₽', p.username);
     }
     async function adminSendGift() {
@@ -2835,6 +2858,7 @@ function renderNotifications() {
             await sb.from('saved_numbers').update({ price: np }).eq('id', gameBetNumber.id);
             gameBetNumber.price = np;
             updateCollection(); updateProfileUI(); updateGameBetCard();
+            addLog('upgrade', `Апгрейд удачный: ${gameBetNumber.formatted} (теперь ${formatPrice(gameBetNumber.price)})`);
             showToast('success', 'Выигрыш!', formatPrice(np));
             sounds.win.play().catch(()=>{});
         } else {
@@ -3407,6 +3431,83 @@ async function confirmGiveNumber(isSecret = false) {
         showToast('success', 'Номер выдан!', `Игроку с ID: ${player.telegram_id}`);
         closeAdminGiveNumber();
     }
+}
+// ==================== СИСТЕМА ЛОГОВ ====================
+
+// Запись лога в БД
+async function addLog(actionType, details) {
+    if (!currentUser) return;
+    try {
+        await sb.from('admin_logs').insert({
+            user_id: currentUser.id,
+            username: currentUser.username,
+            action_type: actionType,
+            details: details
+        });
+    } catch (e) {
+        console.error('Log error:', e);
+    }
+}
+
+// Открытие экрана логов
+function openAdminLogs() {
+    document.getElementById('adminLogsScreen').classList.add('active');
+    renderAdminLogs();
+}
+
+// Закрытие экрана логов
+function closeAdminLogs() {
+    document.getElementById('adminLogsScreen').classList.remove('active');
+}
+
+// Отрисовка списка логов
+async function renderAdminLogs() {
+    const list = document.getElementById('adminLogsList');
+    list.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Загрузка логов...</div>';
+    
+    // Запрашиваем последние 100 записей
+    const { data, error } = await sb.from('admin_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+    if (error) {
+        list.innerHTML = '<div style="color:#ef4444;padding:20px;">Ошибка: ' + error.message + '</div>';
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Логов пока нет</div>';
+        return;
+    }
+
+    list.innerHTML = data.map(log => {
+        let icon = 'fa-info-circle';
+        let color = '#888';
+        
+        // Красим иконки в зависимости от действия
+        if (log.action_type === 'roll') { icon = 'fa-dice'; color = '#a855f7'; }
+        if (log.action_type === 'sell') { icon = 'fa-coins'; color = '#f59e0b'; }
+        if (log.action_type === 'upgrade') { icon = 'fa-arrow-up'; color = '#22c55e'; }
+        if (log.action_type === 'admin_gift') { icon = 'fa-gift'; color = '#ef4444'; }
+
+        const date = new Date(log.created_at).toLocaleString('ru-RU', { 
+            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
+        });
+
+        return `<div class="promo-list-item" style="border-left: 3px solid ${color};">
+            <div class="promo-list-header">
+                <div style="font-size: 13px; font-weight: 700; color: #fff;">
+                    <i class="fa-solid ${icon}" style="color: ${color}; margin-right: 6px;"></i>
+                    ${log.username}
+                </div>
+                <div style="font-size: 11px; color: #888;">${date}</div>
+            </div>
+            <div style="font-size: 12px; color: #ccc; margin-top: 4px;">
+                ${log.details}
+            </div>
+        </div>`;
+    }).join('');
 }
     </script>
 </body>
