@@ -671,7 +671,6 @@
     #adminNewsScreen { z-index: 10000; }
     #adminLogsScreen { z-index: 10001 !important; }
 </style>
-</style>
 </head>
 <body>
 <div class="loading-screen" id="loadingScreen">
@@ -3112,10 +3111,8 @@ async function bootstrap() {
 
         try { await checkMaintenance(); } catch(e) { console.warn('checkMaintenance failed:', e); }
 
-        if (document.getElementById('gameRoot').style.display !== 'none') {
             document.getElementById('gameRoot').style.display = 'block';
             document.getElementById('loadingScreen').classList.add('hidden');
-        }
 
         loadSavedNumbers();
         loadAllPlayers();
