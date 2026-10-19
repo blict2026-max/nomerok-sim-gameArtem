@@ -3585,13 +3585,14 @@ async function updateMaintenanceButtonUI(status) {
     }
 }
 
+// Ловим ЛЮБЫЕ ошибки и показываем их на экране
 window.addEventListener('error', function(event) {
     document.getElementById('loadingScreen').classList.add('hidden');
     const errorScreen = document.getElementById('errorScreen');
     if (errorScreen) {
         errorScreen.classList.add('active');
         errorScreen.querySelector('.error-title').textContent = 'Ошибка в коде';
-        errorScreen.querySelector('.error-text').innerHTML = 'Детали:<br><span style="color:#ef4444;font-size:12px;word-break:break-all;">' + event.message + '<br>Строка: ' + event.lineno + '</span>';
+        errorScreen.querySelector('.error-text').innerHTML = 'Напиши этот текст разработчику:<br><br><span style="color:#ef4444;font-size:13px;word-break:break-all;">' + event.message + '<br><b>Строка: ' + event.lineno + '</b></span>';
     }
 });
 
@@ -3605,7 +3606,7 @@ window.addEventListener('error', function(event) {
         if (errorScreen) {
             errorScreen.classList.add('active');
             errorScreen.querySelector('.error-title').textContent = 'Ошибка запуска';
-            errorScreen.querySelector('.error-text').innerHTML = 'Детали:<br><span style="color:#ef4444;font-size:12px;word-break:break-all;">' + e.message + '</span>';
+            errorScreen.querySelector('.error-text').innerHTML = 'Напиши этот текст разработчику:<br><br><span style="color:#ef4444;font-size:13px;word-break:break-all;">' + e.message + '</span>';
         }
     }
 })();
