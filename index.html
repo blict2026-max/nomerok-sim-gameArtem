@@ -3185,10 +3185,56 @@ async function bootstrap() {
     }
     tg.ready(); tg.expand();
     telegramUser = tg.initDataUnsafe.user;
+
+    // ⚠️ Сначала проверяем тех. работы (ждём ответ, чтобы не показывать игру зря)
+    document.getElementById('loadingText').textContent = 'Проверка сервера...';
+    try {
+        const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
+        if (data && data.maintenance_mode) {
+            // Если мы админ — показываем игру, но с предупреждением
+            const isAdmin = await checkIfAdmin();
+            if (!isAdmin) {
+                // Показываем экран тех. работ и ПРЕКРАЩАЕМ загрузку
+                showMaintenanceScreen(data.maintenance_text);
+                document.getElementById('loadingScreen').classList.add('hidden');
+                return; // Дальше не идём, игру не грузим
+            }
+        }
+    } catch(e) {
+        console.warn('Maintenance check failed:', e);
+    }
+
+    // Если тех. работ нет (или мы админ) — грузим игру
     showGameImmediately();
     refreshFromServer();
 }
 
+// Хелпер: проверяем, админ ли это (запрашиваем только 1 поле)
+async function checkIfAdmin() {
+    try {
+        const { data } = await sb.from('profiles').select('is_owner').eq('telegram_id', telegramUser.id).maybeSingle();
+        return data && data.is_owner;
+    } catch(e) { return false; }
+}
+
+// Хелпер: показываем экран тех. работ (без задержек)
+function showMaintenanceScreen(text) {
+    let overlay = document.getElementById('maintenanceOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'maintenanceOverlay';
+        overlay.style.cssText = 'position: fixed; inset: 0; background: #0d0d0d; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; gap: 20px;';
+        document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = `
+        <div style="font-size: 60px;">🛠️</div>
+        <div style="font-size: 24px; font-weight: 800; color: #fff;">Технические работы</div>
+        <div style="font-size: 15px; color: #aaa; line-height: 1.6;">${text || 'Скоро вернёмся!'}</div>
+        <button onclick="location.reload()" style="margin-top: 20px; background: #2a2a2a; color: #fff; border: none; border-radius: 12px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer;">Обновить</button>
+    `;
+    overlay.style.display = 'flex';
+    document.getElementById('gameRoot').style.display = 'none';
+}
 // ===== ЗАГРУЗКА С СЕРВЕРА =====
 async function refreshFromServer() {
     try {
@@ -3236,15 +3282,15 @@ updateBalance();
         cacheProfile();
 
         Promise.allSettled([
-    loadSavedNumbers().then(() => { updateCollection(); updateProfileUI(); cacheProfile(); }).catch(e => console.warn('numbers:', e)),
-    loadAllPlayers().catch(e => console.warn('players:', e)),
-    checkMaintenance().catch(e => console.warn('maint:', e)),
-    checkTaxes().catch(e => console.warn('tax:', e)),
-    initNewsFeed().catch(e => console.warn('news:', e)),
+    loadSavedNumbers().then(() => { updateCollection(); updateProfileUI(); cacheProfile(); }),
+    loadAllPlayers(),
+    checkMaintenance(),
+    checkTaxes(),
+    initNewsFeed(),
     (async () => {
         const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
         if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
-    })().catch(e => console.warn('promos:', e))
+    })()
 ]);
         renderMiniCards();
         renderChancesScreen();
