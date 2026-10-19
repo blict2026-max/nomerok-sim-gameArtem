@@ -1344,7 +1344,6 @@ const TAGS = {
     yard: { label: 'Лярд', class: 'tag-yard' }
 };
 
-// ===== ПРАВКА 1: безопасный UUID =====
 function uuidv4() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         try { return crypto.randomUUID(); } catch(_) {}
@@ -1417,7 +1416,6 @@ function showToast(type, title, sub) {
     setTimeout(() => toast.classList.remove('active'), 3000);
 }
 
-// ===== ПРАВКА 2: безопасная инициализация Audio =====
 let sounds = { click: null, win: null, drop: null };
 try {
     sounds.click = new Audio('https://actions.google.com/sounds/v1/ui/click_002.ogg');
@@ -1465,7 +1463,6 @@ function startNewsAutoScroll() {
             carousel.scrollTo({ left: currentIndex * scrollAmount, behavior: 'smooth' });
         }
 
-        // Принудительно обновляем точки
         Array.from(indicator.children).forEach((dot, i) => {
             dot.classList.toggle('active', i === currentIndex);
         });
@@ -1492,7 +1489,6 @@ async function loadNewsFeed() {
         </div>
     `).join('');
 
-    // Генерируем точки внизу
     const indicator = document.getElementById('newsIndicator');
     indicator.innerHTML = activeNews.map((_, i) => `<div class="news-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></div>`).join('');
 
@@ -2351,13 +2347,11 @@ async function activatePromo() {
     const input = document.getElementById('promoInput').value.trim().toUpperCase();
     if (!input) { showToast('error', 'Введите промокод', ''); return; }
 
-    // Проверка по локальному кэшу (мгновенная)
     if (usedPromoCodes.includes(input)) {
         showToast('error', 'Уже использован', 'Этот код уже активирован');
         return;
     }
 
-    // Проверка в БД на случай, если кэш не загрузился
     const { data: used, error: checkErr } = await sb.from('used_promocodes')
         .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
     if (checkErr) { showToast('error', 'Ошибка БД', checkErr.message); return; }
@@ -2419,204 +2413,204 @@ function renderNotifications() {
             </div>
         </div>`).join('');
 }
-    // АУКЦИОН
-    function openAuction() {
-        closeMenu();
-        document.getElementById('auctionScreen').classList.add('active');
-        const list = document.getElementById('auctionList');
-        list.innerHTML = `
-            <div class="skeleton skeleton-card"></div>
-            <div class="skeleton skeleton-card"></div>
-            <div class="skeleton skeleton-card"></div>`;
-        Promise.all([loadAuctionLots(), loadAllPlayers()]).then(() => {
-            renderAuction();
-        });
-        subscribeToLots();
-        startAuctionTick();
-    }
-    function closeAuction() { document.getElementById('auctionScreen').classList.remove('active'); }
-    function switchAuctionTab(t) { currentAuctionTab = t; document.querySelectorAll('.auction-tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); renderAuction(); }
-    function subscribeToLots() {
-        if (auctionRealtimeChannel) return;
-        auctionRealtimeChannel = sb.channel('auction_g').on('postgres_changes', { event: '*', schema: 'public', table: 'auction_lots' }, () => loadAuctionLots().then(renderAuction)).subscribe();
-    }
-    function startAuctionTick() {
-        if (auctionTickInterval) return;
-        auctionTickInterval = setInterval(async () => {
-            const s = document.getElementById('auctionScreen');
-            if (!s || !s.classList.contains('active')) return;
-            const now = Date.now();
-            for (const l of auctionLots) if (!l.ended && now >= l.endsAt) await processLotEnd(l);
-            updateAuctionTimers();
-        }, 5000);
-    }
-    async function processLotEnd(lot) {
-        await sb.from('auction_lots').update({ ended: true }).eq('id', lot.id);
-        if (lot.sellerId === currentUser.id && lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
-            balance += lot.currentBid; updateBalance(); await saveUserData();
-            showToast('success', 'Лот продан!', `+${formatPrice(lot.currentBid)}`);
-        }
-        if (lot.currentBidderId === currentUser.id && lot.sellerId !== currentUser.id) showToast('success', 'Ты выиграл лот!', lot.number.formatted);
-        await loadAuctionLots(); renderAuction();
-    }
-    function updateAuctionTimers() {
-        document.querySelectorAll('.auction-timer[data-ends-at]').forEach(el => {
-            const end = parseInt(el.dataset.endsAt, 10);
-            const rem = end - Date.now();
-            if (rem <= 0) { el.className = 'auction-timer ended'; el.innerHTML = 'Завершён'; return; }
-            el.className = 'auction-timer ' + (rem < 60000 ? 'warm' : 'cold');
-            const s = Math.floor(rem / 1000); const m = Math.floor(s / 60); const ss = s % 60;
-            el.innerHTML = `${m}:${String(ss).padStart(2,'0')}`;
-        });
-    }
-    async function loadAuctionLots() {
-        const { data } = await sb.from('auction_lots').select('*').eq('ended', false).order('ends_at', { ascending: true });
-        auctionLots = (data || []).map(r => ({
-            id: r.id, sellerId: r.seller_id, sellerName: r.seller_name,
-            number: r.number_data, startPrice: r.start_price, buyoutPrice: r.buyout_price,
-            currentBid: r.current_bid, currentBidderId: r.current_bidder_id,
-            currentBidderName: r.current_bidder_name, bidsCount: r.bids_count,
-            endsAt: new Date(r.ends_at).getTime(), isMine: r.seller_id === currentUser.id, ended: r.ended
-        }));
-    }
-    function renderAuction() {
-        const list = document.getElementById('auctionList');
-        const now = Date.now();
-        let items = currentAuctionTab === 'my' ? auctionLots.filter(l => l.isMine) : auctionLots;
-        if (items.length === 0) { list.innerHTML = `<div class="auction-empty"><i class="fa-solid fa-gavel"></i>${currentAuctionTab === 'my' ? 'Нет лотов' : 'Нет активных лотов'}</div>`; return; }
-        items.sort((a, b) => (a.ended === b.ended) ? a.endsAt - b.endsAt : (a.ended ? 1 : -1));
-        list.innerHTML = items.map(lot => {
-            const rem = lot.endsAt - now;
-            const ended = lot.ended || rem <= 0;
-            const tc = ended ? 'ended' : (rem < 60000 ? 'warm' : 'cold');
-            const isHigh = lot.currentBidderId === currentUser.id;
-            const isMine = lot.sellerId === currentUser.id;
-            const minNext = Math.floor(lot.currentBid * 1.1);
-            let actions = '';
-            if (isMine) actions = `<button class="auction-btn cancel" onclick="cancelLot('${lot.id}')"><i class="fa-solid fa-xmark"></i> Снять</button>`;
-            else if (ended) {
-                if (isHigh) actions = `<button class="auction-btn take" onclick="claimLot('${lot.id}')"><i class="fa-solid fa-hand-holding"></i> Забрать</button>`;
-                else actions = `<button class="auction-btn" disabled style="background:#2a2a2a;color:#555;">Завершён</button>`;
-            } else {
-                actions = `<button class="auction-btn bid" onclick="placeBid('${lot.id}')"><i class="fa-solid fa-gavel"></i> ${formatPrice(minNext)}</button>`;
-                if (lot.buyoutPrice > 0) actions += `<button class="auction-btn buyout" onclick="buyoutLot('${lot.id}')"><i class="fa-solid fa-bolt"></i> ${formatPrice(lot.buyoutPrice)}</button>`;
-            }
-            return `<div class="auction-card rarity-${lot.number.rarity.key} ${isMine ? 'my-lot' : ''}">
-                ${isMine ? '<div class="my-lot-badge">Мой лот</div>' : ''}
-                <div class="auction-card-top"><div class="auction-number">${lot.number.formatted}</div><div class="auction-timer ${tc}" data-ends-at="${lot.endsAt}">${ended ? 'Завершён' : '...'}</div></div>
-                <div class="auction-card-info"><div class="auction-rarity" style="color:${getRarityColor(lot.number.rarity.key)};">${getRarityName(lot.number.rarity.key)}</div><div class="auction-seller">${lot.sellerName}</div></div>
-                <div class="auction-bid-row"><div><div class="auction-bid-label">${isHigh ? 'Твоя' : 'Ставка'}</div><div class="auction-bid-value">${formatPrice(lot.currentBid)}</div></div><div style="text-align:right;"><div class="auction-bid-label">Ставок</div><div>${lot.bidsCount}</div></div></div>
-                <div class="auction-actions">${actions}</div>
-            </div>`;
-        }).join('');
-        updateAuctionTimers();
-    }
-    async function placeBid(id) {
-        const lot = auctionLots.find(l => l.id === id);
-        if (!lot || lot.ended) { showToast('error', 'Завершён', ''); return; }
-        const next = Math.floor(lot.currentBid * 1.1);
-        if (balance < next) { showToast('error', 'Мало средств', formatPrice(next)); return; }
-        if (lot.currentBidderId === currentUser.id) { showToast('error', 'Ты лидер', ''); return; }
-        balance -= next; updateBalance();
-        const { error } = await sb.from('auction_lots').update({ current_bid: next, current_bidder_id: currentUser.id, current_bidder_name: currentUser.username, bids_count: lot.bidsCount + 1 }).eq('id', id);
-        if (error) { balance += next; updateBalance(); return; }
-        await saveUserData(); showToast('success', 'Ставка!', formatPrice(next));
-        await loadAuctionLots(); renderAuction();
-    }
-    async function buyoutLot(id) {
-        const lot = auctionLots.find(l => l.id === id);
-        if (!lot || lot.ended || !lot.buyoutPrice) return;
-        if (balance < lot.buyoutPrice) { showToast('error', 'Мало средств', ''); return; }
-        balance -= lot.buyoutPrice; updateBalance();
-        await saveNumberToDB({ ...lot.number, price: lot.buyoutPrice });
-        if (lot.sellerId !== currentUser.id) {
-            const { data: sp } = await sb.from('profiles').select('balance').eq('id', lot.sellerId).single();
-            if (sp) await sb.from('profiles').update({ balance: (sp.balance || 0) + lot.buyoutPrice }).eq('id', lot.sellerId);
-        }
-        await sb.from('auction_lots').update({ ended: true }).eq('id', id);
-        await saveUserData(); showToast('success', 'Выкуплено!', lot.number.formatted);
-        await loadAuctionLots(); renderAuction();
-    }
-    async function claimLot(id) {
-        const lot = auctionLots.find(l => l.id === id);
-        if (!lot || lot.currentBidderId !== currentUser.id) return;
-        await saveNumberToDB({ ...lot.number, price: lot.currentBid });
-        await sb.from('auction_lots').delete().eq('id', id);
-        showToast('success', 'Забран!', lot.number.formatted);
-        await loadAuctionLots(); renderAuction();
-    }
-    async function cancelLot(id) {
-        const lot = auctionLots.find(l => l.id === id);
-        if (!lot || lot.sellerId !== currentUser.id) return;
-        await saveNumberToDB(lot.number);
-        await sb.from('auction_lots').delete().eq('id', id);
-        showToast('success', 'Снят', lot.number.formatted);
-        await loadAuctionLots(); renderAuction();
-    }
-    function openCreateLot() {
-        if (savedNumbers.length === 0) { showToast('error', 'Коллекция пуста', ''); return; }
-        document.getElementById('lotNumberPicker').style.display = 'block';
-        document.getElementById('lotPricePicker').style.display = 'none';
-        renderLotCollection();
-        document.getElementById('lotModal').classList.add('active');
-    }
-    function closeCreateLot() { document.getElementById('lotModal').classList.remove('active'); }
-    function renderLotCollection() {
-        const list = document.getElementById('lotCollectionList');
-        list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectLotNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
-    }
-    function selectLotNumber(i) {
-        selectedLotIndex = i;
-        const n = savedNumbers[i];
-        document.getElementById('lotNumberPicker').style.display = 'none';
-        document.getElementById('lotPricePicker').style.display = 'block';
-        document.getElementById('lotStartPrice').value = Math.max(1, Math.floor(n.price * 0.6));
-        document.getElementById('lotBuyoutPrice').value = Math.floor(n.price * 1.5);
-        document.getElementById('lotDuration').value = 24;
-        validateLotForm();
-    }
-    function validateLotForm() {
-        const s = parseInt(document.getElementById('lotStartPrice').value, 10);
-        const b = parseInt(document.getElementById('lotBuyoutPrice').value, 10);
-        const d = parseInt(document.getElementById('lotDuration').value, 10);
-        document.getElementById('lotConfirmBtn').disabled = !(s > 0 && d > 0 && d <= 168 && (!b || b > s));
-    }
-    document.getElementById('lotStartPrice').addEventListener('input', validateLotForm);
-    document.getElementById('lotBuyoutPrice').addEventListener('input', validateLotForm);
-    document.getElementById('lotDuration').addEventListener('input', validateLotForm);
-    async function confirmCreateLot() {
-        if (selectedLotIndex === null) return;
-        const s = parseInt(document.getElementById('lotStartPrice').value, 10);
-        const b = parseInt(document.getElementById('lotBuyoutPrice').value, 10) || null;
-        const h = parseInt(document.getElementById('lotDuration').value, 10);
-        const num = savedNumbers[selectedLotIndex];
-        await sb.from('saved_numbers').delete().eq('id', num.id);
-        savedNumbers = savedNumbers.filter(x => x.id !== num.id);
-        updateCollection(); updateProfileUI();
-        const { error } = await sb.from('auction_lots').insert({
-            seller_id: currentUser.id, seller_name: currentUser.username,
-            number_data: { formatted: num.formatted, op: num.op, opObj: num.opObj, digits: num.digits, rarity: num.rarity, isSecretVariant: num.isSecretVariant, price: num.price },
-            start_price: s, buyout_price: b, current_bid: s,
-            ends_at: new Date(Date.now() + h * 3600000).toISOString()
-        });
-        if (error) { showToast('error', 'Ошибка', error.message); return; }
-        closeCreateLot(); showToast('success', 'Выставлен!', num.formatted);
-        await loadAuctionLots(); switchAuctionTab('my');
-    }
 
-    async function renderAdminPlayersList() {
-        await loadAllPlayers();
-        const list = document.getElementById('adminPlayersList');
-        list.innerHTML = allPlayersList.map(p => {
-            const av = p.avatar_url ? `<img src="${p.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
-            return `<div class="player-card" onclick="openAdminPlayerDetail('${p.id}')">
-                <div class="player-avatar">${av}</div>
-                <div class="player-info"><div class="player-name">${p.username} ${renderTag(p.tag)} ${p.is_owner ? '👑' : ''}</div><div class="player-sub">Ур. ${p.level || 1} · ${(p.balance || 0).toLocaleString('ru-RU')} ₽</div></div>
-                <i class="fa-solid fa-chevron-right player-arrow"></i>
-            </div>`;
-        }).join('');
+function openAuction() {
+    closeMenu();
+    document.getElementById('auctionScreen').classList.add('active');
+    const list = document.getElementById('auctionList');
+    list.innerHTML = `
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>`;
+    Promise.all([loadAuctionLots(), loadAllPlayers()]).then(() => {
+        renderAuction();
+    });
+    subscribeToLots();
+    startAuctionTick();
+}
+function closeAuction() { document.getElementById('auctionScreen').classList.remove('active'); }
+function switchAuctionTab(t) { currentAuctionTab = t; document.querySelectorAll('.auction-tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); renderAuction(); }
+function subscribeToLots() {
+    if (auctionRealtimeChannel) return;
+    auctionRealtimeChannel = sb.channel('auction_g').on('postgres_changes', { event: '*', schema: 'public', table: 'auction_lots' }, () => loadAuctionLots().then(renderAuction)).subscribe();
+}
+function startAuctionTick() {
+    if (auctionTickInterval) return;
+    auctionTickInterval = setInterval(async () => {
+        const s = document.getElementById('auctionScreen');
+        if (!s || !s.classList.contains('active')) return;
+        const now = Date.now();
+        for (const l of auctionLots) if (!l.ended && now >= l.endsAt) await processLotEnd(l);
+        updateAuctionTimers();
+    }, 5000);
+}
+async function processLotEnd(lot) {
+    await sb.from('auction_lots').update({ ended: true }).eq('id', lot.id);
+    if (lot.sellerId === currentUser.id && lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
+        balance += lot.currentBid; updateBalance(); await saveUserData();
+        showToast('success', 'Лот продан!', `+${formatPrice(lot.currentBid)}`);
     }
-    async function renderAdminPlayerDetail(id) {
+    if (lot.currentBidderId === currentUser.id && lot.sellerId !== currentUser.id) showToast('success', 'Ты выиграл лот!', lot.number.formatted);
+    await loadAuctionLots(); renderAuction();
+}
+function updateAuctionTimers() {
+    document.querySelectorAll('.auction-timer[data-ends-at]').forEach(el => {
+        const end = parseInt(el.dataset.endsAt, 10);
+        const rem = end - Date.now();
+        if (rem <= 0) { el.className = 'auction-timer ended'; el.innerHTML = 'Завершён'; return; }
+        el.className = 'auction-timer ' + (rem < 60000 ? 'warm' : 'cold');
+        const s = Math.floor(rem / 1000); const m = Math.floor(s / 60); const ss = s % 60;
+        el.innerHTML = `${m}:${String(ss).padStart(2,'0')}`;
+    });
+}
+async function loadAuctionLots() {
+    const { data } = await sb.from('auction_lots').select('*').eq('ended', false).order('ends_at', { ascending: true });
+    auctionLots = (data || []).map(r => ({
+        id: r.id, sellerId: r.seller_id, sellerName: r.seller_name,
+        number: r.number_data, startPrice: r.start_price, buyoutPrice: r.buyout_price,
+        currentBid: r.current_bid, currentBidderId: r.current_bidder_id,
+        currentBidderName: r.current_bidder_name, bidsCount: r.bids_count,
+        endsAt: new Date(r.ends_at).getTime(), isMine: r.seller_id === currentUser.id, ended: r.ended
+    }));
+}
+function renderAuction() {
+    const list = document.getElementById('auctionList');
+    const now = Date.now();
+    let items = currentAuctionTab === 'my' ? auctionLots.filter(l => l.isMine) : auctionLots;
+    if (items.length === 0) { list.innerHTML = `<div class="auction-empty"><i class="fa-solid fa-gavel"></i>${currentAuctionTab === 'my' ? 'Нет лотов' : 'Нет активных лотов'}</div>`; return; }
+    items.sort((a, b) => (a.ended === b.ended) ? a.endsAt - b.endsAt : (a.ended ? 1 : -1));
+    list.innerHTML = items.map(lot => {
+        const rem = lot.endsAt - now;
+        const ended = lot.ended || rem <= 0;
+        const tc = ended ? 'ended' : (rem < 60000 ? 'warm' : 'cold');
+        const isHigh = lot.currentBidderId === currentUser.id;
+        const isMine = lot.sellerId === currentUser.id;
+        const minNext = Math.floor(lot.currentBid * 1.1);
+        let actions = '';
+        if (isMine) actions = `<button class="auction-btn cancel" onclick="cancelLot('${lot.id}')"><i class="fa-solid fa-xmark"></i> Снять</button>`;
+        else if (ended) {
+            if (isHigh) actions = `<button class="auction-btn take" onclick="claimLot('${lot.id}')"><i class="fa-solid fa-hand-holding"></i> Забрать</button>`;
+            else actions = `<button class="auction-btn" disabled style="background:#2a2a2a;color:#555;">Завершён</button>`;
+        } else {
+            actions = `<button class="auction-btn bid" onclick="placeBid('${lot.id}')"><i class="fa-solid fa-gavel"></i> ${formatPrice(minNext)}</button>`;
+            if (lot.buyoutPrice > 0) actions += `<button class="auction-btn buyout" onclick="buyoutLot('${lot.id}')"><i class="fa-solid fa-bolt"></i> ${formatPrice(lot.buyoutPrice)}</button>`;
+        }
+        return `<div class="auction-card rarity-${lot.number.rarity.key} ${isMine ? 'my-lot' : ''}">
+            ${isMine ? '<div class="my-lot-badge">Мой лот</div>' : ''}
+            <div class="auction-card-top"><div class="auction-number">${lot.number.formatted}</div><div class="auction-timer ${tc}" data-ends-at="${lot.endsAt}">${ended ? 'Завершён' : '...'}</div></div>
+            <div class="auction-card-info"><div class="auction-rarity" style="color:${getRarityColor(lot.number.rarity.key)};">${getRarityName(lot.number.rarity.key)}</div><div class="auction-seller">${lot.sellerName}</div></div>
+            <div class="auction-bid-row"><div><div class="auction-bid-label">${isHigh ? 'Твоя' : 'Ставка'}</div><div class="auction-bid-value">${formatPrice(lot.currentBid)}</div></div><div style="text-align:right;"><div class="auction-bid-label">Ставок</div><div>${lot.bidsCount}</div></div></div>
+            <div class="auction-actions">${actions}</div>
+        </div>`;
+    }).join('');
+    updateAuctionTimers();
+}
+async function placeBid(id) {
+    const lot = auctionLots.find(l => l.id === id);
+    if (!lot || lot.ended) { showToast('error', 'Завершён', ''); return; }
+    const next = Math.floor(lot.currentBid * 1.1);
+    if (balance < next) { showToast('error', 'Мало средств', formatPrice(next)); return; }
+    if (lot.currentBidderId === currentUser.id) { showToast('error', 'Ты лидер', ''); return; }
+    balance -= next; updateBalance();
+    const { error } = await sb.from('auction_lots').update({ current_bid: next, current_bidder_id: currentUser.id, current_bidder_name: currentUser.username, bids_count: lot.bidsCount + 1 }).eq('id', id);
+    if (error) { balance += next; updateBalance(); return; }
+    await saveUserData(); showToast('success', 'Ставка!', formatPrice(next));
+    await loadAuctionLots(); renderAuction();
+}
+async function buyoutLot(id) {
+    const lot = auctionLots.find(l => l.id === id);
+    if (!lot || lot.ended || !lot.buyoutPrice) return;
+    if (balance < lot.buyoutPrice) { showToast('error', 'Мало средств', ''); return; }
+    balance -= lot.buyoutPrice; updateBalance();
+    await saveNumberToDB({ ...lot.number, price: lot.buyoutPrice });
+    if (lot.sellerId !== currentUser.id) {
+        const { data: sp } = await sb.from('profiles').select('balance').eq('id', lot.sellerId).single();
+        if (sp) await sb.from('profiles').update({ balance: (sp.balance || 0) + lot.buyoutPrice }).eq('id', lot.sellerId);
+    }
+    await sb.from('auction_lots').update({ ended: true }).eq('id', id);
+    await saveUserData(); showToast('success', 'Выкуплено!', lot.number.formatted);
+    await loadAuctionLots(); renderAuction();
+}
+async function claimLot(id) {
+    const lot = auctionLots.find(l => l.id === id);
+    if (!lot || lot.currentBidderId !== currentUser.id) return;
+    await saveNumberToDB({ ...lot.number, price: lot.currentBid });
+    await sb.from('auction_lots').delete().eq('id', id);
+    showToast('success', 'Забран!', lot.number.formatted);
+    await loadAuctionLots(); renderAuction();
+}
+async function cancelLot(id) {
+    const lot = auctionLots.find(l => l.id === id);
+    if (!lot || lot.sellerId !== currentUser.id) return;
+    await saveNumberToDB(lot.number);
+    await sb.from('auction_lots').delete().eq('id', id);
+    showToast('success', 'Снят', lot.number.formatted);
+    await loadAuctionLots(); renderAuction();
+}
+function openCreateLot() {
+    if (savedNumbers.length === 0) { showToast('error', 'Коллекция пуста', ''); return; }
+    document.getElementById('lotNumberPicker').style.display = 'block';
+    document.getElementById('lotPricePicker').style.display = 'none';
+    renderLotCollection();
+    document.getElementById('lotModal').classList.add('active');
+}
+function closeCreateLot() { document.getElementById('lotModal').classList.remove('active'); }
+function renderLotCollection() {
+    const list = document.getElementById('lotCollectionList');
+    list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectLotNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
+}
+function selectLotNumber(i) {
+    selectedLotIndex = i;
+    const n = savedNumbers[i];
+    document.getElementById('lotNumberPicker').style.display = 'none';
+    document.getElementById('lotPricePicker').style.display = 'block';
+    document.getElementById('lotStartPrice').value = Math.max(1, Math.floor(n.price * 0.6));
+    document.getElementById('lotBuyoutPrice').value = Math.floor(n.price * 1.5);
+    document.getElementById('lotDuration').value = 24;
+    validateLotForm();
+}
+function validateLotForm() {
+    const s = parseInt(document.getElementById('lotStartPrice').value, 10);
+    const b = parseInt(document.getElementById('lotBuyoutPrice').value, 10);
+    const d = parseInt(document.getElementById('lotDuration').value, 10);
+    document.getElementById('lotConfirmBtn').disabled = !(s > 0 && d > 0 && d <= 168 && (!b || b > s));
+}
+document.getElementById('lotStartPrice').addEventListener('input', validateLotForm);
+document.getElementById('lotBuyoutPrice').addEventListener('input', validateLotForm);
+document.getElementById('lotDuration').addEventListener('input', validateLotForm);
+async function confirmCreateLot() {
+    if (selectedLotIndex === null) return;
+    const s = parseInt(document.getElementById('lotStartPrice').value, 10);
+    const b = parseInt(document.getElementById('lotBuyoutPrice').value, 10) || null;
+    const h = parseInt(document.getElementById('lotDuration').value, 10);
+    const num = savedNumbers[selectedLotIndex];
+    await sb.from('saved_numbers').delete().eq('id', num.id);
+    savedNumbers = savedNumbers.filter(x => x.id !== num.id);
+    updateCollection(); updateProfileUI();
+    const { error } = await sb.from('auction_lots').insert({
+        seller_id: currentUser.id, seller_name: currentUser.username,
+        number_data: { formatted: num.formatted, op: num.op, opObj: num.opObj, digits: num.digits, rarity: num.rarity, isSecretVariant: num.isSecretVariant, price: num.price },
+        start_price: s, buyout_price: b, current_bid: s,
+        ends_at: new Date(Date.now() + h * 3600000).toISOString()
+    });
+    if (error) { showToast('error', 'Ошибка', error.message); return; }
+    closeCreateLot(); showToast('success', 'Выставлен!', num.formatted);
+    await loadAuctionLots(); switchAuctionTab('my');
+}
+
+async function renderAdminPlayersList() {
+    await loadAllPlayers();
+    const list = document.getElementById('adminPlayersList');
+    list.innerHTML = allPlayersList.map(p => {
+        const av = p.avatar_url ? `<img src="${p.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
+        return `<div class="player-card" onclick="openAdminPlayerDetail('${p.id}')">
+            <div class="player-avatar">${av}</div>
+            <div class="player-info"><div class="player-name">${p.username} ${renderTag(p.tag)} ${p.is_owner ? '👑' : ''}</div><div class="player-sub">Ур. ${p.level || 1} · ${(p.balance || 0).toLocaleString('ru-RU')} ₽</div></div>
+            <i class="fa-solid fa-chevron-right player-arrow"></i>
+        </div>`;
+    }).join('');
+}
+async function renderAdminPlayerDetail(id) {
     adminTargetPlayerId = id;
     const p = allPlayersList.find(x => x.id === id);
     if (!p) return;
@@ -2643,449 +2637,449 @@ function renderNotifications() {
     html += '</div>';
     document.getElementById('adminPlayerDetailContent').innerHTML = html;
 }
-    async function adminViewCollection() {
-        if (!adminTargetPlayerId) return;
-        const p = allPlayersList.find(x => x.id === adminTargetPlayerId);
-        const { data } = await sb.from('saved_numbers').select('*').eq('user_id', adminTargetPlayerId);
-        document.getElementById('adminCollectionTitle').textContent = 'Коллекция: ' + p.username;
-        const grid = document.getElementById('adminCollectionGrid');
-        if (!data || data.length === 0) grid.innerHTML = '<div class="collection-empty">Нет номеров</div>';
-        else grid.innerHTML = data.map(n => `<div class="sim-card-item rarity-${n.rarity_key}"><div class="sci-top"><div class="sci-op-badge">${getOpShort(n.op_name || 'SECRET')}</div><div class="sci-chip"></div></div><div class="sci-number">${n.formatted}</div><div class="sci-bottom"><div class="sci-rarity">${getRarityName(n.rarity_key)}</div><div class="sci-price">${formatPrice(n.price)}</div></div></div>`).join('');
-        document.getElementById('adminCollectionScreen').classList.add('active');
-    }
-    async function adminSetTag(tag) {
-        if (!adminTargetPlayerId) return;
-        await sb.from('profiles').update({ tag }).eq('id', adminTargetPlayerId);
-        if (adminTargetPlayerId === currentUser.id) { currentUser.tag = tag; updateProfileUI(); }
-        document.getElementById('tagModal').classList.remove('active');
-        await loadAllPlayers(); renderAdminPlayerDetail(adminTargetPlayerId);
-        showToast('success', 'Тег обновлён', '');
-    }
-    async function adminGiveMoney() {
-        if (!adminTargetPlayerId) return;
-        const p = allPlayersList.find(x => x.id === adminTargetPlayerId);
-        await sb.from('profiles').update({ balance: (p.balance || 0) + 10000 }).eq('id', adminTargetPlayerId);
-        await sb.from('notifications').insert({ user_id: adminTargetPlayerId, type: 'gift', title: '+10 000 ₽ от владельца', body: 'Деньги зачислены', data: {} });
-        await loadAllPlayers(); renderAdminPlayerDetail(adminTargetPlayerId);
-        addLog('admin_gift', `Выдал 10 000 ₽ игроку ${p.username}`);
-        showToast('success', '+10 000 ₽', p.username);
-    }
-    async function adminSendGift() {
-        if (!adminTargetPlayerId) return;
-        const m = parseInt(document.getElementById('giftMoney').value) || 0;
-        const r = parseInt(document.getElementById('giftRolls').value) || 0;
-        const l = parseInt(document.getElementById('giftLuck').value) || 0;
-        if (!m && !r && !l) { showToast('error', 'Пусто', ''); return; }
-        const data = {};
-        if (m) data.money = m;
-        if (r) data.rolls = r;
-        if (l) data.x2 = l;
-        await sb.from('notifications').insert({
-            user_id: adminTargetPlayerId, type: 'gift', title: '🎁 Подарок!',
-            body: [m ? `+${m} ₽` : '', r ? `+${r} круток` : '', l ? `×2 на ${l} мин` : ''].filter(Boolean).join(', '),
-            data
-        });
-        document.getElementById('giftModal').classList.remove('active');
-        document.getElementById('giftMoney').value = '';
-        document.getElementById('giftRolls').value = '';
-        document.getElementById('giftLuck').value = '';
-        showToast('success', 'Отправлен!', '');
-    }
-    async function renderAdminStats() {
-        const content = document.getElementById('adminStatsContent');
-        content.innerHTML = '<div style="text-align:center;color:#888;padding:40px;">Загрузка...</div>';
-        try {
-            await loadAllPlayers();
-            const tp = allPlayersList.length;
-            const onlineCut = Date.now() - 300000;
-            const online = allPlayersList.filter(p => p.updated_at && new Date(p.updated_at).getTime() > onlineCut).length;
-            const tb = allPlayersList.reduce((s, p) => s + (p.balance || 0), 0);
-            const tr = allPlayersList.reduce((s, p) => s + (p.total_rolls || 0), 0);
-            const { count: tn } = await sb.from('saved_numbers').select('*', { count: 'exact', head: true });
-            const { count: tl } = await sb.from('auction_lots').select('*', { count: 'exact', head: true }).eq('ended', false);
-            const { data: nums } = await sb.from('saved_numbers').select('rarity_key');
-            const rc = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
-            (nums || []).forEach(n => { if (rc[n.rarity_key] !== undefined) rc[n.rarity_key]++; });
-            content.innerHTML = `
-                <div class="stats-grid">
-                    <div class="stats-tile"><div class="st-value blue">${tp}</div><div class="st-label">Игроков</div></div>
-                    <div class="stats-tile"><div class="st-value green">${online}</div><div class="st-label">Онлайн</div></div>
-                    <div class="stats-tile"><div class="st-value gold">${formatRatingValue(tb)} ₽</div><div class="st-label">Общий капитал</div></div>
-                    <div class="stats-tile"><div class="st-value">${tn || 0}</div><div class="st-label">Номеров</div></div>
-                    <div class="stats-tile"><div class="st-value blue">${tl || 0}</div><div class="st-label">Лотов</div></div>
-                    <div class="stats-tile"><div class="st-value">${tr.toLocaleString('ru-RU')}</div><div class="st-label">Всего круток</div></div>
-                </div>
-                <div class="rarity-breakdown"><div class="rb-title">Топ-3 по балансу</div>${allPlayersList.slice(0,3).map((p,i) => `<div class="rb-row"><span>${i+1}. ${p.username}</span><b>${(p.balance||0).toLocaleString('ru-RU')} ₽</b></div>`).join('')}</div>
-                <div class="rarity-breakdown"><div class="rb-title">По редкостям</div>
-                    <div class="rb-row"><span style="color:#9ca3af;">Обычных</span><b>${rc.common}</b></div>
-                    <div class="rb-row"><span style="color:#3b82f6;">Редких</span><b>${rc.rare}</b></div>
-                    <div class="rb-row"><span style="color:#a855f7;">Эпиков</span><b>${rc.epic}</b></div>
-                    <div class="rb-row"><span style="color:#f59e0b;">Легендарок</span><b>${rc.legendary}</b></div>
-                    <div class="rb-row"><span style="color:#ef4444;">Мификов</span><b>${rc.mythic}</b></div>
-                    <div class="rb-row"><span style="color:#c084fc;">Секретных</span><b>${rc.secret}</b></div>
-                </div>`;
-        } catch (e) { content.innerHTML = `<div style="color:#ef4444;padding:40px;text-align:center;">${e.message}</div>`; }
-    }
-    async function resetSeasonGlobal() {
-        if (!confirm('Сбросить ВСЕХ? Необратимо!')) return;
-        await sb.from('saved_numbers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        await sb.from('auction_lots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        await sb.from('profiles').update({ balance: 0, total_rolls: 0 }).neq('id', '00000000-0000-0000-0000-000000000000');
-        showToast('success', 'Сезон сброшен', ''); closeAdminReset(); location.reload();
-    }
+async function adminViewCollection() {
+    if (!adminTargetPlayerId) return;
+    const p = allPlayersList.find(x => x.id === adminTargetPlayerId);
+    const { data } = await sb.from('saved_numbers').select('*').eq('user_id', adminTargetPlayerId);
+    document.getElementById('adminCollectionTitle').textContent = 'Коллекция: ' + p.username;
+    const grid = document.getElementById('adminCollectionGrid');
+    if (!data || data.length === 0) grid.innerHTML = '<div class="collection-empty">Нет номеров</div>';
+    else grid.innerHTML = data.map(n => `<div class="sim-card-item rarity-${n.rarity_key}"><div class="sci-top"><div class="sci-op-badge">${getOpShort(n.op_name || 'SECRET')}</div><div class="sci-chip"></div></div><div class="sci-number">${n.formatted}</div><div class="sci-bottom"><div class="sci-rarity">${getRarityName(n.rarity_key)}</div><div class="sci-price">${formatPrice(n.price)}</div></div></div>`).join('');
+    document.getElementById('adminCollectionScreen').classList.add('active');
+}
+async function adminSetTag(tag) {
+    if (!adminTargetPlayerId) return;
+    await sb.from('profiles').update({ tag }).eq('id', adminTargetPlayerId);
+    if (adminTargetPlayerId === currentUser.id) { currentUser.tag = tag; updateProfileUI(); }
+    document.getElementById('tagModal').classList.remove('active');
+    await loadAllPlayers(); renderAdminPlayerDetail(adminTargetPlayerId);
+    showToast('success', 'Тег обновлён', '');
+}
+async function adminGiveMoney() {
+    if (!adminTargetPlayerId) return;
+    const p = allPlayersList.find(x => x.id === adminTargetPlayerId);
+    await sb.from('profiles').update({ balance: (p.balance || 0) + 10000 }).eq('id', adminTargetPlayerId);
+    await sb.from('notifications').insert({ user_id: adminTargetPlayerId, type: 'gift', title: '+10 000 ₽ от владельца', body: 'Деньги зачислены', data: {} });
+    await loadAllPlayers(); renderAdminPlayerDetail(adminTargetPlayerId);
+    addLog('admin_gift', `Выдал 10 000 ₽ игроку ${p.username}`);
+    showToast('success', '+10 000 ₽', p.username);
+}
+async function adminSendGift() {
+    if (!adminTargetPlayerId) return;
+    const m = parseInt(document.getElementById('giftMoney').value) || 0;
+    const r = parseInt(document.getElementById('giftRolls').value) || 0;
+    const l = parseInt(document.getElementById('giftLuck').value) || 0;
+    if (!m && !r && !l) { showToast('error', 'Пусто', ''); return; }
+    const data = {};
+    if (m) data.money = m;
+    if (r) data.rolls = r;
+    if (l) data.x2 = l;
+    await sb.from('notifications').insert({
+        user_id: adminTargetPlayerId, type: 'gift', title: '🎁 Подарок!',
+        body: [m ? `+${m} ₽` : '', r ? `+${r} круток` : '', l ? `×2 на ${l} мин` : ''].filter(Boolean).join(', '),
+        data
+    });
+    document.getElementById('giftModal').classList.remove('active');
+    document.getElementById('giftMoney').value = '';
+    document.getElementById('giftRolls').value = '';
+    document.getElementById('giftLuck').value = '';
+    showToast('success', 'Отправлен!', '');
+}
+async function renderAdminStats() {
+    const content = document.getElementById('adminStatsContent');
+    content.innerHTML = '<div style="text-align:center;color:#888;padding:40px;">Загрузка...</div>';
+    try {
+        await loadAllPlayers();
+        const tp = allPlayersList.length;
+        const onlineCut = Date.now() - 300000;
+        const online = allPlayersList.filter(p => p.updated_at && new Date(p.updated_at).getTime() > onlineCut).length;
+        const tb = allPlayersList.reduce((s, p) => s + (p.balance || 0), 0);
+        const tr = allPlayersList.reduce((s, p) => s + (p.total_rolls || 0), 0);
+        const { count: tn } = await sb.from('saved_numbers').select('*', { count: 'exact', head: true });
+        const { count: tl } = await sb.from('auction_lots').select('*', { count: 'exact', head: true }).eq('ended', false);
+        const { data: nums } = await sb.from('saved_numbers').select('rarity_key');
+        const rc = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
+        (nums || []).forEach(n => { if (rc[n.rarity_key] !== undefined) rc[n.rarity_key]++; });
+        content.innerHTML = `
+            <div class="stats-grid">
+                <div class="stats-tile"><div class="st-value blue">${tp}</div><div class="st-label">Игроков</div></div>
+                <div class="stats-tile"><div class="st-value green">${online}</div><div class="st-label">Онлайн</div></div>
+                <div class="stats-tile"><div class="st-value gold">${formatRatingValue(tb)} ₽</div><div class="st-label">Общий капитал</div></div>
+                <div class="stats-tile"><div class="st-value">${tn || 0}</div><div class="st-label">Номеров</div></div>
+                <div class="stats-tile"><div class="st-value blue">${tl || 0}</div><div class="st-label">Лотов</div></div>
+                <div class="stats-tile"><div class="st-value">${tr.toLocaleString('ru-RU')}</div><div class="st-label">Всего круток</div></div>
+            </div>
+            <div class="rarity-breakdown"><div class="rb-title">Топ-3 по балансу</div>${allPlayersList.slice(0,3).map((p,i) => `<div class="rb-row"><span>${i+1}. ${p.username}</span><b>${(p.balance||0).toLocaleString('ru-RU')} ₽</b></div>`).join('')}</div>
+            <div class="rarity-breakdown"><div class="rb-title">По редкостям</div>
+                <div class="rb-row"><span style="color:#9ca3af;">Обычных</span><b>${rc.common}</b></div>
+                <div class="rb-row"><span style="color:#3b82f6;">Редких</span><b>${rc.rare}</b></div>
+                <div class="rb-row"><span style="color:#a855f7;">Эпиков</span><b>${rc.epic}</b></div>
+                <div class="rb-row"><span style="color:#f59e0b;">Легендарок</span><b>${rc.legendary}</b></div>
+                <div class="rb-row"><span style="color:#ef4444;">Мификов</span><b>${rc.mythic}</b></div>
+                <div class="rb-row"><span style="color:#c084fc;">Секретных</span><b>${rc.secret}</b></div>
+            </div>`;
+    } catch (e) { content.innerHTML = `<div style="color:#ef4444;padding:40px;text-align:center;">${e.message}</div>`; }
+}
+async function resetSeasonGlobal() {
+    if (!confirm('Сбросить ВСЕХ? Необратимо!')) return;
+    await sb.from('saved_numbers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await sb.from('auction_lots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await sb.from('profiles').update({ balance: 0, total_rolls: 0 }).neq('id', '00000000-0000-0000-0000-000000000000');
+    showToast('success', 'Сезон сброшен', ''); closeAdminReset(); location.reload();
+}
 
-    function generateRandomCode() {
-        const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code = '';
-        for (let i = 0; i < 8; i++) code += c[Math.floor(Math.random() * c.length)];
-        document.getElementById('newPromoCode').value = code;
-    }
-    function toggleRewardItem(cb, id) {
-        const i = document.getElementById(id); if (i) i.disabled = !cb.checked;
-        const p = cb.closest('.promo-reward-item'); if (p) p.classList.toggle('checked', cb.checked);
-    }
-    async function renderPromoList() {
-        const { data } = await sb.from('promo_codes').select('*').order('created_at', { ascending: false });
-        const list = document.getElementById('promoList');
-        if (!data || !data.length) { list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Нет промокодов</div>'; return; }
-        list.innerHTML = data.map(p => {
-            const exp = p.expires_at && new Date(p.expires_at) < new Date();
-            const used = p.uses_left <= 0;
-            return `<div class="promo-list-item"><div class="promo-list-header"><div class="promo-list-code">${p.code}</div><div class="promo-list-status ${exp ? 'expired' : used ? 'used-up' : 'active'}">${exp ? 'Истёк' : used ? 'Исчерпан' : 'Активен'}</div></div><div class="promo-list-info-row"><span>Активаций</span><b>${p.uses_left} / ${p.max_uses}</b></div><div class="promo-list-actions"><button class="promo-copy-btn" onclick="navigator.clipboard.writeText('${p.code}');showToast('success','Скопировано','${p.code}')"><i class="fa-solid fa-copy"></i> Копировать</button><button class="promo-del-btn" onclick="deletePromo('${p.id}')"><i class="fa-solid fa-trash"></i> Удалить</button></div></div>`;
-        }).join('');
-    }
-    async function createPromoCode() {
-        const code = document.getElementById('newPromoCode').value.trim().toUpperCase();
-        const uses = parseInt(document.getElementById('newPromoUses').value) || 1;
-        const hours = parseInt(document.getElementById('newPromoHours').value) || 0;
-        if (!code || code.length < 3) { showToast('error', 'Короткий код', ''); return; }
-        const rewards = {};
-        if (document.getElementById('rewardMoney').checked) rewards.money = parseInt(document.getElementById('moneyInput').value) || 0;
-        if (document.getElementById('rewardRolls').checked) rewards.rolls = parseInt(document.getElementById('rollsInput').value) || 0;
-        ['x2','x5','x10','x15'].forEach(k => {
-            const cb = document.getElementById('reward' + k.charAt(0).toUpperCase() + k.slice(1));
-            const inp = document.getElementById(k + 'Input');
-            if (cb && cb.checked) rewards[k] = parseInt(inp.value) || 0;
-        });
-        const expiresAt = hours > 0 ? new Date(Date.now() + hours * 3600000).toISOString() : null;
-        const { error } = await sb.from('promo_codes').insert({ code, uses_left: uses, max_uses: uses, expires_at: expiresAt, rewards });
-        if (error) { showToast('error', 'Ошибка', error.message); return; }
-        showToast('success', 'Создан!', code);
-        document.getElementById('newPromoCode').value = '';
-        await renderPromoList();
-    }
-    async function deletePromo(id) { await sb.from('promo_codes').delete().eq('id', id); await renderPromoList(); showToast('success', 'Удалён', ''); }
+function generateRandomCode() {
+    const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code = '';
+    for (let i = 0; i < 8; i++) code += c[Math.floor(Math.random() * c.length)];
+    document.getElementById('newPromoCode').value = code;
+}
+function toggleRewardItem(cb, id) {
+    const i = document.getElementById(id); if (i) i.disabled = !cb.checked;
+    const p = cb.closest('.promo-reward-item'); if (p) p.classList.toggle('checked', cb.checked);
+}
+async function renderPromoList() {
+    const { data } = await sb.from('promo_codes').select('*').order('created_at', { ascending: false });
+    const list = document.getElementById('promoList');
+    if (!data || !data.length) { list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Нет промокодов</div>'; return; }
+    list.innerHTML = data.map(p => {
+        const exp = p.expires_at && new Date(p.expires_at) < new Date();
+        const used = p.uses_left <= 0;
+        return `<div class="promo-list-item"><div class="promo-list-header"><div class="promo-list-code">${p.code}</div><div class="promo-list-status ${exp ? 'expired' : used ? 'used-up' : 'active'}">${exp ? 'Истёк' : used ? 'Исчерпан' : 'Активен'}</div></div><div class="promo-list-info-row"><span>Активаций</span><b>${p.uses_left} / ${p.max_uses}</b></div><div class="promo-list-actions"><button class="promo-copy-btn" onclick="navigator.clipboard.writeText('${p.code}');showToast('success','Скопировано','${p.code}')"><i class="fa-solid fa-copy"></i> Копировать</button><button class="promo-del-btn" onclick="deletePromo('${p.id}')"><i class="fa-solid fa-trash"></i> Удалить</button></div></div>`;
+    }).join('');
+}
+async function createPromoCode() {
+    const code = document.getElementById('newPromoCode').value.trim().toUpperCase();
+    const uses = parseInt(document.getElementById('newPromoUses').value) || 1;
+    const hours = parseInt(document.getElementById('newPromoHours').value) || 0;
+    if (!code || code.length < 3) { showToast('error', 'Короткий код', ''); return; }
+    const rewards = {};
+    if (document.getElementById('rewardMoney').checked) rewards.money = parseInt(document.getElementById('moneyInput').value) || 0;
+    if (document.getElementById('rewardRolls').checked) rewards.rolls = parseInt(document.getElementById('rollsInput').value) || 0;
+    ['x2','x5','x10','x15'].forEach(k => {
+        const cb = document.getElementById('reward' + k.charAt(0).toUpperCase() + k.slice(1));
+        const inp = document.getElementById(k + 'Input');
+        if (cb && cb.checked) rewards[k] = parseInt(inp.value) || 0;
+    });
+    const expiresAt = hours > 0 ? new Date(Date.now() + hours * 3600000).toISOString() : null;
+    const { error } = await sb.from('promo_codes').insert({ code, uses_left: uses, max_uses: uses, expires_at: expiresAt, rewards });
+    if (error) { showToast('error', 'Ошибка', error.message); return; }
+    showToast('success', 'Создан!', code);
+    document.getElementById('newPromoCode').value = '';
+    await renderPromoList();
+}
+async function deletePromo(id) { await sb.from('promo_codes').delete().eq('id', id); await renderPromoList(); showToast('success', 'Удалён', ''); }
 
-    const slider = document.getElementById('slider');
-    const upgradeBtn = document.getElementById('upgradeBtn');
-    const resultText = document.getElementById('resultText');
-    const successZone = document.getElementById('successZone');
-    const multButtons = document.querySelectorAll('#multipliers .mult-btn');
-    let currentChance = 60, currentMultiplier = 1.5, isAnimatingUpgrade = false, gameBetNumber = null;
-    multButtons.forEach(b => b.addEventListener('click', () => {
-        if (isAnimatingUpgrade) return;
-        multButtons.forEach(x => x.classList.remove('active')); b.classList.add('active');
-        currentChance = parseInt(b.getAttribute('data-chance')); currentMultiplier = parseFloat(b.getAttribute('data-mult'));
-        successZone.style.width = currentChance + '%';
-        upgradeBtn.textContent = `Улучшить ×${currentMultiplier} • ${currentChance}%`;
-        slider.style.left = '0%'; resultText.classList.remove('visible');
-    }));
-    function openGameCollection() { renderGameCollection(); document.getElementById('gameCollectionModal').classList.add('active'); }
-    function closeGameCollection() { document.getElementById('gameCollectionModal').classList.remove('active'); }
-    function renderGameCollection() {
-        const list = document.getElementById('gameCollectionList');
-        if (savedNumbers.length === 0) { list.innerHTML = '<div class="game-collection-empty" style="text-align:center;color:#6b7a90;padding:30px;">Нет номеров</div>'; return; }
-        list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectGameNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
-    }
-    function selectGameNumber(i) { gameBetNumber = savedNumbers[i]; updateGameBetCard(); closeGameCollection(); }
-    function updateGameBetCard() {
-        const card = document.getElementById('gameBetCard');
-        const numEl = document.getElementById('gameBetNumber');
-        const priceEl = document.getElementById('gameBetPrice');
-        if (!gameBetNumber) { card.classList.add('empty'); numEl.textContent = '— не выбран —'; priceEl.textContent = ''; return; }
-        card.classList.remove('empty');
-        numEl.textContent = gameBetNumber.formatted;
-        numEl.style.color = getRarityColor(gameBetNumber.rarity.key);
-        priceEl.textContent = 'Цена: ' + formatPrice(gameBetNumber.price);
-    }
-    function startUpgrade() {
-        if (isAnimatingUpgrade || !gameBetNumber) return;
-        isAnimatingUpgrade = true; upgradeBtn.disabled = true;
-        resultText.classList.remove('visible');
-        const win = Math.random() * 100 < currentChance;
-        let target;
-        if (win) { const min = 2, max = Math.max(currentChance - 2, min + 1); target = Math.random() * (max - min) + min; }
-        else { const min = currentChance + 2, max = 98; target = Math.random() * (max - min) + min; }
-        animateToTarget(target, win);
-    }
-    function animateToTarget(target, win) {
-        const start = performance.now(); const DUR = 3500;
-        function frame(t) {
-            const el = (t - start) / 1000;
-            const prog = Math.min(el / (DUR / 1000), 1);
-            const easeOut = 1 - Math.pow(1 - prog, 3);
-            const amp = 50 * (1 - easeOut);
-            const osc = Math.sin(el * 7 * Math.PI * 2) * amp;
-            let pos = (50 + osc) * (1 - easeOut) + target * easeOut;
-            if (pos < 0) pos = 0; if (pos > 100) pos = 100;
-            slider.style.left = pos + '%';
-            if (prog >= 1) { slider.style.left = target + '%'; showUpgradeResult(win); return; }
-            requestAnimationFrame(frame);
-        }
+const slider = document.getElementById('slider');
+const upgradeBtn = document.getElementById('upgradeBtn');
+const resultText = document.getElementById('resultText');
+const successZone = document.getElementById('successZone');
+const multButtons = document.querySelectorAll('#multipliers .mult-btn');
+let currentChance = 60, currentMultiplier = 1.5, isAnimatingUpgrade = false, gameBetNumber = null;
+multButtons.forEach(b => b.addEventListener('click', () => {
+    if (isAnimatingUpgrade) return;
+    multButtons.forEach(x => x.classList.remove('active')); b.classList.add('active');
+    currentChance = parseInt(b.getAttribute('data-chance')); currentMultiplier = parseFloat(b.getAttribute('data-mult'));
+    successZone.style.width = currentChance + '%';
+    upgradeBtn.textContent = `Улучшить ×${currentMultiplier} • ${currentChance}%`;
+    slider.style.left = '0%'; resultText.classList.remove('visible');
+}));
+function openGameCollection() { renderGameCollection(); document.getElementById('gameCollectionModal').classList.add('active'); }
+function closeGameCollection() { document.getElementById('gameCollectionModal').classList.remove('active'); }
+function renderGameCollection() {
+    const list = document.getElementById('gameCollectionList');
+    if (savedNumbers.length === 0) { list.innerHTML = '<div class="game-collection-empty" style="text-align:center;color:#6b7a90;padding:30px;">Нет номеров</div>'; return; }
+    list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectGameNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
+}
+function selectGameNumber(i) { gameBetNumber = savedNumbers[i]; updateGameBetCard(); closeGameCollection(); }
+function updateGameBetCard() {
+    const card = document.getElementById('gameBetCard');
+    const numEl = document.getElementById('gameBetNumber');
+    const priceEl = document.getElementById('gameBetPrice');
+    if (!gameBetNumber) { card.classList.add('empty'); numEl.textContent = '— не выбран —'; priceEl.textContent = ''; return; }
+    card.classList.remove('empty');
+    numEl.textContent = gameBetNumber.formatted;
+    numEl.style.color = getRarityColor(gameBetNumber.rarity.key);
+    priceEl.textContent = 'Цена: ' + formatPrice(gameBetNumber.price);
+}
+function startUpgrade() {
+    if (isAnimatingUpgrade || !gameBetNumber) return;
+    isAnimatingUpgrade = true; upgradeBtn.disabled = true;
+    resultText.classList.remove('visible');
+    const win = Math.random() * 100 < currentChance;
+    let target;
+    if (win) { const min = 2, max = Math.max(currentChance - 2, min + 1); target = Math.random() * (max - min) + min; }
+    else { const min = currentChance + 2, max = 98; target = Math.random() * (max - min) + min; }
+    animateToTarget(target, win);
+}
+function animateToTarget(target, win) {
+    const start = performance.now(); const DUR = 3500;
+    function frame(t) {
+        const el = (t - start) / 1000;
+        const prog = Math.min(el / (DUR / 1000), 1);
+        const easeOut = 1 - Math.pow(1 - prog, 3);
+        const amp = 50 * (1 - easeOut);
+        const osc = Math.sin(el * 7 * Math.PI * 2) * amp;
+        let pos = (50 + osc) * (1 - easeOut) + target * easeOut;
+        if (pos < 0) pos = 0; if (pos > 100) pos = 100;
+        slider.style.left = pos + '%';
+        if (prog >= 1) { slider.style.left = target + '%'; showUpgradeResult(win); return; }
         requestAnimationFrame(frame);
     }
-    async function showUpgradeResult(win) {
-        if (win) {
-            resultText.textContent = "🏆 ВЫИГРАЛ!";
-            resultText.className = 'result-text result-success visible';
-            const np = Math.floor(gameBetNumber.price * currentMultiplier);
-            await sb.from('saved_numbers').update({ price: np }).eq('id', gameBetNumber.id);
-            gameBetNumber.price = np;
-            updateCollection(); updateProfileUI(); updateGameBetCard();
-            addLog('upgrade', `Апгрейд удачный: ${gameBetNumber.formatted} (теперь ${formatPrice(gameBetNumber.price)})`);
-            showToast('success', 'Выигрыш!', formatPrice(np));
-            safePlay(sounds.win);
-        } else {
-            resultText.textContent = "💀 ПРОИГРАЛ!";
-            resultText.className = 'result-text result-fail visible';
-            await sb.from('saved_numbers').delete().eq('id', gameBetNumber.id);
-            savedNumbers = savedNumbers.filter(x => x.id !== gameBetNumber.id);
-            gameBetNumber = null; updateCollection(); updateProfileUI(); updateGameBetCard();
-            showToast('error', 'Сгорел', '');
-        }
-        isAnimatingUpgrade = false; upgradeBtn.disabled = false;
-    }
-    upgradeBtn.addEventListener('click', startUpgrade);
-
-    const MINES_SIZE = 25;
-    let minesState = { active: false, betNumber: null, minesCount: 3, multiplier: 1.07, minePositions: [], openedCells: [], currentPrice: 0, basePrice: 0, dead: false };
-    function openMinesGame() { closeMenu(); resetMinesState(); document.getElementById('minesGameScreen').classList.add('active'); renderMinesField(); updateMinesUI(); }
-    function closeMinesGame() {
-        if (minesState.active && !minesState.dead && minesState.betNumber) {
-            sb.from('saved_numbers').delete().eq('id', minesState.betNumber.id).then(() => { savedNumbers = savedNumbers.filter(x => x.id !== minesState.betNumber.id); updateCollection(); updateProfileUI(); });
-            showToast('error', 'Сгорел', '');
-        }
-        document.getElementById('minesGameScreen').classList.remove('active'); resetMinesState();
-    }
-    function resetMinesState() {
-        minesState = { active: false, betNumber: null, minesCount: 3, multiplier: 1.07, minePositions: [], openedCells: [], currentPrice: 0, basePrice: 0, dead: false };
-        document.querySelectorAll('#minesMultipliers .mult-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector('#minesMultipliers .mult-btn')?.classList.add('active');
-        document.getElementById('minesHint').textContent = 'Выбери номер и жми на клетки';
-        document.getElementById('minesHint').className = 'mines-hint';
-    }
-    function openMinesCollection() {
-        if (minesState.active) return;
-        const list = document.getElementById('minesCollectionList');
-        if (savedNumbers.length === 0) list.innerHTML = '<div style="text-align:center;color:#6b7a90;padding:30px;">Нет номеров</div>';
-        else list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectMinesNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
-        document.getElementById('minesCollectionModal').classList.add('active');
-    }
-    function closeMinesCollection() { document.getElementById('minesCollectionModal').classList.remove('active'); }
-    function selectMinesNumber(i) {
-        if (minesState.active) return;
-        const num = savedNumbers[i]; minesState.betNumber = num; minesState.basePrice = num.price; minesState.currentPrice = num.price;
-        updateMinesBetCard(); closeMinesCollection();
-    }
-    function updateMinesBetCard() {
-        const card = document.getElementById('minesBetCard');
-        const numEl = document.getElementById('minesBetNumber');
-        const priceEl = document.getElementById('minesBetPrice');
-        if (!minesState.betNumber) { card.classList.add('empty'); numEl.textContent = '— не выбран —'; priceEl.textContent = ''; return; }
-        card.classList.remove('empty');
-        numEl.textContent = minesState.betNumber.formatted;
-        numEl.style.color = getRarityColor(minesState.betNumber.rarity.key);
-        priceEl.textContent = 'Цена: ' + formatPrice(minesState.betNumber.price);
-    }
-    function renderMinesField() {
-        const f = document.getElementById('minesField'); f.innerHTML = '';
-        for (let i = 0; i < MINES_SIZE; i++) {
-            const c = document.createElement('div'); c.className = 'mine-cell'; c.dataset.index = i;
-            c.onclick = () => openMineCell(i); f.appendChild(c);
-        }
-    }
-    document.querySelectorAll('#minesMultipliers .mult-btn').forEach(b => b.addEventListener('click', () => {
-        if (minesState.active) return;
-        document.querySelectorAll('#minesMultipliers .mult-btn').forEach(x => x.classList.remove('active')); b.classList.add('active');
-        minesState.minesCount = parseInt(b.getAttribute('data-mines')); minesState.multiplier = parseFloat(b.getAttribute('data-mult'));
-    }));
-    function startMinesRound() {
-        const pos = [];
-        while (pos.length < minesState.minesCount) { const p = Math.floor(Math.random() * MINES_SIZE); if (!pos.includes(p)) pos.push(p); }
-        minesState.minePositions = pos; minesState.openedCells = []; minesState.active = true; minesState.dead = false;
-        minesState.currentPrice = minesState.basePrice;
-        document.getElementById('minesHint').textContent = 'Открывай клетки!';
-        updateMinesUI(); renderMinesField();
-    }
-    function openMineCell(i) {
-        if (!minesState.betNumber) { showToast('error', 'Выбери номер', ''); return; }
-        if (minesState.dead || minesState.openedCells.includes(i)) return;
-        if (!minesState.active) startMinesRound();
-        const c = document.querySelector(`.mine-cell[data-index="${i}"]`);
-        if (!c) return;
-        minesState.openedCells.push(i); c.classList.add('opened');
-        if (minesState.minePositions.includes(i)) { c.classList.add('mine'); c.textContent = '💣'; loseMinesGame(); return; }
-        minesState.currentPrice = Math.floor(minesState.currentPrice * minesState.multiplier);
-        c.innerHTML = `<span class="cell-mult">×${minesState.multiplier.toFixed(2)}</span>`;
-        updateMinesUI();
-    }
-    function updateMinesUI() {
-        document.getElementById('minesCurrentPrice').textContent = formatPrice(minesState.currentPrice);
-        document.getElementById('minesOpenedCount').textContent = minesState.openedCells.length;
-        const btn = document.getElementById('minesTakeBtn');
-        if (minesState.active && !minesState.dead && minesState.openedCells.length > 0) { btn.disabled = false; btn.textContent = 'Забрать ' + formatPrice(minesState.currentPrice); }
-        else { btn.disabled = true; btn.textContent = 'Забрать ' + formatPrice(minesState.currentPrice); }
-    }
-    async function loseMinesGame() {
-        minesState.dead = true; minesState.active = false;
-        minesState.minePositions.forEach(i => { const c = document.querySelector(`.mine-cell[data-index="${i}"]`); if (c && !c.classList.contains('opened')) { c.classList.add('opened', 'mine'); c.textContent = '💣'; } });
-        await sb.from('saved_numbers').delete().eq('id', minesState.betNumber.id);
-        savedNumbers = savedNumbers.filter(x => x.id !== minesState.betNumber.id);
-        updateCollection(); updateProfileUI();
-        document.getElementById('minesHint').textContent = '💥 Взрыв! Номер сгорел';
-        document.getElementById('minesHint').className = 'mines-hint lose';
-        showToast('error', 'Сгорел!', minesState.betNumber.formatted);
-        minesState.betNumber = null; updateMinesBetCard();
-    }
-    async function takeMinesWin() {
-        if (!minesState.active || minesState.dead || !minesState.betNumber) return;
-        const num = minesState.betNumber; const np = minesState.currentPrice;
-        await sb.from('saved_numbers').update({ price: np }).eq('id', num.id);
-        num.price = np; updateCollection(); updateProfileUI();
-        showToast('success', 'Забрал!', formatPrice(np));
+    requestAnimationFrame(frame);
+}
+async function showUpgradeResult(win) {
+    if (win) {
+        resultText.textContent = "🏆 ВЫИГРАЛ!";
+        resultText.className = 'result-text result-success visible';
+        const np = Math.floor(gameBetNumber.price * currentMultiplier);
+        await sb.from('saved_numbers').update({ price: np }).eq('id', gameBetNumber.id);
+        gameBetNumber.price = np;
+        updateCollection(); updateProfileUI(); updateGameBetCard();
+        addLog('upgrade', `Апгрейд удачный: ${gameBetNumber.formatted} (теперь ${formatPrice(gameBetNumber.price)})`);
+        showToast('success', 'Выигрыш!', formatPrice(np));
         safePlay(sounds.win);
-        minesState.active = false;
-        setTimeout(() => { resetMinesState(); renderMinesField(); updateMinesUI(); updateMinesBetCard(); }, 1500);
+    } else {
+        resultText.textContent = "💀 ПРОИГРАЛ!";
+        resultText.className = 'result-text result-fail visible';
+        await sb.from('saved_numbers').delete().eq('id', gameBetNumber.id);
+        savedNumbers = savedNumbers.filter(x => x.id !== gameBetNumber.id);
+        gameBetNumber = null; updateCollection(); updateProfileUI(); updateGameBetCard();
+        showToast('error', 'Сгорел', '');
     }
+    isAnimatingUpgrade = false; upgradeBtn.disabled = false;
+}
+upgradeBtn.addEventListener('click', startUpgrade);
 
-    function updateBalance() {
-        balanceDisplay.innerHTML = balance.toLocaleString('ru-RU') + ' <span>₽</span>';
-        if (profileBalance) profileBalance.textContent = balance.toLocaleString('ru-RU');
+const MINES_SIZE = 25;
+let minesState = { active: false, betNumber: null, minesCount: 3, multiplier: 1.07, minePositions: [], openedCells: [], currentPrice: 0, basePrice: 0, dead: false };
+function openMinesGame() { closeMenu(); resetMinesState(); document.getElementById('minesGameScreen').classList.add('active'); renderMinesField(); updateMinesUI(); }
+function closeMinesGame() {
+    if (minesState.active && !minesState.dead && minesState.betNumber) {
+        sb.from('saved_numbers').delete().eq('id', minesState.betNumber.id).then(() => { savedNumbers = savedNumbers.filter(x => x.id !== minesState.betNumber.id); updateCollection(); updateProfileUI(); });
+        showToast('error', 'Сгорел', '');
     }
-    function updateAdminVisibility() {
-        const s = document.getElementById('adminSection');
-        const m = document.getElementById('adminMenu');
-        if (currentUser && currentUser.is_owner) { s.style.display = 'block'; m.style.display = 'grid'; }
-        else { s.style.display = 'none'; m.style.display = 'none'; }
+    document.getElementById('minesGameScreen').classList.remove('active'); resetMinesState();
+}
+function resetMinesState() {
+    minesState = { active: false, betNumber: null, minesCount: 3, multiplier: 1.07, minePositions: [], openedCells: [], currentPrice: 0, basePrice: 0, dead: false };
+    document.querySelectorAll('#minesMultipliers .mult-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('#minesMultipliers .mult-btn')?.classList.add('active');
+    document.getElementById('minesHint').textContent = 'Выбери номер и жми на клетки';
+    document.getElementById('minesHint').className = 'mines-hint';
+}
+function openMinesCollection() {
+    if (minesState.active) return;
+    const list = document.getElementById('minesCollectionList');
+    if (savedNumbers.length === 0) list.innerHTML = '<div style="text-align:center;color:#6b7a90;padding:30px;">Нет номеров</div>';
+    else list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectMinesNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
+    document.getElementById('minesCollectionModal').classList.add('active');
+}
+function closeMinesCollection() { document.getElementById('minesCollectionModal').classList.remove('active'); }
+function selectMinesNumber(i) {
+    if (minesState.active) return;
+    const num = savedNumbers[i]; minesState.betNumber = num; minesState.basePrice = num.price; minesState.currentPrice = num.price;
+    updateMinesBetCard(); closeMinesCollection();
+}
+function updateMinesBetCard() {
+    const card = document.getElementById('minesBetCard');
+    const numEl = document.getElementById('minesBetNumber');
+    const priceEl = document.getElementById('minesBetPrice');
+    if (!minesState.betNumber) { card.classList.add('empty'); numEl.textContent = '— не выбран —'; priceEl.textContent = ''; return; }
+    card.classList.remove('empty');
+    numEl.textContent = minesState.betNumber.formatted;
+    numEl.style.color = getRarityColor(minesState.betNumber.rarity.key);
+    priceEl.textContent = 'Цена: ' + formatPrice(minesState.betNumber.price);
+}
+function renderMinesField() {
+    const f = document.getElementById('minesField'); f.innerHTML = '';
+    for (let i = 0; i < MINES_SIZE; i++) {
+        const c = document.createElement('div'); c.className = 'mine-cell'; c.dataset.index = i;
+        c.onclick = () => openMineCell(i); f.appendChild(c);
     }
-    function updateRollButtons() {
-        const rollBtn = document.getElementById('rollBtn');
-        const rollBtnText = document.getElementById('rollBtnText');
-        const rollBtnPrice = document.getElementById('rollBtnPrice');
-        const rollX5Btn = document.getElementById('rollX5Btn');
-        if (!rollBtn) return;
-        rollBtn.querySelectorAll('.free-badge').forEach(b => b.remove());
-        rollX5Btn.querySelectorAll('.free-badge').forEach(b => b.remove());
-        rollBtn.classList.remove('free', 'x5-armed');
-        rollX5Btn.classList.remove('free', 'armed');
-        if (freeRolls > 0) {
-            rollBtn.classList.add('free'); rollX5Btn.classList.add('free');
-            rollBtnText.textContent = 'Крутить бесплатно';
-            rollBtnPrice.textContent = '';
-            const bm = document.createElement('div'); bm.className = 'free-badge'; bm.textContent = freeRolls > 99 ? '99+' : freeRolls; rollBtn.appendChild(bm);
-            const bx = document.createElement('div'); bx.className = 'free-badge'; bx.textContent = Math.min(freeRolls, 5); rollX5Btn.appendChild(bx);
-        } else if (x5Armed) {
-            rollX5Btn.classList.add('armed'); rollBtn.classList.add('x5-armed');
-            rollBtnText.textContent = 'Крутить x5'; rollBtnPrice.textContent = '2 500 ₽';
-        } else {
-            rollBtnText.textContent = 'Крутить'; rollBtnPrice.textContent = '500 ₽';
-        }
-    }
-    function updateProfileUI() {
-        const count = savedNumbers.length;
-        document.getElementById('profCount').textContent = count;
-        if (profileBalance) profileBalance.textContent = balance.toLocaleString('ru-RU');
-        document.getElementById('profRolls').textContent = (currentUser.total_rolls || 0).toLocaleString('ru-RU');
-        document.getElementById('profEarned').textContent = formatRatingValue(balance);
-        document.getElementById('profLevel').textContent = currentUser.level || 1;
-        const xpNeeded = (currentUser.level || 1) * 1000;
-        const xpPercent = Math.min(100, ((currentUser.xp || 0) / xpNeeded) * 100);
-        if (xpMiniBar) xpMiniBar.style.width = xpPercent + '%';
-        const counts = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
-        savedNumbers.forEach(n => counts[n.rarity.key]++);
-        document.getElementById('profCountCommon').textContent = counts.common;
-        document.getElementById('profCountRare').textContent = counts.rare;
-        document.getElementById('profCountEpic').textContent = counts.epic;
-        document.getElementById('profCountLegendary').textContent = counts.legendary;
-        document.getElementById('profCountMythic').textContent = counts.mythic;
-        document.getElementById('profCountSecret').textContent = counts.secret;
-        const maxCount = Math.max(count, 1);
-        document.getElementById('profBarCommon').style.width = (counts.common / maxCount * 100) + '%';
-        document.getElementById('profBarRare').style.width = (counts.rare / maxCount * 100) + '%';
-        document.getElementById('profBarEpic').style.width = (counts.epic / maxCount * 100) + '%';
-        document.getElementById('profBarLegendary').style.width = (counts.legendary / maxCount * 100) + '%';
-        document.getElementById('profBarMythic').style.width = (counts.mythic / maxCount * 100) + '%';
-        document.getElementById('profBarSecret').style.width = (counts.secret / maxCount * 100) + '%';
-        const order = ['common', 'rare', 'epic', 'legendary', 'mythic', 'secret'];
-        let bestRarity = 'common';
-        savedNumbers.forEach(n => { if (order.indexOf(n.rarity.key) > order.indexOf(bestRarity)) bestRarity = n.rarity.key; });
-        document.getElementById('profBest').textContent = count > 0 ? getRarityName(bestRarity) : '—';
-        const pn = document.getElementById('profileUsername');
-        if (pn && currentUser) {
-            const tgName = currentUser.tg_username ? `@${currentUser.tg_username}` : '';
-            pn.innerHTML = `<b>${currentUser.username}</b> ${renderTag(currentUser.tag)}<br><span style="color:#555;font-size:12px;">${tgName}</span>`;
-        }
-        if (levelDisplay) levelDisplay.textContent = 'Ур. ' + (currentUser.level || 1);
-        const avatarHtml = buildAvatarHtml(currentUser.avatar_url);
-        const headerAv = document.getElementById('headerAvatar');
-        const profAv = document.getElementById('profileAvatarEl');
-        if (headerAv) {
-            headerAv.className = 'icon-circle avatar'; 
-            if (currentUser.avatar_frame) headerAv.classList.add(currentUser.avatar_frame);
-            headerAv.innerHTML = avatarHtml;
-        }
-        if (profAv) {
-            profAv.className = 'profile-avatar'; 
-            if (currentUser.avatar_frame) profAv.classList.add(currentUser.avatar_frame);
-            profAv.innerHTML = avatarHtml;
-        }
-    }
-    function handleX5Click() { x5Armed = !x5Armed; updateRollButtons(); }
-    function handleMainClick() { const c = x5Armed ? 5 : 1; startRoll(c); x5Armed = false; updateRollButtons(); }
+}
+document.querySelectorAll('#minesMultipliers .mult-btn').forEach(b => b.addEventListener('click', () => {
+    if (minesState.active) return;
+    document.querySelectorAll('#minesMultipliers .mult-btn').forEach(x => x.classList.remove('active')); b.classList.add('active');
+    minesState.minesCount = parseInt(b.getAttribute('data-mines')); minesState.multiplier = parseFloat(b.getAttribute('data-mult'));
+}));
+function startMinesRound() {
+    const pos = [];
+    while (pos.length < minesState.minesCount) { const p = Math.floor(Math.random() * MINES_SIZE); if (!pos.includes(p)) pos.push(p); }
+    minesState.minePositions = pos; minesState.openedCells = []; minesState.active = true; minesState.dead = false;
+    minesState.currentPrice = minesState.basePrice;
+    document.getElementById('minesHint').textContent = 'Открывай клетки!';
+    updateMinesUI(); renderMinesField();
+}
+function openMineCell(i) {
+    if (!minesState.betNumber) { showToast('error', 'Выбери номер', ''); return; }
+    if (minesState.dead || minesState.openedCells.includes(i)) return;
+    if (!minesState.active) startMinesRound();
+    const c = document.querySelector(`.mine-cell[data-index="${i}"]`);
+    if (!c) return;
+    minesState.openedCells.push(i); c.classList.add('opened');
+    if (minesState.minePositions.includes(i)) { c.classList.add('mine'); c.textContent = '💣'; loseMinesGame(); return; }
+    minesState.currentPrice = Math.floor(minesState.currentPrice * minesState.multiplier);
+    c.innerHTML = `<span class="cell-mult">×${minesState.multiplier.toFixed(2)}</span>`;
+    updateMinesUI();
+}
+function updateMinesUI() {
+    document.getElementById('minesCurrentPrice').textContent = formatPrice(minesState.currentPrice);
+    document.getElementById('minesOpenedCount').textContent = minesState.openedCells.length;
+    const btn = document.getElementById('minesTakeBtn');
+    if (minesState.active && !minesState.dead && minesState.openedCells.length > 0) { btn.disabled = false; btn.textContent = 'Забрать ' + formatPrice(minesState.currentPrice); }
+    else { btn.disabled = true; btn.textContent = 'Забрать ' + formatPrice(minesState.currentPrice); }
+}
+async function loseMinesGame() {
+    minesState.dead = true; minesState.active = false;
+    minesState.minePositions.forEach(i => { const c = document.querySelector(`.mine-cell[data-index="${i}"]`); if (c && !c.classList.contains('opened')) { c.classList.add('opened', 'mine'); c.textContent = '💣'; } });
+    await sb.from('saved_numbers').delete().eq('id', minesState.betNumber.id);
+    savedNumbers = savedNumbers.filter(x => x.id !== minesState.betNumber.id);
+    updateCollection(); updateProfileUI();
+    document.getElementById('minesHint').textContent = '💥 Взрыв! Номер сгорел';
+    document.getElementById('minesHint').className = 'mines-hint lose';
+    showToast('error', 'Сгорел!', minesState.betNumber.formatted);
+    minesState.betNumber = null; updateMinesBetCard();
+}
+async function takeMinesWin() {
+    if (!minesState.active || minesState.dead || !minesState.betNumber) return;
+    const num = minesState.betNumber; const np = minesState.currentPrice;
+    await sb.from('saved_numbers').update({ price: np }).eq('id', num.id);
+    num.price = np; updateCollection(); updateProfileUI();
+    showToast('success', 'Забрал!', formatPrice(np));
+    safePlay(sounds.win);
+    minesState.active = false;
+    setTimeout(() => { resetMinesState(); renderMinesField(); updateMinesUI(); updateMinesBetCard(); }, 1500);
+}
 
-    function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
-    function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
-    function openCollection() { closeMenu(); currentFilter = 'all'; updateCollection(); setTimeout(() => document.getElementById('collectionScreen').classList.add('active'), 300); }
-    function closeCollection() { document.getElementById('collectionScreen').classList.remove('active'); }
-    function openProfile() { closeMenu(); updateProfileUI(); setTimeout(() => document.getElementById('profileScreen').classList.add('active'), 300); }
-    function closeProfile() { document.getElementById('profileScreen').classList.remove('active'); }
-    function openChances() { closeMenu(); renderChancesScreen(); setTimeout(() => document.getElementById('chancesScreen').classList.add('active'), 300); }
-    function closeChances() { document.getElementById('chancesScreen').classList.remove('active'); }
-    function openRating() { closeMenu(); renderRating(); setTimeout(() => document.getElementById('ratingScreen').classList.add('active'), 300); }
-    function closeRating() { document.getElementById('ratingScreen').classList.remove('active'); }
-    function openGames() { closeMenu(); setTimeout(() => document.getElementById('gamesScreen').classList.add('active'), 300); }
-    function closeGames() { document.getElementById('gamesScreen').classList.remove('active'); }
-    function openUpgradeGame() { document.getElementById('upgradeGameScreen').classList.add('active'); }
-    function closeUpgradeGame() { document.getElementById('upgradeGameScreen').classList.remove('active'); }
-    function openPromo() { closeMenu(); setTimeout(() => document.getElementById('promoScreen').classList.add('active'), 300); }
-    function closePromo() { document.getElementById('promoScreen').classList.remove('active'); }
-    function openCheckNumber() { closeMenu(); document.getElementById('checkScreen').classList.add('active'); }
-    function closeCheckNumber() { document.getElementById('checkScreen').classList.remove('active'); }
-    function openNotifications() { closeMenu(); renderNotifications(); setTimeout(() => document.getElementById('notificationsScreen').classList.add('active'), 300); }
-    function closeNotifications() { document.getElementById('notificationsScreen').classList.remove('active'); }
+function updateBalance() {
+    balanceDisplay.innerHTML = balance.toLocaleString('ru-RU') + ' <span>₽</span>';
+    if (profileBalance) profileBalance.textContent = balance.toLocaleString('ru-RU');
+}
+function updateAdminVisibility() {
+    const s = document.getElementById('adminSection');
+    const m = document.getElementById('adminMenu');
+    if (currentUser && currentUser.is_owner) { s.style.display = 'block'; m.style.display = 'grid'; }
+    else { s.style.display = 'none'; m.style.display = 'none'; }
+}
+function updateRollButtons() {
+    const rollBtn = document.getElementById('rollBtn');
+    const rollBtnText = document.getElementById('rollBtnText');
+    const rollBtnPrice = document.getElementById('rollBtnPrice');
+    const rollX5Btn = document.getElementById('rollX5Btn');
+    if (!rollBtn) return;
+    rollBtn.querySelectorAll('.free-badge').forEach(b => b.remove());
+    rollX5Btn.querySelectorAll('.free-badge').forEach(b => b.remove());
+    rollBtn.classList.remove('free', 'x5-armed');
+    rollX5Btn.classList.remove('free', 'armed');
+    if (freeRolls > 0) {
+        rollBtn.classList.add('free'); rollX5Btn.classList.add('free');
+        rollBtnText.textContent = 'Крутить бесплатно';
+        rollBtnPrice.textContent = '';
+        const bm = document.createElement('div'); bm.className = 'free-badge'; bm.textContent = freeRolls > 99 ? '99+' : freeRolls; rollBtn.appendChild(bm);
+        const bx = document.createElement('div'); bx.className = 'free-badge'; bx.textContent = Math.min(freeRolls, 5); rollX5Btn.appendChild(bx);
+    } else if (x5Armed) {
+        rollX5Btn.classList.add('armed'); rollBtn.classList.add('x5-armed');
+        rollBtnText.textContent = 'Крутить x5'; rollBtnPrice.textContent = '2 500 ₽';
+    } else {
+        rollBtnText.textContent = 'Крутить'; rollBtnPrice.textContent = '500 ₽';
+    }
+}
+function updateProfileUI() {
+    const count = savedNumbers.length;
+    document.getElementById('profCount').textContent = count;
+    if (profileBalance) profileBalance.textContent = balance.toLocaleString('ru-RU');
+    document.getElementById('profRolls').textContent = (currentUser.total_rolls || 0).toLocaleString('ru-RU');
+    document.getElementById('profEarned').textContent = formatRatingValue(balance);
+    document.getElementById('profLevel').textContent = currentUser.level || 1;
+    const xpNeeded = (currentUser.level || 1) * 1000;
+    const xpPercent = Math.min(100, ((currentUser.xp || 0) / xpNeeded) * 100);
+    if (xpMiniBar) xpMiniBar.style.width = xpPercent + '%';
+    const counts = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
+    savedNumbers.forEach(n => counts[n.rarity.key]++);
+    document.getElementById('profCountCommon').textContent = counts.common;
+    document.getElementById('profCountRare').textContent = counts.rare;
+    document.getElementById('profCountEpic').textContent = counts.epic;
+    document.getElementById('profCountLegendary').textContent = counts.legendary;
+    document.getElementById('profCountMythic').textContent = counts.mythic;
+    document.getElementById('profCountSecret').textContent = counts.secret;
+    const maxCount = Math.max(count, 1);
+    document.getElementById('profBarCommon').style.width = (counts.common / maxCount * 100) + '%';
+    document.getElementById('profBarRare').style.width = (counts.rare / maxCount * 100) + '%';
+    document.getElementById('profBarEpic').style.width = (counts.epic / maxCount * 100) + '%';
+    document.getElementById('profBarLegendary').style.width = (counts.legendary / maxCount * 100) + '%';
+    document.getElementById('profBarMythic').style.width = (counts.mythic / maxCount * 100) + '%';
+    document.getElementById('profBarSecret').style.width = (counts.secret / maxCount * 100) + '%';
+    const order = ['common', 'rare', 'epic', 'legendary', 'mythic', 'secret'];
+    let bestRarity = 'common';
+    savedNumbers.forEach(n => { if (order.indexOf(n.rarity.key) > order.indexOf(bestRarity)) bestRarity = n.rarity.key; });
+    document.getElementById('profBest').textContent = count > 0 ? getRarityName(bestRarity) : '—';
+    const pn = document.getElementById('profileUsername');
+    if (pn && currentUser) {
+        const tgName = currentUser.tg_username ? `@${currentUser.tg_username}` : '';
+        pn.innerHTML = `<b>${currentUser.username}</b> ${renderTag(currentUser.tag)}<br><span style="color:#555;font-size:12px;">${tgName}</span>`;
+    }
+    if (levelDisplay) levelDisplay.textContent = 'Ур. ' + (currentUser.level || 1);
+    const avatarHtml = buildAvatarHtml(currentUser.avatar_url);
+    const headerAv = document.getElementById('headerAvatar');
+    const profAv = document.getElementById('profileAvatarEl');
+    if (headerAv) {
+        headerAv.className = 'icon-circle avatar'; 
+        if (currentUser.avatar_frame) headerAv.classList.add(currentUser.avatar_frame);
+        headerAv.innerHTML = avatarHtml;
+    }
+    if (profAv) {
+        profAv.className = 'profile-avatar'; 
+        if (currentUser.avatar_frame) profAv.classList.add(currentUser.avatar_frame);
+        profAv.innerHTML = avatarHtml;
+    }
+}
+function handleX5Click() { x5Armed = !x5Armed; updateRollButtons(); }
+function handleMainClick() { const c = x5Armed ? 5 : 1; startRoll(c); x5Armed = false; updateRollButtons(); }
+
+function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
+function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
+function openCollection() { closeMenu(); currentFilter = 'all'; updateCollection(); setTimeout(() => document.getElementById('collectionScreen').classList.add('active'), 300); }
+function closeCollection() { document.getElementById('collectionScreen').classList.remove('active'); }
+function openProfile() { closeMenu(); updateProfileUI(); setTimeout(() => document.getElementById('profileScreen').classList.add('active'), 300); }
+function closeProfile() { document.getElementById('profileScreen').classList.remove('active'); }
+function openChances() { closeMenu(); renderChancesScreen(); setTimeout(() => document.getElementById('chancesScreen').classList.add('active'), 300); }
+function closeChances() { document.getElementById('chancesScreen').classList.remove('active'); }
+function openRating() { closeMenu(); renderRating(); setTimeout(() => document.getElementById('ratingScreen').classList.add('active'), 300); }
+function closeRating() { document.getElementById('ratingScreen').classList.remove('active'); }
+function openGames() { closeMenu(); setTimeout(() => document.getElementById('gamesScreen').classList.add('active'), 300); }
+function closeGames() { document.getElementById('gamesScreen').classList.remove('active'); }
+function openUpgradeGame() { document.getElementById('upgradeGameScreen').classList.add('active'); }
+function closeUpgradeGame() { document.getElementById('upgradeGameScreen').classList.remove('active'); }
+function openPromo() { closeMenu(); setTimeout(() => document.getElementById('promoScreen').classList.add('active'), 300); }
+function closePromo() { document.getElementById('promoScreen').classList.remove('active'); }
+function openCheckNumber() { closeMenu(); document.getElementById('checkScreen').classList.add('active'); }
+function closeCheckNumber() { document.getElementById('checkScreen').classList.remove('active'); }
+function openNotifications() { closeMenu(); renderNotifications(); setTimeout(() => document.getElementById('notificationsScreen').classList.add('active'), 300); }
+function closeNotifications() { document.getElementById('notificationsScreen').classList.remove('active'); }
 function openAdmin() { 
     closeMenu(); 
     updateMaintenanceButtonUI(); 
     setTimeout(() => document.getElementById('adminScreen').classList.add('active'), 300); 
 }
-    function closeAdmin() { document.getElementById('adminScreen').classList.remove('active'); }
-    function openAdminPlayers() { renderAdminPlayersList(); document.getElementById('adminPlayersScreen').classList.add('active'); }
-    function closeAdminPlayers() { document.getElementById('adminPlayersScreen').classList.remove('active'); }
-    function openAdminPlayerDetail(id) { renderAdminPlayerDetail(id); document.getElementById('adminPlayerDetail').classList.add('active'); }
-    function closeAdminPlayerDetail() { document.getElementById('adminPlayerDetail').classList.remove('active'); }
-    function closeAdminCollection() { document.getElementById('adminCollectionScreen').classList.remove('active'); }
-    function openAdminStats() { renderAdminStats(); document.getElementById('adminStatsScreen').classList.add('active'); }
-    function closeAdminStats() { document.getElementById('adminStatsScreen').classList.remove('active'); }
-    function openAdminReset() { document.getElementById('adminResetScreen').classList.add('active'); }
-    function closeAdminReset() { document.getElementById('adminResetScreen').classList.remove('active'); }
-    function openAdminPromo() { document.getElementById('adminPromoScreen').classList.add('active'); renderPromoList(); }
-    function closeAdminPromo() { document.getElementById('adminPromoScreen').classList.remove('active'); }
-    function shareBot() {
-        const link = 'https://t.me/NomerokGameSim_bot';
-        const text = '🎮 Играй в Sim Card Game!';
-        const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
-        if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
-        else window.open(url, '_blank');
-    }
+function closeAdmin() { document.getElementById('adminScreen').classList.remove('active'); }
+function openAdminPlayers() { renderAdminPlayersList(); document.getElementById('adminPlayersScreen').classList.add('active'); }
+function closeAdminPlayers() { document.getElementById('adminPlayersScreen').classList.remove('active'); }
+function openAdminPlayerDetail(id) { renderAdminPlayerDetail(id); document.getElementById('adminPlayerDetail').classList.add('active'); }
+function closeAdminPlayerDetail() { document.getElementById('adminPlayerDetail').classList.remove('active'); }
+function closeAdminCollection() { document.getElementById('adminCollectionScreen').classList.remove('active'); }
+function openAdminStats() { renderAdminStats(); document.getElementById('adminStatsScreen').classList.add('active'); }
+function closeAdminStats() { document.getElementById('adminStatsScreen').classList.remove('active'); }
+function openAdminReset() { document.getElementById('adminResetScreen').classList.add('active'); }
+function closeAdminReset() { document.getElementById('adminResetScreen').classList.remove('active'); }
+function openAdminPromo() { document.getElementById('adminPromoScreen').classList.add('active'); renderPromoList(); }
+function closeAdminPromo() { document.getElementById('adminPromoScreen').classList.remove('active'); }
+function shareBot() {
+    const link = 'https://t.me/NomerokGameSim_bot';
+    const text = '🎮 Играй в Sim Card Game!';
+    const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+    if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
+    else window.open(url, '_blank');
+}
 function openAdminNews() {
     document.getElementById('adminScreen').classList.remove('active');
     document.getElementById('adminNewsScreen').classList.add('active');
@@ -3148,7 +3142,6 @@ async function deleteNews(id) {
     renderAdminNewsList();
 }
 
-// ===== КЭШ ПРОФИЛЯ =====
 function cacheProfile() {
     if (!currentUser || !telegramUser) return;
     try {
@@ -3184,7 +3177,6 @@ function loadCachedProfile() {
     } catch(_) { return null; }
 }
 
-// ===== БЫСТРЫЙ ПОКАЗ =====
 function buildAvatarHtml(url) {
     if (!url) return '<i class="fa-solid fa-crown"></i>';
     return '<img src="' + url + '" alt="" loading="eager" decoding="async" style="width:100%;height:100%;object-fit:cover;background:linear-gradient(135deg,#2a2200,#1a1500);" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'<i class=&quot;fa-solid fa-crown&quot;></i>\';">';
@@ -3217,65 +3209,6 @@ if (cached.profile && cached.profile.level && levelDisplay) {
     document.getElementById('loadingScreen').classList.add('hidden');
 }
 
-// ===== ОСНОВНОЙ BOOTSTRAP =====
-async function bootstrap() {
-    if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-        document.getElementById('loadingScreen').classList.add('hidden');
-        document.getElementById('errorScreen').classList.add('active');
-        return;
-    }
-    tg.ready(); tg.expand();
-    telegramUser = tg.initDataUnsafe.user;
-
-    // ⚠️ Сначала проверяем тех. работы (ждём ответ, чтобы не показывать игру зря)
-    document.getElementById('loadingText').textContent = 'Проверка сервера...';
-    try {
-        const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
-        if (data && data.maintenance_mode) {
-            // Если мы админ — показываем игру, но с предупреждением
-            const isAdmin = await checkIfAdmin();
-            if (!isAdmin) {
-                // Показываем экран тех. работ и ПРЕКРАЩАЕМ загрузку
-                showMaintenanceScreen(data.maintenance_text);
-                document.getElementById('loadingScreen').classList.add('hidden');
-                return; // Дальше не идём, игру не грузим
-            }
-        }
-    } catch(e) {
-        console.warn('Maintenance check failed:', e);
-    }
-
-    // Если тех. работ нет (или мы админ) — грузим игру
-    showGameImmediately();
-    refreshFromServer();
-}
-
-// Хелпер: проверяем, админ ли это (запрашиваем только 1 поле)
-async function checkIfAdmin() {
-    try {
-        const { data } = await sb.from('profiles').select('is_owner').eq('telegram_id', telegramUser.id).maybeSingle();
-        return data && data.is_owner;
-    } catch(e) { return false; }
-}
-
-// Хелпер: показываем экран тех. работ (без задержек)
-function showMaintenanceScreen(text) {
-    let overlay = document.getElementById('maintenanceOverlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'maintenanceOverlay';
-        overlay.style.cssText = 'position: fixed; inset: 0; background: #0d0d0d; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; gap: 20px;';
-        document.body.appendChild(overlay);
-    }
-    overlay.innerHTML = `
-        <div style="font-size: 60px;">🛠️</div>
-        <div style="font-size: 24px; font-weight: 800; color: #fff;">Технические работы</div>
-        <div style="font-size: 15px; color: #aaa; line-height: 1.6;">${text || 'Скоро вернёмся!'}</div>
-        <button onclick="location.reload()" style="margin-top: 20px; background: #2a2a2a; color: #fff; border: none; border-radius: 12px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer;">Обновить</button>
-    `;
-    overlay.style.display = 'flex';
-    document.getElementById('gameRoot').style.display = 'none';
-}
 // ===== ЗАГРУЗКА С СЕРВЕРА =====
 async function refreshFromServer() {
     try {
@@ -3585,7 +3518,6 @@ async function updateMaintenanceButtonUI(status) {
     }
 }
 
-// Перехватываем ошибки и выводим их на экран телефона
 window.addEventListener('error', function(event) {
     document.getElementById('loadingScreen').classList.add('hidden');
     let errDiv = document.getElementById('phoneError');
@@ -3602,10 +3534,9 @@ window.addEventListener('error', function(event) {
 (function() {
     // 1. Инициализируем Telegram
     if (window.Telegram && window.Telegram.WebApp) {
-        tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        telegramUser = tg.initDataUnsafe?.user || { id: 12345678, first_name: 'Тест' };
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+        telegramUser = window.Telegram.WebApp.initDataUnsafe?.user || { id: 12345678, first_name: 'Тест' };
     } else {
         telegramUser = { id: 12345678, first_name: 'Тест' };
     }
@@ -3613,11 +3544,9 @@ window.addEventListener('error', function(event) {
     // 2. Мгновенно убираем экран загрузки и показываем игру
     document.getElementById('loadingScreen').classList.add('hidden');
     document.getElementById('gameRoot').style.display = 'block';
-
-    // 3. Показываем заглушку баланса, чтобы не было пустоты
     document.getElementById('balanceDisplay').innerHTML = '0 <span>₽</span>';
 
-    // 4. Запускаем загрузку данных в фоне (если сервер ответит, данные обновятся)
+    // 3. Запускаем загрузку данных в фоне
     setTimeout(() => {
         try {
             refreshFromServer();
@@ -3626,7 +3555,7 @@ window.addEventListener('error', function(event) {
         }
     }, 100);
 })();
-/* Улучшение плавности скролла на iOS/Android */
+
 html, body, .menu-sheet, .collection-screen, .profile-screen, .shop-screen {
     -webkit-overflow-scrolling: touch; 
     scroll-behavior: smooth;
