@@ -3544,12 +3544,16 @@ async function updateMaintenanceButtonUI(status) {
     }
 }
 
-bootstrap().catch(e => {
-    console.error(e);
-    const lt = document.getElementById('loadingText');
-    if (lt) lt.textContent = 'ОШИБКА: ' + (e.message || 'Неизвестно');
-    alert('ОШИБКА: ' + (e.message || 'Неизвестно')); // ЭТО ВЫВЕДЕТ ОКНО С ОШИБКОЙ
-});
+(async () => {
+    try {
+        await bootstrap();
+    } catch (e) {
+        console.error(e);
+        const lt = document.getElementById('loadingText');
+        if (lt) lt.textContent = 'ОШИБКА: ' + (e.message || 'Неизвестно');
+        alert('ОШИБКА: ' + (e.message || 'Неизвестно'));
+    }
+})();
     </script>
 </body>
 </html>
