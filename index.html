@@ -4,15 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Sim Card Game</title>
-<link rel="preconnect" href="https://docubgerphcbftmwyltl.supabase.co" crossorigin>
-<link rel="dns-prefetch" href="https://docubgerphcbftmwyltl.supabase.co">
-<link rel="preconnect" href="https://cdnjs.cloudflare.com">
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root { --bg-color: #0d0d0d; --sheet-bg: #141414; --card-bg: #1e1e1e; --text-main: #ffffff; --text-muted: #8e8e93; --gold: #e6b800; --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); --ease-out: cubic-bezier(0.16, 1, 0.3, 1); }
+    :root { --bg-color: #0d0d0d; --sheet-bg: #141414; --card-bg: #1e1e1e; --text-main: #ffffff; --text-muted: #8e8e93; --gold: #e6b800; --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); --ease-out: cubic-bezier(0.16, 1, 0.3, 1); }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg-color); color: var(--text-main); max-width: 480px; margin: 0 auto; min-height: 100vh; overflow-x: hidden; position: relative; }
 
@@ -227,17 +223,7 @@
 
     .skeleton { background: linear-gradient(90deg, #1c1c1c 25%, #252525 50%, #1c1c1c 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-.skeleton-card { height: 100px; margin: 0 16px 12px; }
-.skeleton-balance {
-    display: inline-block;
-    width: 64px;
-    height: 20px;
-    background: linear-gradient(90deg, #1c1c1c 25%, #252525 50%, #1c1c1c 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-    vertical-align: middle;
-}
+    .skeleton-card { height: 100px; margin: 0 16px 12px; }
 
     .collection-screen, .check-screen, .chances-screen, .profile-screen, .promo-screen, .games-screen,
     .admin-screen, .admin-players-screen, .admin-reset-screen, .admin-player-detail, .rating-screen,
@@ -643,6 +629,7 @@
     .rb-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
     .rb-row b { color: #fff; }
 
+    /* СТИЛИ ДЛЯ МАГАЗИНА И ПРОПУСКА */
     .shop-tabs { display: flex; gap: 8px; padding: 0 16px 16px; overflow-x: auto; scrollbar-width: none; }
     .shop-tab { padding: 10px 18px; background: #1c1c1c; border-radius: 20px; font-size: 14px; font-weight: 600; color: #ccc; cursor: pointer; border: 1px solid transparent; white-space: nowrap; }
     .shop-tab.active { background: #fff; color: #0d0d0d; border-color: #fff; }
@@ -677,25 +664,14 @@
     .icon-circle.avatar.frame-neon { border: 3px solid #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.8); }
     .icon-circle.avatar.frame-fire { border: 3px solid #ef4444; box-shadow: 0 0 15px rgba(239,68,68,0.8); animation: firePulse 1.5s infinite alternate; }
     @keyframes firePulse { 0% { box-shadow: 0 0 5px #ef4444; } 100% { box-shadow: 0 0 25px #f97316; } }
-    .news-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 16px 16px; scrollbar-width: none; scroll-behavior: smooth; }
-    .news-carousel::-webkit-scrollbar { display: none; }
-    .news-card { min-width: 85%; scroll-snap-align: center; background: linear-gradient(135deg, #2a1a3a, #1a0f2a); border: 1px solid #a855f7; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
-    .news-card-title { font-size: 14px; font-weight: 800; color: #e9d5ff; display: flex; align-items: center; gap: 6px; }
-    .news-card-desc { 
-    font-size: 13px; 
-    color: #e0e0e0; 
-    line-height: 1.45; 
-    white-space: normal; /* Разрешаем перенос текста */
-    display: -webkit-box;
-    -webkit-line-clamp: 2; /* Максимум 2 строки, потом троеточие */
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.news-indicator { display: flex; justify-content: center; gap: 6px; margin-top: -8px; margin-bottom: 16px; }
-.news-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; transition: all 0.3s; }
-.news-dot.active { background: #e0e0e0; width: 18px; border-radius: 4px; }
-    #adminNewsScreen { z-index: 10000; }
-    #adminLogsScreen { z-index: 10001 !important; }
+    /* СТИЛИ ДЛЯ НОВОСТЕЙ (КАРУСЕЛЬ) */
+.news-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 16px 16px; scrollbar-width: none; scroll-behavior: smooth; }
+.news-carousel::-webkit-scrollbar { display: none; }
+.news-card { min-width: 85%; scroll-snap-align: center; background: linear-gradient(135deg, #2a1a3a, #1a0f2a); border: 1px solid #a855f7; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.news-card-title { font-size: 14px; font-weight: 800; color: #e9d5ff; display: flex; align-items: center; gap: 6px; }
+.news-card-desc { font-size: 12px; color: #ccc; line-height: 1.4; }
+#adminNewsScreen { z-index: 10000; }
+#adminLogsScreen { z-index: 10001 !important; }
 </style>
 </head>
 <body>
@@ -725,8 +701,7 @@
 </div>
 
 <div class="main-content">
-<div class="news-carousel" id="newsCarousel"></div>
-<div class="news-indicator" id="newsIndicator"></div>
+ <div class="news-carousel" id="newsCarousel"></div>
 
     <div class="sim-card start-card" id="simCard">
         <div class="start-hand">👋</div>
@@ -760,6 +735,7 @@
     </div>
 </div>
 
+<!-- ЕЖЕДНЕВНЫЙ БОНУС -->
 <div class="choice-modal" id="dailyModal">
     <div class="choice-box">
         <div style="text-align: center; font-size: 20px; font-weight: 800; color: #fff;">🎁 Ежедневный бонус</div>
@@ -769,14 +745,17 @@
     </div>
 </div>
 
+<!-- МАГАЗИН -->
 <div class="shop-screen" id="shopScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeShop()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="screen-title">Магазин</div>
+    
     <div class="shop-tabs">
         <div class="shop-tab active" data-tab="main" onclick="switchShopTab('main')">Главное</div>
         <div class="shop-tab" data-tab="rolls" onclick="switchShopTab('rolls')">Крутки</div>
         <div class="shop-tab" data-tab="style" onclick="switchShopTab('style')">Стиль</div>
     </div>
+
     <div id="shopTab-main" class="shop-tab-content">
         <div class="vip-banner">
             <div class="vip-title"><i class="fa-solid fa-crown"></i> VIP Статус</div>
@@ -792,6 +771,7 @@
             </div>
         </div>
     </div>
+
     <div id="shopTab-rolls" class="shop-tab-content" style="display: none;">
         <div class="shop-grid">
             <div class="shop-card">
@@ -806,6 +786,7 @@
             </div>
         </div>
     </div>
+
     <div id="shopTab-style" class="shop-tab-content" style="display: none;">
         <div class="shop-grid">
             <div class="shop-card">
@@ -827,6 +808,7 @@
     </div>
 </div>
 
+<!-- БОЕВОЙ ПРОПУСК -->
 <div class="bp-screen" id="battlePassScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeBattlePass()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="screen-title">Боевой пропуск</div>
@@ -837,6 +819,7 @@
     <div class="bp-grid" id="bpGrid"></div>
 </div>
 
+<!-- МЕНЮ -->
 <div class="overlay" id="overlay" onclick="closeMenu()"></div>
 <div class="menu-sheet" id="menuSheet">
     <div class="sheet-handle" onclick="closeMenu()"></div>
@@ -878,6 +861,7 @@
     </div>
 </div>
 
+<!-- КОЛЛЕКЦИЯ -->
 <div class="collection-screen" id="collectionScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeCollection()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="screen-title">Коллекция</div>
@@ -900,6 +884,7 @@
     <div class="sim-grid" id="collectionGrid"></div>
 </div>
 
+<!-- ПРОФИЛЬ -->
 <div class="profile-screen" id="profileScreen">
     <div class="profile-header"><div class="nav-left" onclick="closeProfile()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="profile-avatar-wrap">
@@ -930,6 +915,7 @@
     </div>
 </div>
 
+<!-- ПРОМОКОД -->
 <div class="promo-screen" id="promoScreen">
     <div class="screen-header"><div class="nav-left" onclick="closePromo()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="promo-title">Промокод</div>
@@ -938,12 +924,14 @@
     <button class="promo-activate" onclick="activatePromo()">Активировать</button>
 </div>
 
+<!-- УВЕДОМЛЕНИЯ -->
 <div class="notifications-screen" id="notificationsScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeNotifications()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="screen-title">Уведомления</div>
     <div id="notificationsList"></div>
 </div>
 
+<!-- РЕЙТИНГ -->
 <div class="rating-screen" id="ratingScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeRating()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="rating-title">Рейтинг</div>
@@ -957,6 +945,7 @@
     <div class="rating-list" id="ratingList"></div>
 </div>
 
+<!-- ПРОВЕРКА НОМЕРА -->
 <div class="check-screen" id="checkScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeCheckNumber()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="check-title">Проверка номера</div>
@@ -970,6 +959,7 @@
     <div class="check-result" id="checkResult"></div>
 </div>
 
+<!-- ШАНСЫ -->
 <div class="chances-screen" id="chancesScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeChances()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="chances-title">Шансы</div>
@@ -977,6 +967,7 @@
     <div class="chances-list" id="chancesList"></div>
 </div>
 
+<!-- ИГРЫ -->
 <div class="games-screen" id="gamesScreen">
     <div class="games-top-bar"><div class="games-back" onclick="closeGames()"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>Назад</div></div>
     <div class="game-card">
@@ -991,6 +982,7 @@
     </div>
 </div>
 
+<!-- АУКЦИОН -->
 <div class="auction-screen" id="auctionScreen">
     <div class="screen-header"><div class="nav-left" onclick="closeAuction()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="screen-title">🏛 Аукцион</div>
@@ -1006,6 +998,7 @@
     <div class="auction-list" id="auctionList"></div>
 </div>
 
+<!-- ЛОТ -->
 <div class="lot-modal" id="lotModal">
     <div class="lot-sheet">
         <div class="lot-handle" onclick="closeCreateLot()"></div>
@@ -1020,6 +1013,7 @@
     </div>
 </div>
 
+<!-- МОДАЛКА SIM-КАРТОЧКИ -->
 <div class="sim-detail-modal" id="simDetailModal">
     <div class="sim-detail-box">
         <div class="sim-detail-card" id="simDetailCard">
@@ -1040,7 +1034,7 @@
         </div>
     </div>
 </div>
-
+<!-- ЭКРАН УПРАВЛЕНИЯ НОВОСТЯМИ -->
 <div class="admin-player-detail" id="adminNewsScreen" style="z-index: 10000;">
     <div class="admin-sub-header">
         <div class="nav-left" onclick="closeAdminNews()">
@@ -1048,28 +1042,44 @@
         </div>
     </div>
     <div class="admin-sub-title">Управление новостями</div>
+    
     <div class="promo-form">
         <div class="promo-form-label">Заголовок</div>
-        <div class="promo-form-input"><input type="text" id="newsTitleInput" placeholder="Например: Двойная удача!"></div>
+        <div class="promo-form-input">
+            <input type="text" id="newsTitleInput" placeholder="Например: Двойная удача!">
+        </div>
         <div class="promo-form-label">Текст</div>
-        <div class="promo-form-input"><input type="text" id="newsDescInput" placeholder="Например: Действует х2 на час"></div>
+        <div class="promo-form-input">
+            <input type="text" id="newsDescInput" placeholder="Например: Действует х2 на час">
+        </div>
         <div class="promo-form-label">Время (часов, 0 = навсегда)</div>
-        <div class="promo-form-input"><input type="number" id="newsHoursInput" value="24" min="0"></div>
-        <button class="admin-btn green" onclick="createNews()" style="margin-top: 10px;"><i class="fa-solid fa-plus"></i> Опубликовать</button>
+        <div class="promo-form-input">
+            <input type="number" id="newsHoursInput" value="24" min="0">
+        </div>
+        <button class="admin-btn green" onclick="createNews()" style="margin-top: 10px;">
+            <i class="fa-solid fa-plus"></i> Опубликовать
+        </button>
     </div>
+
     <div class="promo-list-title">Активные новости</div>
     <div class="promo-list" id="adminNewsList"></div>
 </div>
-
+<!-- ЭКРАН ЛОГОВ -->
 <div class="admin-promo-screen" id="adminLogsScreen">
     <div class="admin-sub-header">
-        <div class="nav-left" onclick="closeAdminLogs()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div>
-        <div class="nav-left" onclick="renderAdminLogs()" style="color: #f59e0b;"><i class="fa-solid fa-rotate-right"></i><span>Обновить</span></div>
+        <div class="nav-left" onclick="closeAdminLogs()">
+            <i class="fa-solid fa-arrow-left"></i><span>Назад</span>
+        </div>
+        <div class="nav-left" onclick="renderAdminLogs()" style="color: #f59e0b;">
+            <i class="fa-solid fa-rotate-right"></i><span>Обновить</span>
+        </div>
     </div>
     <div class="admin-sub-title">Логи действий</div>
-    <div class="promo-list" id="adminLogsList" style="padding-bottom: 40px;"></div>
+    <div class="promo-list" id="adminLogsList" style="padding-bottom: 40px;">
+        <!-- Сюда будут загружаться логи -->
+    </div>
 </div>
-
+<!-- АДМИНКА -->
 <div class="admin-screen" id="adminScreen">
     <div class="admin-header"><div class="nav-left" onclick="closeAdmin()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="admin-title">Админ-панель</div>
@@ -1145,25 +1155,30 @@
     <div class="promo-list-title">Созданные промокоды</div>
     <div class="promo-list" id="promoList"></div>
 </div>
-
+<!-- ЭКРАН ВЫДАЧИ НОМЕРА -->
 <div class="admin-promo-screen" id="adminGiveNumberScreen">
     <div class="admin-sub-header"><div class="nav-left" onclick="closeAdminGiveNumber()"><i class="fa-solid fa-arrow-left"></i><span>Назад</span></div></div>
     <div class="admin-sub-title">Выдача номера</div>
+    
     <div class="promo-form">
         <div class="promo-form-label">Поиск обычного номера</div>
         <div class="promo-form-input">
             <input type="text" id="adminGiveNumInput" placeholder="+7 999 777-77-77">
             <button class="promo-gen-btn" onclick="searchAdminNumber()"><i class="fa-solid fa-magnifying-glass"></i></button>
         </div>
-        <div style="font-size: 11px; color: #888; margin-top: 8px; text-align: center;">Или введите секретный номер (0-9, 0123456789):</div>
+        <div style="font-size: 11px; color: #888; margin-top: 8px; text-align: center;">
+            Или введите секретный номер (0-9, 0123456789):
+        </div>
         <div class="promo-form-input" style="margin-top: 4px;">
             <input type="text" id="adminGiveSecretInput" placeholder="Секретный номер">
             <button class="promo-gen-btn" onclick="searchAdminSecretNumber()" style="border-color: #ef4444; color: #ef4444;"><i class="fa-solid fa-mask"></i></button>
         </div>
     </div>
+
     <div id="adminGiveNumResult" style="padding: 0 16px;"></div>
 </div>
 
+<!-- МОДАЛКА ТЕГА -->
 <div class="tag-modal" id="tagModal">
     <div class="tag-modal-box">
         <div class="tag-modal-title">Тег</div>
@@ -1180,6 +1195,7 @@
     </div>
 </div>
 
+<!-- МОДАЛКА ПОДАРКА -->
 <div class="tag-modal" id="giftModal">
     <div class="tag-modal-box">
         <div class="tag-modal-title">🎁 Подарок</div>
@@ -1191,6 +1207,7 @@
     </div>
 </div>
 
+<!-- DROP OVERLAY -->
 <div class="drop-overlay" id="dropOverlay">
     <div class="drop-bg" onclick="closeDropOverlay()"></div>
     <div class="drop-title" id="dropTitle"></div>
@@ -1208,6 +1225,7 @@
     </div>
 </div>
 
+<!-- CHOICE MODAL -->
 <div class="choice-modal" id="choiceModal">
     <div class="choice-box">
         <div class="choice-number" id="choiceNumber"></div>
@@ -1221,6 +1239,7 @@
     </div>
 </div>
 
+<!-- ИГРА АПГРЕЙД -->
 <div class="upgrade-game-screen" id="upgradeGameScreen">
     <div class="upgrade-game-inner">
         <div class="ug-top-bar"><div class="ug-back-btn" onclick="closeUpgradeGame()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>Назад</div></div>
@@ -1242,6 +1261,7 @@
     </div>
 </div>
 
+<!-- ИГРА САПЁР -->
 <div class="mines-game-screen" id="minesGameScreen">
     <div class="mines-game-inner">
         <div class="ug-top-bar"><div class="ug-back-btn" onclick="closeMinesGame()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>Назад</div></div>
@@ -1263,9 +1283,11 @@
     </div>
 </div>
 
+<!-- МОДАЛКИ ВЫБОРА -->
 <div class="game-collection-modal" id="minesCollectionModal"><div class="game-collection-sheet"><div class="game-collection-handle" onclick="closeMinesCollection()"></div><div class="game-collection-title">Выбери номер</div><div class="game-collection-list" id="minesCollectionList"></div></div></div>
 <div class="game-collection-modal" id="gameCollectionModal"><div class="game-collection-sheet"><div class="game-collection-handle" onclick="closeGameCollection()"></div><div class="game-collection-title">Выбери номер</div><div class="game-collection-list" id="gameCollectionList"></div></div></div>
 
+<!-- TOAST -->
 <div class="toast" id="toast">
     <div class="toast-icon" id="toastIcon"><i class="fa-solid fa-check"></i></div>
     <div class="toast-text"><div class="toast-title" id="toastTitle">Готово</div><div class="toast-sub" id="toastSub"></div></div>
@@ -1285,7 +1307,6 @@ let telegramUser = null;
 // ==================== СОСТОЯНИЕ ====================
 let currentUser = null;
 let balance = 0;
-let balanceSynced = false;
 let freeRolls = 0;
 let savedNumbers = [];
 let recentNumbers = [];
@@ -1306,8 +1327,6 @@ let selectedLotIndex = null;
 let currentAuctionTab = 'all';
 let auctionTickInterval = null;
 let simDetailTarget = null;
-let isSavingNumber = false; // флаг от двойного сохранения
-let isApplyingNotification = false; // флаг от двойного применения уведомлений
 
 const balanceDisplay = document.getElementById('balanceDisplay');
 const profileBalance = document.getElementById('profileBalance');
@@ -1346,23 +1365,6 @@ const TAGS = {
     yard: { label: 'Лярд', class: 'tag-yard' }
 };
 
-// ===== Безопасный UUID =====
-function uuidv4() {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        try { return crypto.randomUUID(); } catch(_) {}
-    }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = Math.random() * 16 | 0;
-        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    });
-}
-
-// ===== Экранирование HTML (защита от XSS) =====
-function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
 function getRarityColor(key) {
     return { common: '#9ca3af', rare: '#3b82f6', epic: '#a855f7', legendary: '#f59e0b', mythic: '#ef4444', secret: '#c084fc' }[key] || '#fff';
 }
@@ -1395,15 +1397,15 @@ function renderTag(tag) {
     if (!tag) return '';
     const t = TAGS[tag];
     if (!t) return '';
-    return `<span class="user-tag ${t.class}">${escapeHtml(t.label)}</span>`;
+    return `<span class="user-tag ${t.class}">${t.label}</span>`;
 }
-function formatPrice(n) { return (n || 0).toLocaleString('ru-RU') + ' ₽'; }
+function formatPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
 function formatRatingValue(n) {
     if (n >= 1000000000000) return (n / 1000000000000).toFixed(2).replace('.', ',') + ' трлн';
     if (n >= 1000000000) return (n / 1000000000).toFixed(2).replace('.', ',') + ' млрд';
     if (n >= 1000000) return (n / 1000000).toFixed(2).replace('.', ',') + ' млн';
     if (n >= 1000) return (n / 1000).toFixed(2).replace('.', ',') + ' тыс';
-    return (n || 0).toLocaleString('ru-RU');
+    return n.toLocaleString('ru-RU');
 }
 function formatTimer(ms) {
     if (ms <= 0) return '00:00';
@@ -1425,83 +1427,79 @@ function showToast(type, title, sub) {
     setTimeout(() => toast.classList.remove('active'), 3000);
 }
 
-// ===== Безопасная инициализация Audio =====
-let sounds = { click: null, win: null, drop: null };
-try {
-    sounds.click = new Audio('https://actions.google.com/sounds/v1/ui/click_002.ogg');
-    sounds.win = new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg');
-    sounds.drop = new Audio('https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate.ogg');
-    sounds.click.volume = 0.2;
-    sounds.win.volume = 0.5;
-    sounds.drop.volume = 0.5;
-} catch (e) { console.warn('Audio init failed:', e); }
-function safePlay(snd) { try { if (snd) snd.play().catch(()=>{}); } catch(_) {} }
+// ЗВУКИ
+const sounds = {
+    click: new Audio('https://actions.google.com/sounds/v1/ui/click_002.ogg'),
+    win: new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg'),
+    drop: new Audio('https://actions.google.com/sounds/v1/crowds/battle_crowd_celebrate.ogg')
+};
+sounds.click.volume = 0.2;
+sounds.win.volume = 0.5;
+sounds.drop.volume = 0.5;
 document.addEventListener('click', (e) => {
     if (e.target.closest('button') || e.target.closest('.btn-tile') || e.target.closest('.menu-item')) {
-        safePlay(sounds.click);
+        sounds.click.play().catch(()=>{});
     }
 });
 
-let newsChannel = null;
-let newsAutoScrollInterval = null;
+// ЛЕНТА НОВОСТЕЙ
 function initNewsFeed() {
-    if (newsChannel) { try { sb.removeChannel(newsChannel); } catch(_) {} }
-    newsChannel = sb.channel('news_channel_' + Date.now())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'news_feed' }, () => {
+    sb.channel('news_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'news_feed' }, payload => {
           loadNewsFeed();
       }).subscribe();
     loadNewsFeed();
 }
+// АВТО-ПРОКРУТКА НОВОСТЕЙ
+let newsAutoScrollInterval = null;
 function startNewsAutoScroll() {
     const carousel = document.getElementById('newsCarousel');
-    const indicator = document.getElementById('newsIndicator');
     if (!carousel) return;
     if (newsAutoScrollInterval) clearInterval(newsAutoScrollInterval);
-    let currentIndex = 0;
+    
     newsAutoScrollInterval = setInterval(() => {
         if (document.getElementById('gameRoot').style.display === 'none') return;
-        if (!indicator || indicator.children.length === 0) return;
-        const totalCards = indicator.children.length;
-        const scrollAmount = carousel.offsetWidth * 0.85 + 10;
-        currentIndex++;
-        if (currentIndex >= totalCards) {
-            currentIndex = 0;
+        const scrollAmount = carousel.offsetWidth * 0.85;
+        const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+        
+        if (carousel.scrollLeft >= maxScroll - 10) {
             carousel.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-            carousel.scrollTo({ left: currentIndex * scrollAmount, behavior: 'smooth' });
+            carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
         }
-        Array.from(indicator.children).forEach((dot, i) => {
-            dot.classList.toggle('active', i === currentIndex);
-        });
     }, 3000);
 }
+
 async function loadNewsFeed() {
     const { data } = await sb.from('news_feed').select('*').order('created_at', { ascending: false });
     const carousel = document.getElementById('newsCarousel');
     if (!carousel) return;
+    
     const now = new Date();
+    // Фильтруем: показываем только те, у которых нет времени конца, или время еще не пришло
     const activeNews = (data || []).filter(n => !n.expires_at || new Date(n.expires_at) > now);
+    
     if (activeNews.length === 0) {
         carousel.innerHTML = `<div class="news-card"><div class="news-card-title">📢 Добро пожаловать!</div><div class="news-card-desc">Скоро здесь появятся новости от администрации.</div></div>`;
-        document.getElementById('newsIndicator').innerHTML = '';
         return;
     }
+    
     carousel.innerHTML = activeNews.map(n => `
         <div class="news-card">
-            <div class="news-card-title" style="font-size: 15px;">${escapeHtml(n.icon || '📢')} ${escapeHtml(n.title)}</div>
-            <div class="news-card-desc">${escapeHtml(n.description)}</div>
+            <div class="news-card-title">${n.icon || '📢'} ${n.title}</div>
+            <div class="news-card-desc">${n.description}</div>
         </div>
     `).join('');
-    const indicator = document.getElementById('newsIndicator');
-    indicator.innerHTML = activeNews.map((_, i) => `<div class="news-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></div>`).join('');
+    
     startNewsAutoScroll();
 }
-
+// СИСТЕМА УРОВНЕЙ
 async function addXP(amount) {
     if (!currentUser) return;
     currentUser.xp = (currentUser.xp || 0) + amount;
     let xpNeeded = currentUser.level * 1000;
     let leveledUp = false;
+    
     while (currentUser.xp >= xpNeeded) {
         currentUser.level += 1;
         currentUser.xp -= xpNeeded;
@@ -1509,15 +1507,18 @@ async function addXP(amount) {
         leveledUp = true;
         balance += currentUser.level * 1000;
     }
+    
     if (leveledUp) {
         showToast('success', 'Новый уровень!', `Ур. ${currentUser.level}`);
-        safePlay(sounds.win);
+        sounds.win.play().catch(()=>{});
         updateBalance();
     }
+    
     await sb.from('profiles').update({ level: currentUser.level, xp: currentUser.xp }).eq('id', currentUser.id);
     updateProfileUI();
 }
 
+// БОЕВОЙ ПРОПУСК
 const BP_REWARDS = [
     { pts: 10, type: 'money', val: 5000, icon: '💵', label: '5 000 ₽' },
     { pts: 25, type: 'roll', val: 1, icon: '🎲', label: '1 Крутка' },
@@ -1533,6 +1534,7 @@ async function renderBattlePass() {
     const grid = document.getElementById('bpGrid');
     const { data } = await sb.from('battle_pass').select('*').eq('user_id', currentUser.id).maybeSingle();
     let claimed = data ? data.claimed_rewards : [];
+    
     grid.innerHTML = BP_REWARDS.map((r, i) => {
         const isClaimed = claimed.includes(i);
         const canClaim = (currentUser.bp_points || 0) >= r.pts && !isClaimed;
@@ -1552,18 +1554,21 @@ async function claimBP(index) {
     if (r.type === 'money') { balance += r.val; updateBalance(); }
     if (r.type === 'roll') { freeRolls += r.val; updateRollButtons(); }
     if (r.type === 'luck') { activateLuckBoost('x2', 60); }
-    if (r.type === 'frame') { await applyFrame(r.val); }
+    if (r.type === 'frame') { applyFrame(r.val); }
+
     const { data } = await sb.from('battle_pass').select('*').eq('user_id', currentUser.id).maybeSingle();
     let claimed = data ? data.claimed_rewards : [];
-    if (!claimed.includes(index)) claimed.push(index);
+    claimed.push(index);
     if (data) await sb.from('battle_pass').update({ claimed_rewards: claimed }).eq('user_id', currentUser.id);
     else await sb.from('battle_pass').insert({ user_id: currentUser.id, points: 0, claimed_rewards: claimed });
+    
     await saveUserData();
     showToast('success', 'Награда получена!', r.label);
-    safePlay(sounds.win);
+    sounds.win.play().catch(()=>{});
     renderBattlePass();
 }
 
+// МАГАЗИН
 function openShop() { closeMenu(); document.getElementById('shopScreen').classList.add('active'); }
 function closeShop() { document.getElementById('shopScreen').classList.remove('active'); }
 function switchShopTab(tab) {
@@ -1573,7 +1578,7 @@ function switchShopTab(tab) {
 async function buyItem(itemId) {
     if (!tg || !tg.showPopup) {
         if (itemId.startsWith('vip')) await applyVIP(itemId);
-        else if (itemId.startsWith('rolls')) { freeRolls += itemId === 'rolls5' ? 5 : 20; updateRollButtons(); }
+        else if (itemId.startsWith('rolls')) freeRolls += itemId === 'rolls5' ? 5 : 20;
         else await applyFrame(itemId);
         showToast('success', 'Куплено (тест)', '');
         return;
@@ -1608,28 +1613,25 @@ async function applyFrame(frameId) {
     updateProfileUI();
 }
 
+// НАЛОГИ
 async function checkTaxes() {
     if (!currentUser) return;
     const now = Date.now();
     const lastTax = currentUser.last_tax_time ? new Date(currentUser.last_tax_time).getTime() : 0;
     const DAY = 24 * 60 * 60 * 1000;
     if (now - lastTax > DAY) {
-        let tax = 0;
         if (balance > 1000000) {
-            tax = Math.floor(balance * 0.05);
+            const tax = Math.floor(balance * 0.05);
             balance -= tax;
             updateBalance();
             showToast('error', 'Налог списан', `Вычли 5%: ${formatPrice(tax)}`);
         }
         currentUser.last_tax_time = new Date().toISOString();
-        await sb.from('profiles').update({
-            balance: balance,
-            last_tax_time: currentUser.last_tax_time
-        }).eq('id', currentUser.id);
-        cacheProfile();
+        await sb.from('profiles').update({ last_tax_time: currentUser.last_tax_time }).eq('id', currentUser.id);
     }
 }
 
+// ЕЖЕДНЕВНЫЙ БОНУС
 function openDailyReward() {
     closeMenu();
     const modal = document.getElementById('dailyModal');
@@ -1662,7 +1664,7 @@ async function claimDailyReward() {
     showToast('success', 'Бонус получен!', '+5 000 ₽ и 1 крутка');
     document.getElementById('dailyModal').classList.remove('active');
 }
-
+// ==================== ГЕНЕРАЦИЯ И ЦЕНЫ ====================
 function getPatternMultiplier(digits) {
     if (!digits || digits.length !== 7) return 1.0;
     const d = digits; const s = digits.join('');
@@ -1731,7 +1733,7 @@ function renderPatternBadge(container, numberObj) {
     if (old) old.remove();
     const badge = document.createElement('div');
     badge.className = 'pattern-badge';
-    badge.innerHTML = `×${info.mult.toFixed(2)} <span class="pattern-name">${escapeHtml(info.name)}</span>`;
+    badge.innerHTML = `×${info.mult.toFixed(2)} <span class="pattern-name">${info.name}</span>`;
     container.appendChild(badge);
 }
 function calculatePrice(rarity, numberObj) {
@@ -1743,6 +1745,7 @@ function calculatePrice(rarity, numberObj) {
     const patternMult = numberObj && numberObj.digits ? getPatternMultiplier(numberObj.digits) : 1.0;
     const opMult = (numberObj && numberObj.opObj) ? (OPERATOR_MULT[numberObj.opObj.name] || 1.0) : 1.0;
     const digitBonus = numberObj && numberObj.digits ? getDigitBonus(numberObj.digits) : 1.0;
+
     if (key === 'legendary') {
         const base = 100000 + Math.random() * 600000;
         const finalPrice = Math.floor(base * patternMult * opMult * digitBonus);
@@ -1759,7 +1762,7 @@ function calculatePrice(rarity, numberObj) {
     }
     const base = BASE_PRICES[key] || BASE_PRICES.common;
     const jitter = 0.95 + Math.random() * 0.10;
-    const minFloor = Math.floor(BASE_PRICES[key] * 0.85);
+    const minFloor = Math.floor(BASE_PRICES[key] * 0.85); 
     const calculated = Math.floor(base * patternMult * opMult * digitBonus * jitter);
     return Math.max(minFloor, calculated);
 }
@@ -1810,13 +1813,7 @@ function buildNumberFromDigits(opObj, digits, rarity) {
     const formatted = `+7 ${opObj.code} ${digits[0]}${digits[1]}${digits[2]}-${digits[3]}${digits[4]}-${digits[5]}${digits[6]}`;
     return { op: opObj.code, opObj, digits, formatted, rarity };
 }
-async function generateUniqueNumber(rarity, _depth = 0) {
-    if (_depth > 5) {
-        // Защита от бесконечной рекурсии — отдаём обычный
-        const opObj = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
-        const digits = generateDigitsForRarity(RARITIES[5]);
-        return buildNumberFromDigits(opObj, digits, RARITIES[5]);
-    }
+async function generateUniqueNumber(rarity) {
     const limit = TIRAGE_LIMITS[rarity.key];
     if (limit === Infinity) {
         const opObj = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
@@ -1825,15 +1822,14 @@ async function generateUniqueNumber(rarity, _depth = 0) {
     }
     if (rarity.key === 'secret') {
         const variants = ['0','1','2','3','4','5','6','7','8','9','0123456789','10','11','12','13','14','15','16'];
-        const shuffled = [...variants].sort(() => Math.random() - 0.5);
+        const shuffled = variants.sort(() => Math.random() - 0.5);
         for (const v of shuffled) {
             const { count } = await sb.from('saved_numbers').select('id', { count: 'exact', head: true }).eq('rarity_key', 'secret').eq('formatted', v);
             if ((count || 0) < limit) {
                 return { op: '-', opObj: { code: '-', name: 'SECRET', country: '🌌 Неизвестно' }, digits: v.split('').map(Number), formatted: v, rarity: rarity, isSecretVariant: v };
             }
         }
-        // Все secret заняты — отдаём legendary (с защитой от рекурсии)
-        return generateUniqueNumber(RARITIES[3], _depth + 1);
+        return generateUniqueNumber(RARITIES[3]);
     }
     for (let attempt = 0; attempt < 30; attempt++) {
         const opObj = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
@@ -1842,9 +1838,10 @@ async function generateUniqueNumber(rarity, _depth = 0) {
         const { count } = await sb.from('saved_numbers').select('id', { count: 'exact', head: true }).eq('formatted', num.formatted);
         if ((count || 0) < limit) return num;
     }
-    return generateUniqueNumber(RARITIES[3], _depth + 1);
+    return generateUniqueNumber(RARITIES[3]);
 }
 
+// УДАЧА И ШАНСЫ
 const LUCK_TIERS = [
     { key: 'x15', mult: 15, tier: 3 }, { key: 'x10', mult: 10, tier: 3 },
     { key: 'x5', mult: 5, tier: 2 }, { key: 'x2', mult: 2, tier: 1 },
@@ -1893,22 +1890,18 @@ function startLuckTimer() {
 }
 function calculateChances() {
     const boost = getLuckMultiplier();
-    // База нормализована к 100%
     const base = { common: 87, rare: 6, epic: 4, legendary: 0.1, mythic: 0.001, secret: 0.0001 };
-    const baseSum = Object.values(base).reduce((a, b) => a + b, 0);
-    const normBase = {};
-    Object.keys(base).forEach(k => normBase[k] = base[k] * 100 / baseSum);
-    if (boost <= 1) return { ...normBase, boost: 1 };
+    if (boost <= 1) return { ...base, boost: 1 };
     const boostFactor = Math.min(0.85, (boost - 1) / (boost + 1));
-    const commonReduction = normBase.common * boostFactor;
-    const rareTotal = normBase.rare + normBase.epic + normBase.legendary + normBase.mythic + normBase.secret;
+    const commonReduction = base.common * boostFactor;
+    const rareTotal = base.rare + base.epic + base.legendary + base.mythic + base.secret;
     const scale = (rareTotal + commonReduction) / rareTotal;
     const boosted = {
-        common: normBase.common - commonReduction, rare: normBase.rare * scale,
-        epic: normBase.epic * scale * (1 + (boost - 1) * 0.08),
-        legendary: normBase.legendary * scale * (1 + (boost - 1) * 0.12),
-        mythic: normBase.mythic * scale * (1 + (boost - 1) * 0.18),
-        secret: normBase.secret * scale * (1 + (boost - 1) * 0.25)
+        common: base.common - commonReduction, rare: base.rare * scale,
+        epic: base.epic * scale * (1 + (boost - 1) * 0.08),
+        legendary: base.legendary * scale * (1 + (boost - 1) * 0.12),
+        mythic: base.mythic * scale * (1 + (boost - 1) * 0.18),
+        secret: base.secret * scale * (1 + (boost - 1) * 0.25)
     };
     const total = Object.values(boosted).reduce((a, b) => a + b, 0);
     const norm = 100 / total;
@@ -1920,8 +1913,8 @@ function formatChancePercent(v) {
     if (v >= 10) return v.toFixed(1).replace(/\.0$/, '') + '%';
     if (v >= 1) return v.toFixed(2).replace(/\.?0+$/, '') + '%';
     if (v >= 0.01) return v.toFixed(3).replace(/\.?0+$/, '') + '%';
-    if (v >= 0.0001) return v.toFixed(4).replace(/\.?0+$/, '') + '%';
-    return v.toFixed(6) + '%';
+    if (v >= 0.0001) return v.toFixed(5).replace(/\.?0+$/, '') + '%';
+    return v.toExponential(1) + '%';
 }
 function renderChancesScreen() {
     const list = document.getElementById('chancesList');
@@ -1962,6 +1955,7 @@ function pickRarity() {
     return RARITIES[5];
 }
 
+// РЕНДЕР И КРУТКА
 function renderMainNumber(n) {
     const card = document.getElementById('simCard');
     const isSecret = n.rarity.key === 'secret';
@@ -1975,12 +1969,12 @@ function renderMainNumber(n) {
     if (isSecret) {
         card.innerHTML = `${badgeIcon ? `<div class="op-badge ${badgeClass}">${badgeIcon}</div>` : ''}
             <div class="sim-top"><div class="sim-logo"><div class="sim-logo-top"><div class="red-box">SEC</div><span>SECRET</span></div><div class="sim-country">🌌 Неизвестно</div></div></div>
-            <div class="sim-number rarity-secret" id="simNumber" style="font-size: 56px; text-align: center; font-weight: 900;">${escapeHtml(n.formatted)}</div>
+            <div class="sim-number rarity-secret" id="simNumber" style="font-size: 56px; text-align: center; font-weight: 900;">${n.formatted}</div>
             <div class="sim-footer"><div class="sim-type">Супер секретный</div></div>`;
     } else {
         card.innerHTML = `${badgeIcon ? `<div class="op-badge ${badgeClass}">${badgeIcon}</div>` : ''}
-            <div class="sim-top"><div class="sim-logo"><div class="sim-logo-top"><div class="red-box">${getOpShort(opName)}</div><span>${escapeHtml(opName)}</span></div><div class="sim-country">${escapeHtml(n.opObj.country)}</div></div></div>
-            <div class="sim-number rarity-${n.rarity.key}" id="simNumber">${escapeHtml(n.formatted)}</div>
+            <div class="sim-top"><div class="sim-logo"><div class="sim-logo-top"><div class="red-box">${getOpShort(opName)}</div><span>${opName}</span></div><div class="sim-country">${n.opObj.country}</div></div></div>
+            <div class="sim-number rarity-${n.rarity.key}" id="simNumber">${n.formatted}</div>
             <div class="sim-footer"><div class="sim-type">${getRarityName(n.rarity.key)}</div></div>`;
     }
     renderPatternBadge(card, n);
@@ -1997,6 +1991,7 @@ function showDropOverlay(n) {
     title.className = 'drop-title ' + key;
     const opName = n.opObj ? n.opObj.name : 'SECRET';
     const opClass = getOperatorClass(opName);
+    const badgeClass = getOpBadgeClass(opName);
     cardInner.className = 'drop-card-inner rarity-' + key + (opClass ? ' ' + opClass : '');
     document.getElementById('dropDcRedBox').textContent = getOpShort(opName);
     document.getElementById('dropDcOpName').textContent = opName;
@@ -2007,46 +2002,25 @@ function showDropOverlay(n) {
     document.getElementById('dropPriceValue').textContent = formatPrice(n.price);
     overlay.classList.add('active');
     renderPatternBadge(cardInner, n);
-    safePlay(sounds.drop);
+    sounds.drop.play().catch(()=>{});
     if (navigator.vibrate) {
         if (key === 'mythic') navigator.vibrate([120, 60, 120, 60, 250]);
         else if (key === 'legendary') navigator.vibrate([80, 40, 150]);
         else navigator.vibrate([150, 60, 150, 60, 300]);
     }
 }
-function closeDropOverlay() {
-    document.getElementById('dropOverlay').classList.remove('active');
-    // Сбрасываем dropPendingNumber только если он уже не сохранён
-    if (dropPendingNumber) {
-        dropPendingNumber = null;
-        document.getElementById('saveSellRow').classList.add('visible');
-    }
-}
-async function dropSave() {
-    if (!dropPendingNumber) return;
-    const n = dropPendingNumber;
-    dropPendingNumber = null; // сбрасываем ДО await, чтобы двойной клик не сработал
-    await saveNumberToDB(n);
-    recentNumbers = recentNumbers.filter(x => x !== n);
-    // Сбрасываем currentRolledNumber, если это он
-    if (currentRolledNumber === n) currentRolledNumber = null;
-    closeDropOverlay();
-    document.getElementById('saveSellRow').classList.remove('visible');
-    renderMiniCards();
-}
+function closeDropOverlay() { document.getElementById('dropOverlay').classList.remove('active'); dropPendingNumber = null; document.getElementById('saveSellRow').classList.add('visible'); }
+async function dropSave() { if (!dropPendingNumber) return; await saveNumberToDB(dropPendingNumber); recentNumbers = recentNumbers.filter(n => n !== dropPendingNumber); closeDropOverlay(); renderMiniCards(); }
 
 async function rollOne() {
     const finalRarity = pickRarity();
     const finalNumber = await generateUniqueNumber(finalRarity);
     const price = calculatePrice(finalNumber.rarity, finalNumber);
-    const card = document.getElementById('simCard');
-    const numEl = document.getElementById('simNumber');
-    if (card.classList.contains('start-card') || !numEl) {
-        renderMainNumber(finalNumber);
-        return { ...finalNumber, price, rarity: finalNumber.rarity };
-    }
-    // Анимация прокрутки без Promise-обёртки
-    await new Promise((resolve) => {
+    return new Promise(async (resolve) => {
+        const card = document.getElementById('simCard');
+        if (card.classList.contains('start-card')) { renderMainNumber(finalNumber); resolve({ ...finalNumber, price, rarity: finalNumber.rarity }); return; }
+        const numEl = document.getElementById('simNumber');
+        if (!numEl) { renderMainNumber(finalNumber); resolve({ ...finalNumber, price, rarity: finalNumber.rarity }); return; }
         numEl.className = 'sim-number';
         let frames = 0;
         const interval = setInterval(() => {
@@ -2055,20 +2029,16 @@ async function rollOne() {
             for (let i = 0; i < 7; i++) rd.push(Math.floor(Math.random() * 10));
             const op = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
             numEl.textContent = `+7 ${op.code} ${rd[0]}${rd[1]}${rd[2]}-${rd[3]}${rd[4]}-${rd[5]}${rd[6]}`;
-            if (frames >= 20) { clearInterval(interval); resolve(); }
+            if (frames >= 20) { clearInterval(interval); renderMainNumber(finalNumber); resolve({ ...finalNumber, price, rarity: finalNumber.rarity }); }
         }, 60);
     });
-    renderMainNumber(finalNumber);
-    return { ...finalNumber, price, rarity: finalNumber.rarity };
 }
 
 async function startRoll(count) {
     if (isRolling) return;
-    if (!balanceSynced) {
-        showToast('error', 'Загрузка', 'Данные с сервера ещё идут, подождите');
-        return;
-    }
-    try { new Audio('https://actions.google.com/sounds/v1/foley/playing_cards_flick_1.ogg').play().catch(()=>{}); } catch(_) {}
+    const rollSound = new Audio('https://actions.google.com/sounds/v1/foley/playing_cards_flick_1.ogg');
+rollSound.volume = 0.4;
+rollSound.play().catch(()=>{});
     let freeUsed = Math.min(freeRolls, count);
     let paidRolls = count - freeUsed;
     let cost = ROLL_PRICE * paidRolls;
@@ -2092,21 +2062,28 @@ async function startRoll(count) {
     const best = results.reduce((b, r) => order.indexOf(r.rarity.key) > order.indexOf(b.rarity.key) ? r : b, results[0]);
     if (['legendary', 'mythic', 'secret'].includes(best.rarity.key)) currentUser.pity_counter = 0;
     else currentUser.pity_counter = (currentUser.pity_counter || 0) + count;
-    await sb.from('profiles').update({ pity_counter: currentUser.pity_counter, bp_points: (currentUser.bp_points || 0) + (count * 2) }).eq('id', currentUser.id);
-    currentUser.bp_points = (currentUser.bp_points || 0) + (count * 2);
+    await sb.from('profiles').update({ pity_counter: currentUser.pity_counter }).eq('id', currentUser.id);
+
     results.reverse().forEach(r => recentNumbers.unshift(r));
     recentNumbers = recentNumbers.slice(0, 5);
     renderMiniCards();
+    
     if (['legendary', 'mythic', 'secret'].includes(best.rarity.key)) showDropOverlay(best);
     else document.getElementById('saveSellRow').classList.add('visible');
+    
     isRolling = false;
     document.getElementById('rollBtn').disabled = false;
     document.getElementById('rollX5Btn').disabled = false;
     updateRollButtons();
+
     await addXP(count * 10);
+    currentUser.bp_points = (currentUser.bp_points || 0) + (count * 2);
+    await sb.from('profiles').update({ bp_points: currentUser.bp_points }).eq('id', currentUser.id);
+    
     await saveUserData();
     addLog('roll', `Сделал ${count} круток. Лучшее: ${best.rarity.name} ${best.formatted}`);
 }
+// МИНИ-КАРТОЧКИ И ВЫБОР
 function renderMiniCards() {
     const row = document.getElementById('miniCardsRow');
     if (!row) return;
@@ -2143,42 +2120,32 @@ function openChoiceModal(n) {
 function closeChoiceModal() { document.getElementById('choiceModal').classList.remove('active'); modalTargetNumber = null; }
 async function modalSave() {
     if (!modalTargetNumber) return;
-    const n = modalTargetNumber;
-    modalTargetNumber = null;
-    await saveNumberToDB(n);
-    const i = recentNumbers.indexOf(n);
+    await saveNumberToDB(modalTargetNumber);
+    const i = recentNumbers.indexOf(modalTargetNumber);
     if (i > -1) recentNumbers.splice(i, 1);
-    if (currentRolledNumber === n) { currentRolledNumber = null; document.getElementById('saveSellRow').classList.remove('visible'); }
+    if (currentRolledNumber === modalTargetNumber) { currentRolledNumber = null; document.getElementById('saveSellRow').classList.remove('visible'); }
     renderMiniCards(); closeChoiceModal();
 }
 async function modalSell() {
     if (!modalTargetNumber) return;
-    const n = modalTargetNumber;
-    modalTargetNumber = null;
-    balance += n.price; updateBalance(); await saveUserData();
-    showToast('success', 'Продан!', '+' + formatPrice(n.price));
-    const i = recentNumbers.indexOf(n);
+    balance += modalTargetNumber.price; updateBalance(); await saveUserData();
+    showToast('success', 'Продан!', '+' + formatPrice(modalTargetNumber.price));
+    const i = recentNumbers.indexOf(modalTargetNumber);
     if (i > -1) recentNumbers.splice(i, 1);
-    if (currentRolledNumber === n) { currentRolledNumber = null; document.getElementById('saveSellRow').classList.remove('visible'); }
+    if (currentRolledNumber === modalTargetNumber) { currentRolledNumber = null; document.getElementById('saveSellRow').classList.remove('visible'); }
     renderMiniCards(); closeChoiceModal();
 }
 async function saveNumber() {
     if (!currentRolledNumber) return;
-    const n = currentRolledNumber;
-    currentRolledNumber = null;
-    await saveNumberToDB(n);
-    const i = recentNumbers.indexOf(n);
+    await saveNumberToDB(currentRolledNumber);
+    const i = recentNumbers.indexOf(currentRolledNumber);
     if (i > -1) recentNumbers.splice(i, 1);
     renderMiniCards();
     document.getElementById('saveSellRow').classList.remove('visible');
+    currentRolledNumber = null;
 }
 async function saveNumberToDB(n) {
-    if (!currentUser) return false;
-    if (isSavingNumber) {
-        showToast('error', 'Подождите', 'Сохранение уже идёт');
-        return false;
-    }
-    isSavingNumber = true;
+    if (!currentUser) return;
     try {
         const { data, error } = await sb.from('saved_numbers').insert({
             user_id: currentUser.id, formatted: n.formatted, op: n.op,
@@ -2195,9 +2162,7 @@ async function saveNumberToDB(n) {
         });
         updateCollection(); updateProfileUI();
         showToast('success', 'Сохранён!', n.formatted);
-        return true;
-    } catch (e) { showToast('error', 'Ошибка', e.message); return false; }
-    finally { isSavingNumber = false; }
+    } catch (e) { showToast('error', 'Ошибка', e.message); }
 }
 async function sellAll() {
     const all = [...recentNumbers];
@@ -2214,6 +2179,7 @@ async function sellAll() {
     await saveUserData();
 }
 
+// КОЛЛЕКЦИЯ
 function updateCollection() {
     const grid = document.getElementById('collectionGrid');
     if (!grid) return;
@@ -2244,10 +2210,10 @@ function updateCollection() {
         card.className = 'sim-card-item rarity-' + n.rarity.key;
         card.innerHTML = `
             <div class="sci-top">
-                <div class="sci-op-badge">${escapeHtml(opShort)}</div>
+                <div class="sci-op-badge">${opShort}</div>
                 <div class="sci-chip"></div>
             </div>
-            <div class="sci-number">${escapeHtml(n.formatted)}</div>
+            <div class="sci-number">${n.formatted}</div>
             <div class="sci-bottom">
                 <div class="sci-rarity">${getRarityName(n.rarity.key)}</div>
                 <div class="sci-price">${formatPrice(n.price)}</div>
@@ -2277,7 +2243,6 @@ function closeSimDetail() {
 async function simDetailSell() {
     if (!simDetailTarget) return;
     const n = simDetailTarget;
-    simDetailTarget = null;
     balance += n.price; updateBalance();
     await sb.from('saved_numbers').delete().eq('id', n.id);
     savedNumbers = savedNumbers.filter(x => x.id !== n.id);
@@ -2290,8 +2255,6 @@ async function simDetailSell() {
 async function simDetailDelete() {
     if (!simDetailTarget) return;
     const n = simDetailTarget;
-    if (!confirm(`Удалить номер ${n.formatted}? Это необратимо.`)) return;
-    simDetailTarget = null;
     await sb.from('saved_numbers').delete().eq('id', n.id);
     savedNumbers = savedNumbers.filter(x => x.id !== n.id);
     updateCollection(); updateProfileUI();
@@ -2299,32 +2262,34 @@ async function simDetailDelete() {
     closeSimDetail();
 }
 
+// РЕЙТИНГ
 function renderRating() {
     const list = document.getElementById('ratingList');
     if (!list) return;
-    // Не мутируем allPlayersList — создаём копии
-    const sorted = allPlayersList.map(p => {
+    const sorted = [...allPlayersList];
+    sorted.forEach(p => {
         let total = p.balance || 0;
         if (p.id === currentUser.id) total += savedNumbers.reduce((s, n) => s + n.price, 0);
-        return { ...p, _ratingValue: total };
+        p._ratingValue = total;
     });
     sorted.sort((a, b) => b._ratingValue - a._ratingValue);
     const meIdx = sorted.findIndex(p => p.id === currentUser.id);
     document.getElementById('myPlace').textContent = meIdx >= 0 ? meIdx + 1 : '—';
     document.getElementById('myValue').textContent = formatRatingValue(meIdx >= 0 ? sorted[meIdx]._ratingValue : 0) + ' ₽';
-    if (currentUser.avatar_url) document.getElementById('myRatingAvatar').innerHTML = `<img src="${escapeHtml(currentUser.avatar_url)}" alt="">`;
-    document.getElementById('myRatingName').innerHTML = `${escapeHtml(currentUser.username)} ${renderTag(currentUser.tag)}`;
+    if (currentUser.avatar_url) document.getElementById('myRatingAvatar').innerHTML = `<img src="${currentUser.avatar_url}" alt="">`;
+    document.getElementById('myRatingName').innerHTML = `${currentUser.username} ${renderTag(currentUser.tag)}`;
     list.innerHTML = sorted.map((p, i) => {
-        const av = p.avatar_url ? `<img src="${escapeHtml(p.avatar_url)}" alt="">` : '<i class="fa-solid fa-crown" style="color:#f59e0b;"></i>';
+        const av = p.avatar_url ? `<img src="${p.avatar_url}" alt="">` : '<i class="fa-solid fa-crown" style="color:#f59e0b;"></i>';
         return `<div class="rating-row">
             <div class="rating-place ${i===0?'top-1':i===1?'top-2':i===2?'top-3':''}">${i+1}</div>
             <div class="rating-avatar">${av}</div>
-            <div class="rating-info"><div class="rating-name">${escapeHtml(p.username)} ${renderTag(p.tag)}</div></div>
+            <div class="rating-info"><div class="rating-name">${p.username} ${renderTag(p.tag)}</div></div>
             <div class="rating-value">${formatRatingValue(p._ratingValue)} ₽</div>
         </div>`;
     }).join('');
 }
 
+// ПРОВЕРКА НОМЕРА
 let currentCountry = 'ru';
 function selectCountry(c) {
     currentCountry = c;
@@ -2360,24 +2325,18 @@ async function checkNumber() {
         const { data } = await sb.from('saved_numbers').select('*').eq('rarity_key', 'secret').eq('formatted', formatted).limit(1);
         if (data && data.length) found = data[0];
     } else {
-        // Ищем прямо на сервере по formatted (формат всегда одинаковый)
-        const { data } = await sb.from('saved_numbers').select('*').eq('formatted', formatted).limit(1);
-        if (data && data.length) found = data[0];
-        // Fallback: если формат мог быть записан иначе — ищем по цифрам через ilike
-        if (!found) {
-            const { data: data2 } = await sb.from('saved_numbers').select('*').ilike('formatted', `%${searchDigits.slice(0,3)}%${searchDigits.slice(3)}%`).limit(5);
-            if (data2) found = data2.find(n => n.formatted.replace(/\D/g, '').endsWith(searchDigits)) || null;
-        }
+        const { data } = await sb.from('saved_numbers').select('*').limit(2000);
+        if (data) found = data.find(n => n.formatted.replace(/\D/g, '') === '7' + searchDigits);
     }
     if (found) {
         const { data: owner } = await sb.from('profiles').select('*').eq('id', found.user_id).maybeSingle();
-        const av = owner && owner.avatar_url ? `<img src="${escapeHtml(owner.avatar_url)}" alt="">` : '<i class="fa-solid fa-crown"></i>';
-        const ownerName = escapeHtml(owner ? owner.username : 'Неизвестно');
-        const ownerTg = owner && owner.tg_username ? `@${escapeHtml(owner.tg_username)}` : '';
+        const av = owner && owner.avatar_url ? `<img src="${owner.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
+        const ownerName = owner ? owner.username : 'Неизвестно';
+        const ownerTg = owner && owner.tg_username ? `@${owner.tg_username}` : '';
         const tirageLimit = TIRAGE_LIMITS[found.rarity_key];
         const tirageText = tirageLimit === Infinity ? '∞ из ∞' : `1 из ${tirageLimit}`;
         resultEl.innerHTML = `
-            <div class="check-result-number">${escapeHtml(found.formatted)}</div>
+            <div class="check-result-number">${found.formatted}</div>
             <div class="check-status busy">Занят</div>
             <div class="check-info-row">
                 <div class="check-info-col"><div class="check-info-label">Редкость</div><div class="check-info-value" style="color:${getRarityColor(found.rarity_key)};">${getRarityName(found.rarity_key)}</div></div>
@@ -2390,7 +2349,7 @@ async function checkNumber() {
             </div>`;
     } else {
         resultEl.innerHTML = `
-            <div class="check-result-number">${escapeHtml(formatted)}</div>
+            <div class="check-result-number">${formatted}</div>
             <div class="check-status free">Свободен</div>
             <div class="check-info-row">
                 <div class="check-info-col"><div class="check-info-label">Статус</div><div class="check-info-value" style="color:#4ade80;">Ни у кого</div></div>
@@ -2398,35 +2357,41 @@ async function checkNumber() {
     }
 }
 
+// ПРОМОКОДЫ
 async function activatePromo() {
     const input = document.getElementById('promoInput').value.trim().toUpperCase();
     if (!input) { showToast('error', 'Введите промокод', ''); return; }
-    if (usedPromoCodes.includes(input)) {
-        showToast('error', 'Уже использован', 'Этот код уже активирован');
-        return;
-    }
+
     const { data: used, error: checkErr } = await sb.from('used_promocodes')
         .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
+    
     if (checkErr) { showToast('error', 'Ошибка БД', checkErr.message); return; }
-    if (used) {
-        if (!usedPromoCodes.includes(input)) usedPromoCodes.push(input);
-        showToast('error', 'Уже использован', 'Этот код уже активирован');
-        return;
-    }
+    if (used) { showToast('error', 'Уже использован', 'Этот код уже активирован'); return; }
+
     const { data: promos, error: promoErr } = await sb.from('promo_codes').select('*').eq('code', input).limit(1);
     if (promoErr) { showToast('error', 'Ошибка БД', promoErr.message); return; }
     if (!promos || !promos.length) { showToast('error', 'Неверный промокод', ''); return; }
+    
     const p = promos[0];
     if (p.uses_left <= 0) { showToast('error', 'Исчерпан', ''); return; }
     if (p.expires_at && new Date(p.expires_at) < new Date()) { showToast('error', 'Истёк', ''); return; }
-    const { error: insertErr } = await sb.from('used_promocodes').insert({ user_id: currentUser.id, code: input });
-    if (insertErr) { showToast('error', 'Ошибка базы', 'Не удалось сохранить: ' + insertErr.message); return; }
+
+    const { error: insertErr } = await sb.from('used_promocodes')
+        .insert({ user_id: currentUser.id, code: input });
+        
+    if (insertErr) { 
+        showToast('error', 'Ошибка базы', 'Не удалось сохранить: ' + insertErr.message); 
+        return; 
+    }
+
     const r = p.rewards || {};
     const applied = [];
     if (r.money) { balance += r.money; applied.push(`+${r.money} ₽`); }
     if (r.rolls) { freeRolls += r.rolls; applied.push(`+${r.rolls} круток`); }
     ['x2','x5','x10','x15'].forEach(k => { if (r[k]) { activateLuckBoost(k, r[k]); applied.push(`×${k.slice(1)} на ${r[k]} мин`); } });
+
     await sb.from('promo_codes').update({ uses_left: p.uses_left - 1 }).eq('id', p.id);
+    
     usedPromoCodes.push(input);
     updateBalance(); updateLuckUI(); updateRollButtons();
     document.getElementById('promoInput').value = '';
@@ -2434,10 +2399,10 @@ async function activatePromo() {
     await saveUserData();
 }
 
+// УВЕДОМЛЕНИЯ
 function subscribeToNotifications() {
-    if (!currentUser) return;
-    if (notificationRealtimeChannel) { try { sb.removeChannel(notificationRealtimeChannel); } catch(_) {} }
-    notificationRealtimeChannel = sb.channel('notif_' + currentUser.id + '_' + Date.now())
+    if (notificationRealtimeChannel) sb.removeChannel(notificationRealtimeChannel);
+    notificationRealtimeChannel = sb.channel('notif_' + currentUser.id)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` }, payload => {
             const n = payload.new;
             notifications.unshift(n);
@@ -2446,26 +2411,13 @@ function subscribeToNotifications() {
         }).subscribe();
 }
 async function applyNotification(n) {
-    // Защита от двойного применения
-    if (n.claimed) return;
-    if (isApplyingNotification) return;
-    isApplyingNotification = true;
-    try {
-        // Сначала атомарно помечаем claimed и проверяем, не помечено ли уже кем-то
-        const { data: updated, error } = await sb.from('notifications')
-            .update({ claimed: true })
-            .eq('id', n.id)
-            .eq('claimed', false)
-            .select('id');
-        if (error) { console.warn('Notif claim error:', error); isApplyingNotification = false; return; }
-        if (!updated || updated.length === 0) { isApplyingNotification = false; return; } // уже обработано
-        const d = n.data || {};
-        let changed = false;
-        if (d.money) { balance += d.money; changed = true; }
-        if (d.rolls) { freeRolls += d.rolls; changed = true; }
-        ['x2','x5','x10','x15'].forEach(k => { if (d[k]) { activateLuckBoost(k, d[k]); changed = true; } });
-        if (changed) { updateBalance(); updateRollButtons(); updateLuckUI(); await saveUserData(); }
-    } finally { isApplyingNotification = false; }
+    const d = n.data || {};
+    let changed = false;
+    if (d.money) { balance += d.money; changed = true; }
+    if (d.rolls) { freeRolls += d.rolls; changed = true; }
+    ['x2','x5','x10','x15'].forEach(k => { if (d[k]) { activateLuckBoost(k, d[k]); changed = true; } });
+    if (changed) { updateBalance(); updateRollButtons(); updateLuckUI(); await saveUserData(); }
+    await sb.from('notifications').update({ claimed: true }).eq('id', n.id);
 }
 function renderNotifications() {
     const list = document.getElementById('notificationsList');
@@ -2474,8 +2426,8 @@ function renderNotifications() {
         <div class="notif-item">
             <div class="notif-icon"><i class="fa-solid fa-bell"></i></div>
             <div class="notif-body">
-                <div class="notif-title">${escapeHtml(n.title)}</div>
-                <div class="notif-text">${escapeHtml(n.body || '')}</div>
+                <div class="notif-title">${n.title}</div>
+                <div class="notif-text">${n.body || ''}</div>
                 <div class="notif-time">${new Date(n.created_at).toLocaleString('ru-RU')}</div>
             </div>
         </div>`).join('');
@@ -2495,14 +2447,11 @@ function renderNotifications() {
         subscribeToLots();
         startAuctionTick();
     }
-    function closeAuction() {
-        document.getElementById('auctionScreen').classList.remove('active');
-        if (auctionTickInterval) { clearInterval(auctionTickInterval); auctionTickInterval = null; }
-    }
+    function closeAuction() { document.getElementById('auctionScreen').classList.remove('active'); }
     function switchAuctionTab(t) { currentAuctionTab = t; document.querySelectorAll('.auction-tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); renderAuction(); }
     function subscribeToLots() {
-        if (auctionRealtimeChannel) { try { sb.removeChannel(auctionRealtimeChannel); } catch(_) {} }
-        auctionRealtimeChannel = sb.channel('auction_g_' + Date.now()).on('postgres_changes', { event: '*', schema: 'public', table: 'auction_lots' }, () => loadAuctionLots().then(renderAuction)).subscribe();
+        if (auctionRealtimeChannel) return;
+        auctionRealtimeChannel = sb.channel('auction_g').on('postgres_changes', { event: '*', schema: 'public', table: 'auction_lots' }, () => loadAuctionLots().then(renderAuction)).subscribe();
     }
     function startAuctionTick() {
         if (auctionTickInterval) return;
@@ -2516,27 +2465,6 @@ function renderNotifications() {
     }
     async function processLotEnd(lot) {
         await sb.from('auction_lots').update({ ended: true }).eq('id', lot.id);
-        // Если у лота есть победитель — начисляем продавцу, а победитель забирает номер
-        if (lot.currentBidderId && lot.sellerId !== currentUser.id && lot.currentBidderId !== currentUser.id) {
-            // Продавец получает деньги
-            const { data: sp } = await sb.from('profiles').select('balance').eq('id', lot.sellerId).single();
-            if (sp) await sb.from('profiles').update({ balance: (sp.balance || 0) + lot.currentBid }).eq('id', lot.sellerId);
-            // Победителю — номер
-            await sb.from('saved_numbers').insert({
-                user_id: lot.currentBidderId, formatted: lot.number.formatted, op: lot.number.op,
-                op_name: lot.number.opObj ? lot.number.opObj.name : null, digits: lot.number.digits,
-                rarity_key: lot.number.rarity.key, rarity_name: lot.number.rarity.name,
-                price: lot.number.price, is_secret_variant: lot.number.isSecretVariant || null
-            });
-        } else if (!lot.currentBidderId) {
-            // Никто не поставил — возвращаем номер продавцу
-            await sb.from('saved_numbers').insert({
-                user_id: lot.sellerId, formatted: lot.number.formatted, op: lot.number.op,
-                op_name: lot.number.opObj ? lot.number.opObj.name : null, digits: lot.number.digits,
-                rarity_key: lot.number.rarity.key, rarity_name: lot.number.rarity.name,
-                price: lot.number.price, is_secret_variant: lot.number.isSecretVariant || null
-            });
-        }
         if (lot.sellerId === currentUser.id && lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
             balance += lot.currentBid; updateBalance(); await saveUserData();
             showToast('success', 'Лот продан!', `+${formatPrice(lot.currentBid)}`);
@@ -2588,8 +2516,8 @@ function renderNotifications() {
             }
             return `<div class="auction-card rarity-${lot.number.rarity.key} ${isMine ? 'my-lot' : ''}">
                 ${isMine ? '<div class="my-lot-badge">Мой лот</div>' : ''}
-                <div class="auction-card-top"><div class="auction-number">${escapeHtml(lot.number.formatted)}</div><div class="auction-timer ${tc}" data-ends-at="${lot.endsAt}">${ended ? 'Завершён' : '...'}</div></div>
-                <div class="auction-card-info"><div class="auction-rarity" style="color:${getRarityColor(lot.number.rarity.key)};">${getRarityName(lot.number.rarity.key)}</div><div class="auction-seller">${escapeHtml(lot.sellerName)}</div></div>
+                <div class="auction-card-top"><div class="auction-number">${lot.number.formatted}</div><div class="auction-timer ${tc}" data-ends-at="${lot.endsAt}">${ended ? 'Завершён' : '...'}</div></div>
+                <div class="auction-card-info"><div class="auction-rarity" style="color:${getRarityColor(lot.number.rarity.key)};">${getRarityName(lot.number.rarity.key)}</div><div class="auction-seller">${lot.sellerName}</div></div>
                 <div class="auction-bid-row"><div><div class="auction-bid-label">${isHigh ? 'Твоя' : 'Ставка'}</div><div class="auction-bid-value">${formatPrice(lot.currentBid)}</div></div><div style="text-align:right;"><div class="auction-bid-label">Ставок</div><div>${lot.bidsCount}</div></div></div>
                 <div class="auction-actions">${actions}</div>
             </div>`;
@@ -2602,15 +2530,6 @@ function renderNotifications() {
         const next = Math.floor(lot.currentBid * 1.1);
         if (balance < next) { showToast('error', 'Мало средств', formatPrice(next)); return; }
         if (lot.currentBidderId === currentUser.id) { showToast('error', 'Ты лидер', ''); return; }
-        // Возвращаем ставку предыдущему лидеру
-        if (lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
-            const { data: prev } = await sb.from('profiles').select('balance').eq('id', lot.currentBidderId).single();
-            if (prev) await sb.from('profiles').update({ balance: (prev.balance || 0) + lot.currentBid }).eq('id', lot.currentBidderId);
-            await sb.from('notifications').insert({
-                user_id: lot.currentBidderId, type: 'bid_refund', title: 'Ставка перебита',
-                body: `Возврат ${formatPrice(lot.currentBid)} по лоту ${lot.number.formatted}`, data: {}
-            });
-        }
         balance -= next; updateBalance();
         const { error } = await sb.from('auction_lots').update({ current_bid: next, current_bidder_id: currentUser.id, current_bidder_name: currentUser.username, bids_count: lot.bidsCount + 1 }).eq('id', id);
         if (error) { balance += next; updateBalance(); return; }
@@ -2621,11 +2540,6 @@ function renderNotifications() {
         const lot = auctionLots.find(l => l.id === id);
         if (!lot || lot.ended || !lot.buyoutPrice) return;
         if (balance < lot.buyoutPrice) { showToast('error', 'Мало средств', ''); return; }
-        // Возвращаем ставку предыдущему лидеру, если он не мы
-        if (lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
-            const { data: prev } = await sb.from('profiles').select('balance').eq('id', lot.currentBidderId).single();
-            if (prev) await sb.from('profiles').update({ balance: (prev.balance || 0) + lot.currentBid }).eq('id', lot.currentBidderId);
-        }
         balance -= lot.buyoutPrice; updateBalance();
         await saveNumberToDB({ ...lot.number, price: lot.buyoutPrice });
         if (lot.sellerId !== currentUser.id) {
@@ -2647,11 +2561,6 @@ function renderNotifications() {
     async function cancelLot(id) {
         const lot = auctionLots.find(l => l.id === id);
         if (!lot || lot.sellerId !== currentUser.id) return;
-        // Возвращаем ставку лидеру, если он есть
-        if (lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
-            const { data: prev } = await sb.from('profiles').select('balance').eq('id', lot.currentBidderId).single();
-            if (prev) await sb.from('profiles').update({ balance: (prev.balance || 0) + lot.currentBid }).eq('id', lot.currentBidderId);
-        }
         await saveNumberToDB(lot.number);
         await sb.from('auction_lots').delete().eq('id', id);
         showToast('success', 'Снят', lot.number.formatted);
@@ -2667,7 +2576,7 @@ function renderNotifications() {
     function closeCreateLot() { document.getElementById('lotModal').classList.remove('active'); }
     function renderLotCollection() {
         const list = document.getElementById('lotCollectionList');
-        list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectLotNumber(${i})"><div class="gci-number">${escapeHtml(n.formatted)}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
+        list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectLotNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
     }
     function selectLotNumber(i) {
         selectedLotIndex = i;
@@ -2708,14 +2617,15 @@ function renderNotifications() {
         await loadAuctionLots(); switchAuctionTab('my');
     }
 
+    // АДМИНКА
     async function renderAdminPlayersList() {
         await loadAllPlayers();
         const list = document.getElementById('adminPlayersList');
         list.innerHTML = allPlayersList.map(p => {
-            const av = p.avatar_url ? `<img src="${escapeHtml(p.avatar_url)}" alt="">` : '<i class="fa-solid fa-crown"></i>';
+            const av = p.avatar_url ? `<img src="${p.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
             return `<div class="player-card" onclick="openAdminPlayerDetail('${p.id}')">
                 <div class="player-avatar">${av}</div>
-                <div class="player-info"><div class="player-name">${escapeHtml(p.username)} ${renderTag(p.tag)} ${p.is_owner ? '👑' : ''}</div><div class="player-sub">Ур. ${p.level || 1} · ${(p.balance || 0).toLocaleString('ru-RU')} ₽</div></div>
+                <div class="player-info"><div class="player-name">${p.username} ${renderTag(p.tag)} ${p.is_owner ? '👑' : ''}</div><div class="player-sub">Ур. ${p.level || 1} · ${(p.balance || 0).toLocaleString('ru-RU')} ₽</div></div>
                 <i class="fa-solid fa-chevron-right player-arrow"></i>
             </div>`;
         }).join('');
@@ -2724,41 +2634,45 @@ function renderNotifications() {
     adminTargetPlayerId = id;
     const p = allPlayersList.find(x => x.id === id);
     if (!p) return;
-    const av = p.avatar_url ? '<img src="' + escapeHtml(p.avatar_url) + '" alt="">' : '<i class="fa-solid fa-crown"></i>';
-    const tgName = p.tg_username ? '@' + escapeHtml(p.tg_username) : '';
+    
+    const av = p.avatar_url ? '<img src="' + p.avatar_url + '" alt="">' : '<i class="fa-solid fa-crown"></i>';
+    const tgName = p.tg_username ? '@' + p.tg_username : '';
     const playerTag = renderTag(p.tag);
     const ownerIcon = p.is_owner ? '👑' : '';
+    
     let html = '';
     html += '<div class="player-detail-header">';
     html += '  <div class="player-detail-avatar">' + av + '</div>';
-    html += '  <div class="player-detail-name">' + escapeHtml(p.username) + ' ' + playerTag + ' ' + ownerIcon + '</div>';
+    html += '  <div class="player-detail-name">' + p.username + ' ' + playerTag + ' ' + ownerIcon + '</div>';
     html += '  <div class="player-detail-username">' + tgName + '</div>';
-    html += '  <div style="font-size: 11px; color: #a855f7; margin-top: 4px; font-weight: 700; letter-spacing: 1px;">[ID: ' + escapeHtml(p.telegram_id) + ']</div>';
+    html += '  <div style="font-size: 11px; color: #a855f7; margin-top: 4px; font-weight: 700; letter-spacing: 1px;">[ID: ' + p.telegram_id + ']</div>';
     html += '</div>';
+    
     html += '<div class="player-detail-stats">';
     html += '  <div class="player-detail-stat"><span class="label">Баланс</span><span class="value">' + (p.balance || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
     html += '  <div class="player-detail-stat"><span class="label">Круток</span><span class="value">' + (p.total_rolls || 0).toLocaleString('ru-RU') + '</span></div>';
     html += '</div>';
+    
     html += '<div class="admin-actions">';
     html += '  <button class="admin-btn blue" onclick="adminViewCollection()"><i class="fa-solid fa-folder-open"></i> Коллекция</button>';
     html += '  <button class="admin-btn orange" onclick="document.getElementById(\'tagModal\').classList.add(\'active\')"><i class="fa-solid fa-tag"></i> Тег</button>';
     html += '  <button class="admin-btn green" onclick="adminGiveMoney()"><i class="fa-solid fa-coins"></i> Выдать 10 000 ₽</button>';
     html += '  <button class="admin-btn" style="background:linear-gradient(135deg,#a855f7,#7c3aed); color:#fff;" onclick="document.getElementById(\'giftModal\').classList.add(\'active\')"><i class="fa-solid fa-gift"></i> Подарок</button>';
     html += '</div>';
+    
     document.getElementById('adminPlayerDetailContent').innerHTML = html;
 }
     async function adminViewCollection() {
         if (!adminTargetPlayerId) return;
         const p = allPlayersList.find(x => x.id === adminTargetPlayerId);
         const { data } = await sb.from('saved_numbers').select('*').eq('user_id', adminTargetPlayerId);
-        document.getElementById('adminCollectionTitle').textContent = 'Коллекция: ' + (p ? p.username : '');
+        document.getElementById('adminCollectionTitle').textContent = 'Коллекция: ' + p.username;
         const grid = document.getElementById('adminCollectionGrid');
         if (!data || data.length === 0) grid.innerHTML = '<div class="collection-empty">Нет номеров</div>';
-        else grid.innerHTML = data.map(n => `<div class="sim-card-item rarity-${n.rarity_key}"><div class="sci-top"><div class="sci-op-badge">${getOpShort(n.op_name || 'SECRET')}</div><div class="sci-chip"></div></div><div class="sci-number">${escapeHtml(n.formatted)}</div><div class="sci-bottom"><div class="sci-rarity">${getRarityName(n.rarity_key)}</div><div class="sci-price">${formatPrice(n.price)}</div></div></div>`).join('');
+        else grid.innerHTML = data.map(n => `<div class="sim-card-item rarity-${n.rarity_key}"><div class="sci-top"><div class="sci-op-badge">${getOpShort(n.op_name || 'SECRET')}</div><div class="sci-chip"></div></div><div class="sci-number">${n.formatted}</div><div class="sci-bottom"><div class="sci-rarity">${getRarityName(n.rarity_key)}</div><div class="sci-price">${formatPrice(n.price)}</div></div></div>`).join('');
         document.getElementById('adminCollectionScreen').classList.add('active');
     }
     async function adminSetTag(tag) {
-        if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
         if (!adminTargetPlayerId) return;
         await sb.from('profiles').update({ tag }).eq('id', adminTargetPlayerId);
         if (adminTargetPlayerId === currentUser.id) { currentUser.tag = tag; updateProfileUI(); }
@@ -2767,7 +2681,6 @@ function renderNotifications() {
         showToast('success', 'Тег обновлён', '');
     }
     async function adminGiveMoney() {
-        if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
         if (!adminTargetPlayerId) return;
         const p = allPlayersList.find(x => x.id === adminTargetPlayerId);
         await sb.from('profiles').update({ balance: (p.balance || 0) + 10000 }).eq('id', adminTargetPlayerId);
@@ -2777,7 +2690,6 @@ function renderNotifications() {
         showToast('success', '+10 000 ₽', p.username);
     }
     async function adminSendGift() {
-        if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
         if (!adminTargetPlayerId) return;
         const m = parseInt(document.getElementById('giftMoney').value) || 0;
         const r = parseInt(document.getElementById('giftRolls').value) || 0;
@@ -2813,7 +2725,6 @@ function renderNotifications() {
             const { data: nums } = await sb.from('saved_numbers').select('rarity_key');
             const rc = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
             (nums || []).forEach(n => { if (rc[n.rarity_key] !== undefined) rc[n.rarity_key]++; });
-            const topByBalance = [...allPlayersList].sort((a,b) => (b.balance||0) - (a.balance||0)).slice(0,3);
             content.innerHTML = `
                 <div class="stats-grid">
                     <div class="stats-tile"><div class="st-value blue">${tp}</div><div class="st-label">Игроков</div></div>
@@ -2823,7 +2734,7 @@ function renderNotifications() {
                     <div class="stats-tile"><div class="st-value blue">${tl || 0}</div><div class="st-label">Лотов</div></div>
                     <div class="stats-tile"><div class="st-value">${tr.toLocaleString('ru-RU')}</div><div class="st-label">Всего круток</div></div>
                 </div>
-                <div class="rarity-breakdown"><div class="rb-title">Топ-3 по балансу</div>${topByBalance.map((p,i) => `<div class="rb-row"><span>${i+1}. ${escapeHtml(p.username)}</span><b>${(p.balance||0).toLocaleString('ru-RU')} ₽</b></div>`).join('')}</div>
+                <div class="rarity-breakdown"><div class="rb-title">Топ-3 по балансу</div>${allPlayersList.slice(0,3).map((p,i) => `<div class="rb-row"><span>${i+1}. ${p.username}</span><b>${(p.balance||0).toLocaleString('ru-RU')} ₽</b></div>`).join('')}</div>
                 <div class="rarity-breakdown"><div class="rb-title">По редкостям</div>
                     <div class="rb-row"><span style="color:#9ca3af;">Обычных</span><b>${rc.common}</b></div>
                     <div class="rb-row"><span style="color:#3b82f6;">Редких</span><b>${rc.rare}</b></div>
@@ -2832,10 +2743,9 @@ function renderNotifications() {
                     <div class="rb-row"><span style="color:#ef4444;">Мификов</span><b>${rc.mythic}</b></div>
                     <div class="rb-row"><span style="color:#c084fc;">Секретных</span><b>${rc.secret}</b></div>
                 </div>`;
-        } catch (e) { content.innerHTML = `<div style="color:#ef4444;padding:40px;text-align:center;">${escapeHtml(e.message)}</div>`; }
+        } catch (e) { content.innerHTML = `<div style="color:#ef4444;padding:40px;text-align:center;">${e.message}</div>`; }
     }
     async function resetSeasonGlobal() {
-        if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
         if (!confirm('Сбросить ВСЕХ? Необратимо!')) return;
         await sb.from('saved_numbers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         await sb.from('auction_lots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -2843,6 +2753,7 @@ function renderNotifications() {
         showToast('success', 'Сезон сброшен', ''); closeAdminReset(); location.reload();
     }
 
+    // ПРОМОКОДЫ АДМИН
     function generateRandomCode() {
         const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code = '';
         for (let i = 0; i < 8; i++) code += c[Math.floor(Math.random() * c.length)];
@@ -2859,11 +2770,10 @@ function renderNotifications() {
         list.innerHTML = data.map(p => {
             const exp = p.expires_at && new Date(p.expires_at) < new Date();
             const used = p.uses_left <= 0;
-            return `<div class="promo-list-item"><div class="promo-list-header"><div class="promo-list-code">${escapeHtml(p.code)}</div><div class="promo-list-status ${exp ? 'expired' : used ? 'used-up' : 'active'}">${exp ? 'Истёк' : used ? 'Исчерпан' : 'Активен'}</div></div><div class="promo-list-info-row"><span>Активаций</span><b>${p.uses_left} / ${p.max_uses}</b></div><div class="promo-list-actions"><button class="promo-copy-btn" onclick="navigator.clipboard.writeText('${escapeHtml(p.code)}');showToast('success','Скопировано','${escapeHtml(p.code)}')"><i class="fa-solid fa-copy"></i> Копировать</button><button class="promo-del-btn" onclick="deletePromo('${p.id}')"><i class="fa-solid fa-trash"></i> Удалить</button></div></div>`;
+            return `<div class="promo-list-item"><div class="promo-list-header"><div class="promo-list-code">${p.code}</div><div class="promo-list-status ${exp ? 'expired' : used ? 'used-up' : 'active'}">${exp ? 'Истёк' : used ? 'Исчерпан' : 'Активен'}</div></div><div class="promo-list-info-row"><span>Активаций</span><b>${p.uses_left} / ${p.max_uses}</b></div><div class="promo-list-actions"><button class="promo-copy-btn" onclick="navigator.clipboard.writeText('${p.code}');showToast('success','Скопировано','${p.code}')"><i class="fa-solid fa-copy"></i> Копировать</button><button class="promo-del-btn" onclick="deletePromo('${p.id}')"><i class="fa-solid fa-trash"></i> Удалить</button></div></div>`;
         }).join('');
     }
     async function createPromoCode() {
-        if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
         const code = document.getElementById('newPromoCode').value.trim().toUpperCase();
         const uses = parseInt(document.getElementById('newPromoUses').value) || 1;
         const hours = parseInt(document.getElementById('newPromoHours').value) || 0;
@@ -2885,6 +2795,7 @@ function renderNotifications() {
     }
     async function deletePromo(id) { await sb.from('promo_codes').delete().eq('id', id); await renderPromoList(); showToast('success', 'Удалён', ''); }
 
+    // ИГРЫ (АПГРЕЙД И САПЁР)
     const slider = document.getElementById('slider');
     const upgradeBtn = document.getElementById('upgradeBtn');
     const resultText = document.getElementById('resultText');
@@ -2904,7 +2815,7 @@ function renderNotifications() {
     function renderGameCollection() {
         const list = document.getElementById('gameCollectionList');
         if (savedNumbers.length === 0) { list.innerHTML = '<div class="game-collection-empty" style="text-align:center;color:#6b7a90;padding:30px;">Нет номеров</div>'; return; }
-        list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectGameNumber(${i})"><div class="gci-number">${escapeHtml(n.formatted)}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
+        list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectGameNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
     }
     function selectGameNumber(i) { gameBetNumber = savedNumbers[i]; updateGameBetCard(); closeGameCollection(); }
     function updateGameBetCard() {
@@ -2953,7 +2864,7 @@ function renderNotifications() {
             updateCollection(); updateProfileUI(); updateGameBetCard();
             addLog('upgrade', `Апгрейд удачный: ${gameBetNumber.formatted} (теперь ${formatPrice(gameBetNumber.price)})`);
             showToast('success', 'Выигрыш!', formatPrice(np));
-            safePlay(sounds.win);
+            sounds.win.play().catch(()=>{});
         } else {
             resultText.textContent = "💀 ПРОИГРАЛ!";
             resultText.className = 'result-text result-fail visible';
@@ -2969,12 +2880,9 @@ function renderNotifications() {
     const MINES_SIZE = 25;
     let minesState = { active: false, betNumber: null, minesCount: 3, multiplier: 1.07, minePositions: [], openedCells: [], currentPrice: 0, basePrice: 0, dead: false };
     function openMinesGame() { closeMenu(); resetMinesState(); document.getElementById('minesGameScreen').classList.add('active'); renderMinesField(); updateMinesUI(); }
-    async function closeMinesGame() {
+    function closeMinesGame() {
         if (minesState.active && !minesState.dead && minesState.betNumber) {
-            const num = minesState.betNumber;
-            await sb.from('saved_numbers').delete().eq('id', num.id);
-            savedNumbers = savedNumbers.filter(x => x.id !== num.id);
-            updateCollection(); updateProfileUI();
+            sb.from('saved_numbers').delete().eq('id', minesState.betNumber.id).then(() => { savedNumbers = savedNumbers.filter(x => x.id !== minesState.betNumber.id); updateCollection(); updateProfileUI(); });
             showToast('error', 'Сгорел', '');
         }
         document.getElementById('minesGameScreen').classList.remove('active'); resetMinesState();
@@ -2990,7 +2898,7 @@ function renderNotifications() {
         if (minesState.active) return;
         const list = document.getElementById('minesCollectionList');
         if (savedNumbers.length === 0) list.innerHTML = '<div style="text-align:center;color:#6b7a90;padding:30px;">Нет номеров</div>';
-        else list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectMinesNumber(${i})"><div class="gci-number">${escapeHtml(n.formatted)}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
+        else list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectMinesNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
         document.getElementById('minesCollectionModal').classList.add('active');
     }
     function closeMinesCollection() { document.getElementById('minesCollectionModal').classList.remove('active'); }
@@ -3061,16 +2969,16 @@ function renderNotifications() {
     }
     async function takeMinesWin() {
         if (!minesState.active || minesState.dead || !minesState.betNumber) return;
-        if (minesState.openedCells.length === 0) { showToast('error', 'Открой клетку', ''); return; }
         const num = minesState.betNumber; const np = minesState.currentPrice;
         await sb.from('saved_numbers').update({ price: np }).eq('id', num.id);
         num.price = np; updateCollection(); updateProfileUI();
         showToast('success', 'Забрал!', formatPrice(np));
-        safePlay(sounds.win);
+        sounds.win.play().catch(()=>{});
         minesState.active = false;
         setTimeout(() => { resetMinesState(); renderMinesField(); updateMinesUI(); updateMinesBetCard(); }, 1500);
     }
 
+    // ПРОФИЛЬ И ОБНОВЛЕНИЕ UI
     function updateBalance() {
         balanceDisplay.innerHTML = balance.toLocaleString('ru-RU') + ' <span>₽</span>';
         if (profileBalance) profileBalance.textContent = balance.toLocaleString('ru-RU');
@@ -3111,9 +3019,11 @@ function renderNotifications() {
         document.getElementById('profRolls').textContent = (currentUser.total_rolls || 0).toLocaleString('ru-RU');
         document.getElementById('profEarned').textContent = formatRatingValue(balance);
         document.getElementById('profLevel').textContent = currentUser.level || 1;
+        
         const xpNeeded = (currentUser.level || 1) * 1000;
         const xpPercent = Math.min(100, ((currentUser.xp || 0) / xpNeeded) * 100);
         if (xpMiniBar) xpMiniBar.style.width = xpPercent + '%';
+
         const counts = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
         savedNumbers.forEach(n => counts[n.rarity.key]++);
         document.getElementById('profCountCommon').textContent = counts.common;
@@ -3135,11 +3045,12 @@ function renderNotifications() {
         document.getElementById('profBest').textContent = count > 0 ? getRarityName(bestRarity) : '—';
         const pn = document.getElementById('profileUsername');
         if (pn && currentUser) {
-            const tgName = currentUser.tg_username ? `@${escapeHtml(currentUser.tg_username)}` : '';
-            pn.innerHTML = `<b>${escapeHtml(currentUser.username)}</b> ${renderTag(currentUser.tag)}<br><span style="color:#555;font-size:12px;">${tgName}</span>`;
+            const tgName = currentUser.tg_username ? `@${currentUser.tg_username}` : '';
+            pn.innerHTML = `<b>${currentUser.username}</b> ${renderTag(currentUser.tag)}<br><span style="color:#555;font-size:12px;">${tgName}</span>`;
         }
         if (levelDisplay) levelDisplay.textContent = 'Ур. ' + (currentUser.level || 1);
-        const avatarHtml = buildAvatarHtml(currentUser.avatar_url);
+        
+        const avatarHtml = currentUser.avatar_url ? `<img src="${currentUser.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
         const headerAv = document.getElementById('headerAvatar');
         const profAv = document.getElementById('profileAvatarEl');
         if (headerAv) {
@@ -3156,6 +3067,7 @@ function renderNotifications() {
     function handleX5Click() { x5Armed = !x5Armed; updateRollButtons(); }
     function handleMainClick() { const c = x5Armed ? 5 : 1; startRoll(c); x5Armed = false; updateRollButtons(); }
 
+    // ОТКРЫТИЕ ЭКРАНОВ
     function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
     function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
     function openCollection() { closeMenu(); currentFilter = 'all'; updateCollection(); setTimeout(() => document.getElementById('collectionScreen').classList.add('active'), 300); }
@@ -3202,164 +3114,90 @@ function openAdmin() {
     }
 function openAdminNews() {
     document.getElementById('adminScreen').classList.remove('active');
-    document.getElementById('adminNewsScreen').classList.add('active');
+    
+    const newsScreen = document.getElementById('adminNewsScreen');
+    newsScreen.classList.add('active');
+    
     document.getElementById('newsTitleInput').value = '';
     document.getElementById('newsDescInput').value = '';
     document.getElementById('newsHoursInput').value = '24';
     renderAdminNewsList();
 }
+
 function closeAdminNews() {
-    document.getElementById('adminNewsScreen').classList.remove('active');
+    const newsScreen = document.getElementById('adminNewsScreen');
+    newsScreen.classList.remove('active');
+    
     document.getElementById('adminScreen').classList.add('active');
 }
 async function createNews() {
-    if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
     const title = document.getElementById('newsTitleInput').value.trim();
     const desc = document.getElementById('newsDescInput').value.trim();
     const hours = parseInt(document.getElementById('newsHoursInput').value) || 0;
+    
     if (!title || !desc) { showToast('error', 'Заполните все поля', ''); return; }
+    
     const expiresAt = hours > 0 ? new Date(Date.now() + hours * 3600000).toISOString() : null;
-    const { error } = await sb.from('news_feed').insert({ title, description: desc, icon: '📢', expires_at: expiresAt });
+    
+    const { error } = await sb.from('news_feed').insert({ 
+        title, description: desc, icon: '📢', expires_at: expiresAt 
+    });
+    
     if (error) { showToast('error', 'Ошибка', error.message); return; }
+    
     showToast('success', 'Новость создана!', '');
     document.getElementById('newsTitleInput').value = '';
     document.getElementById('newsDescInput').value = '';
     loadNewsFeed();
     renderAdminNewsList();
 }
+
 async function renderAdminNewsList() {
     const list = document.getElementById('adminNewsList');
     list.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Загрузка...</div>';
+    
     const { data } = await sb.from('news_feed').select('*').order('created_at', { ascending: false });
+    
     if (!data || data.length === 0) {
         list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Новостей нет</div>';
         return;
     }
+    
     list.innerHTML = data.map(n => {
         let timeText = 'Навсегда';
         let isExpired = false;
         if (n.expires_at) {
             const expDate = new Date(n.expires_at);
-            if (expDate < new Date()) { isExpired = true; timeText = 'Истекла'; }
-            else { timeText = 'До ' + expDate.toLocaleString('ru-RU'); }
+            if (expDate < new Date()) {
+                isExpired = true;
+                timeText = 'Истекла';
+            } else {
+                timeText = 'До ' + expDate.toLocaleString('ru-RU');
+            }
         }
+        
         return `<div class="promo-list-item">
             <div class="promo-list-header">
-                <div class="promo-list-code" style="font-size: 14px;">${escapeHtml(n.title)}</div>
+                <div class="promo-list-code" style="font-size: 14px;">${n.title}</div>
                 <div class="promo-list-status ${isExpired ? 'expired' : 'active'}">${timeText}</div>
             </div>
-            <div class="promo-list-info-row"><span style="color:#aaa;">${escapeHtml(n.description)}</span></div>
+            <div class="promo-list-info-row"><span style="color:#aaa;">${n.description}</span></div>
             <div class="promo-list-actions">
                 <button class="promo-del-btn" onclick="deleteNews('${n.id}')"><i class="fa-solid fa-trash"></i> Удалить</button>
             </div>
         </div>`;
     }).join('');
 }
+
 async function deleteNews(id) {
-    if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
     if (!confirm('Удалить новость?')) return;
     await sb.from('news_feed').delete().eq('id', id);
     showToast('success', 'Удалена', '');
     loadNewsFeed();
     renderAdminNewsList();
 }
-
-// ===== КЭШ ПРОФИЛЯ =====
-function cacheProfile() {
-    if (!currentUser || !telegramUser) return;
-    try {
-        localStorage.setItem('sim_profile_' + telegramUser.id, JSON.stringify({
-            profile: {
-                id: currentUser.id,
-                telegram_id: currentUser.telegram_id,
-                username: currentUser.username,
-                tg_username: currentUser.tg_username,
-                avatar_url: currentUser.avatar_url,
-                avatar_frame: currentUser.avatar_frame,
-                tag: currentUser.tag,
-                level: currentUser.level,
-                xp: currentUser.xp,
-                total_rolls: currentUser.total_rolls,
-                bp_points: currentUser.bp_points,
-                is_owner: currentUser.is_owner,
-                vip_until: currentUser.vip_until
-            },
-            balance: balance,
-            freeRolls: freeRolls,
-            luckBoost: luckBoost,
-            ts: Date.now()
-        }));
-    } catch(_) {}
-}
-function loadCachedProfile() {
-    if (!telegramUser) return null;
-    try {
-        const raw = localStorage.getItem('sim_profile_' + telegramUser.id);
-        if (!raw) return null;
-        return JSON.parse(raw);
-    } catch(_) { return null; }
-}
-
-// ===== БЫСТРЫЙ ПОКАЗ =====
-function buildAvatarHtml(url) {
-    if (!url) return '<i class="fa-solid fa-crown"></i>';
-    return '<img src="' + escapeHtml(url) + '" alt="" loading="eager" decoding="async" style="width:100%;height:100%;object-fit:cover;background:linear-gradient(135deg,#2a2200,#1a1500);" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'<i class=&quot;fa-solid fa-crown&quot;></i>\';">';
-}
-
-function showGameImmediately() {
- const avatarHtml = buildAvatarHtml(telegramUser.photo_url);
-const headerAv = document.getElementById('headerAvatar');
-if (headerAv) headerAv.innerHTML = avatarHtml;
-    const cached = loadCachedProfile();
-    if (cached) {
-        balance = cached.balance || 0;
-        freeRolls = cached.freeRolls || 0;
-        luckBoost = cached.luckBoost || { x2: 0, x5: 0, x10: 0, x15: 0 };
-        updateBalance();
-updateRollButtons();
-updateLuckUI();
-startLuckTimer();
-
-// Фикс бага: показываем правильный уровень из кэша сразу
-if (cached.profile && cached.profile.level && levelDisplay) {
-    levelDisplay.textContent = 'Ур. ' + cached.profile.level;
-}
-    } else {
-        document.getElementById('balanceDisplay').innerHTML =
-            '<span class="skeleton-balance"></span> <span>₽</span>';
-    }
-
-    document.getElementById('gameRoot').style.display = 'block';
-    document.getElementById('loadingScreen').classList.add('hidden');
-}
-
-// ===== ОСНОВНОЙ BOOTSTRAP =====
-async function checkIfAdmin() {
-    try {
-        const { data } = await sb.from('profiles').select('is_owner').eq('telegram_id', telegramUser.id).maybeSingle();
-        return data && data.is_owner;
-    } catch(e) { return false; }
-}
-
-function showMaintenanceScreen(text) {
-    let overlay = document.getElementById('maintenanceOverlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'maintenanceOverlay';
-        overlay.style.cssText = 'position: fixed; inset: 0; background: #0d0d0d; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; gap: 20px;';
-        document.body.appendChild(overlay);
-    }
-    overlay.innerHTML = `
-        <div style="font-size: 60px;">🛠️</div>
-        <div style="font-size: 24px; font-weight: 800; color: #fff;">Технические работы</div>
-        <div style="font-size: 15px; color: #aaa; line-height: 1.6;">${escapeHtml(text || 'Скоро вернёмся!')}</div>
-        <button onclick="location.reload()" style="margin-top: 20px; background: #2a2a2a; color: #fff; border: none; border-radius: 12px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer;">Обновить</button>
-    `;
-    overlay.style.display = 'flex';
-    document.getElementById('gameRoot').style.display = 'none';
-}
-
-async function bootstrap() {
+    // ЗАПУСК
+    async function bootstrap() {
     if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
         document.getElementById('loadingScreen').classList.add('hidden');
         document.getElementById('errorScreen').classList.add('active');
@@ -3367,95 +3205,57 @@ async function bootstrap() {
     }
     tg.ready(); tg.expand();
     telegramUser = tg.initDataUnsafe.user;
-
-    // Проверяем тех. работы ДО показа игры
-    document.getElementById('loadingText').textContent = 'Проверка сервера...';
+    document.getElementById('loadingText').textContent = 'Вход...';
     try {
-        const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
-        if (data && data.maintenance_mode) {
-            const isAdmin = await checkIfAdmin();
-            if (!isAdmin) {
-                showMaintenanceScreen(data.maintenance_text);
-                document.getElementById('loadingScreen').classList.add('hidden');
-                return;
-            }
-        }
-    } catch(e) {
-        console.warn('Maintenance check failed:', e);
-    }
-
-    showGameImmediately();
-    await refreshFromServer();
-}
-
-// ===== ЗАГРУЗКА С СЕРВЕРА =====
-async function refreshFromServer() {
-    try {
+        let { data: profile } = await sb.from('profiles').select('*').eq('telegram_id', telegramUser.id).maybeSingle();
         const fullName = telegramUser.first_name + (telegramUser.last_name ? ' ' + telegramUser.last_name : '');
-
-        let { data: profile } = await sb.from('profiles')
-            .select('*').eq('telegram_id', telegramUser.id).maybeSingle();
-
         if (!profile) {
             const { data: newProfile, error } = await sb.from('profiles').insert({
-                id: uuidv4(), username: fullName,
-                telegram_id: telegramUser.id,
-                tg_username: telegramUser.username || null,
+                id: crypto.randomUUID(), username: fullName,
+                telegram_id: telegramUser.id, tg_username: telegramUser.username || null,
                 avatar_url: telegramUser.photo_url || null,
                 balance: STARTING_BALANCE, level: 1, total_rolls: 0
             }).select().single();
-            if (error) { showToast('error', 'Ошибка входа', error.message); return; }
+            if (error) { document.getElementById('loadingText').textContent = 'Ошибка: ' + error.message; return; }
             profile = newProfile;
         } else {
-            const needUpdate =
-                profile.username !== fullName ||
-                profile.tg_username !== (telegramUser.username || null) ||
-                profile.avatar_url !== (telegramUser.photo_url || null);
-            if (needUpdate) {
-                await sb.from('profiles').update({
-                    username: fullName,
-                    tg_username: telegramUser.username || null,
-                    avatar_url: telegramUser.photo_url || null
-                }).eq('id', profile.id);
-                profile.username = fullName;
-                profile.tg_username = telegramUser.username || null;
-                profile.avatar_url = telegramUser.photo_url || null;
-            }
+            await sb.from('profiles').update({
+                username: fullName, tg_username: telegramUser.username || null,
+                avatar_url: telegramUser.photo_url || null
+            }).eq('id', profile.id);
+            profile.username = fullName;
+            profile.tg_username = telegramUser.username || null;
+            profile.avatar_url = telegramUser.photo_url || null;
+        }
+        currentUser = profile;
+        balance = profile.balance || 0;
+
+        // Сначала проверяем тех. работы
+        await checkMaintenance();
+
+        // Показываем игру только если тех. работы выключены
+        if (document.getElementById('gameRoot').style.display !== 'none') {
+            document.getElementById('gameRoot').style.display = 'block';
+            document.getElementById('loadingScreen').classList.add('hidden');
         }
 
-        currentUser = profile;
-balance = profile.balance || 0;
-balanceSynced = true;
-
-updateBalance();
-        updateProfileUI();
-        updateLuckUI();
-        updateRollButtons();
-        updateAdminVisibility();
-        cacheProfile();
-
-        Promise.allSettled([
-    loadSavedNumbers().then(() => { updateCollection(); updateProfileUI(); cacheProfile(); }),
-    loadAllPlayers(),
-    checkMaintenance(),
-    checkTaxes(),
-    initNewsFeed(),
-    (async () => {
+        // Запускаем загрузку данных в фоне
+        loadSavedNumbers();
+        loadAllPlayers();
+        
+        usedPromoCodes = []; 
         const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
         if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
-    })()
-]);
-        renderMiniCards();
-        renderChancesScreen();
-        startLuckTimer();
 
-        setTimeout(() => {
-            try { subscribeToNotifications(); } catch(e) { console.warn(e); }
-        }, 1500);
+        await checkTaxes();
+        initNewsFeed();
 
+        updateBalance(); updateProfileUI(); updateLuckUI(); updateRollButtons();
+        renderMiniCards(); renderChancesScreen(); startLuckTimer(); updateAdminVisibility();
+        subscribeToNotifications();
     } catch (e) {
-        console.error('refreshFromServer error:', e);
-        showToast('error', 'Ошибка загрузки', e.message || 'Проверьте интернет');
+        console.error(e);
+        document.getElementById('loadingText').textContent = 'Ошибка: ' + (e.message || 'Не удалось');
     }
 }
 async function saveUserData() {
@@ -3465,7 +3265,6 @@ async function saveUserData() {
             balance: balance, total_rolls: currentUser.total_rolls || 0,
             level: currentUser.level || 1, updated_at: new Date().toISOString()
         }).eq('id', currentUser.id);
-        cacheProfile();
     } catch (e) { console.error('Save error', e); }
 }
 async function loadSavedNumbers() {
@@ -3480,12 +3279,18 @@ async function loadSavedNumbers() {
     }));
 }
 async function loadAllPlayers() {
-    // Загружаем больше игроков для корректного рейтинга
-    const { data } = await sb.from('profiles').select('*').order('balance', { ascending: false }).limit(500);
+    const { data } = await sb.from('profiles').select('*').order('balance', { ascending: false }).limit(100);
     allPlayersList = data || [];
 }
 
-// ВЫДАЧА НОМЕРА (АДМИНКА)
+bootstrap().catch(e => {
+    console.error('BOOTSTRAP FAIL', e);
+    const lt = document.getElementById('loadingText');
+    if (lt) lt.textContent = 'BOOTSTRAP FAIL: ' + e.message;
+    if (window._diagShow) _diagShow('BOOTSTRAP FAIL: ' + e.message + '\n' + (e.stack || ''));
+});
+
+    // ВЫДАЧА НОМЕРА (АДМИНКА)
 function openAdminGiveNumber() {
     document.getElementById('adminGiveNumberScreen').classList.add('active');
     document.getElementById('adminGiveNumInput').value = '';
@@ -3495,24 +3300,27 @@ function openAdminGiveNumber() {
 function closeAdminGiveNumber() {
     document.getElementById('adminGiveNumberScreen').classList.remove('active');
 }
+
 let adminFoundNumber = null;
 let adminFoundSecret = null;
+
+// Функция, которая рисует карточку выдачи (чтобы не дублировать код)
 function renderAdminGiveCard(formatted, ownerName = null, isSecret = false) {
     const resEl = document.getElementById('adminGiveNumResult');
     if (ownerName) {
         resEl.innerHTML = `
             <div class="check-result visible" style="margin: 0; background: #1c1c1c; border-radius: 20px;">
-                <div class="check-result-number">${escapeHtml(formatted)}</div>
+                <div class="check-result-number">${formatted}</div>
                 <div class="check-status busy">Занят</div>
                 <div class="check-info-row">
-                    <div class="check-info-col"><div class="check-info-label">Владелец</div><div class="check-info-value">${escapeHtml(ownerName)}</div></div>
+                    <div class="check-info-col"><div class="check-info-label">Владелец</div><div class="check-info-value">${ownerName}</div></div>
                 </div>
             </div>
         `;
     } else {
         resEl.innerHTML = `
             <div class="check-result visible" style="margin: 0; background: #1c1c1c; border-radius: 20px; margin-bottom: 16px;">
-                <div class="check-result-number">${escapeHtml(formatted)}</div>
+                <div class="check-result-number">${formatted}</div>
                 <div class="check-status free">Свободен</div>
                 <div class="check-info-row" style="margin-top: 10px;">
                     <div class="check-info-col">
@@ -3525,16 +3333,22 @@ function renderAdminGiveCard(formatted, ownerName = null, isSecret = false) {
         `;
     }
 }
+
 async function searchAdminNumber() {
     const input = document.getElementById('adminGiveNumInput').value.trim();
     if (!input) return;
+    
     const resEl = document.getElementById('adminGiveNumResult');
     resEl.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Проверяем...</div>';
+    
     const digits = input.replace(/\D/g, '');
     if (digits.length < 10) { resEl.innerHTML = '<div style="color:#ef4444;text-align:center;">Неверный формат</div>'; return; }
+    
     const cd = (digits.startsWith('7') || digits.startsWith('8')) ? digits.slice(1, 11) : digits.slice(0, 10);
     const formatted = `+7 ${cd.slice(0,3)} ${cd.slice(3,6)}-${cd.slice(6,8)}-${cd.slice(8,10)}`;
+
     const { data } = await sb.from('saved_numbers').select('*').eq('formatted', formatted).limit(1);
+    
     if (data && data.length > 0) {
         const num = data[0];
         adminFoundNumber = null;
@@ -3546,12 +3360,16 @@ async function searchAdminNumber() {
         renderAdminGiveCard(formatted, null, false);
     }
 }
+
 async function searchAdminSecretNumber() {
     const input = document.getElementById('adminGiveSecretInput').value.trim();
     if (!input) return;
+    
     const resEl = document.getElementById('adminGiveNumResult');
     resEl.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Проверяем...</div>';
+
     const { data } = await sb.from('saved_numbers').select('*').eq('rarity_key', 'secret').eq('formatted', input).limit(1);
+    
     if (data && data.length > 0) {
         const num = data[0];
         adminFoundSecret = null;
@@ -3563,36 +3381,55 @@ async function searchAdminSecretNumber() {
         renderAdminGiveCard(input, null, true);
     }
 }
+
 async function confirmGiveNumber(isSecret = false) {
-    if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
     const target = document.getElementById('adminGiveTarget').value.trim();
     if (!target) { showToast('error', 'Введите ID игрока', ''); return; }
+    
     let formatted = isSecret ? adminFoundSecret : adminFoundNumber;
     if (!formatted) return;
+
+    // Ищем игрока по Telegram ID (так как ID - это уникальный номер)
     const { data: profiles } = await sb.from('profiles').select('*').eq('telegram_id', target).limit(1);
-    if (!profiles || profiles.length === 0) { showToast('error', 'Игрок не найден', 'Проверьте Telegram ID'); return; }
+    
+    if (!profiles || profiles.length === 0) {
+        showToast('error', 'Игрок не найден', 'Проверьте Telegram ID');
+        return;
+    }
+    
     const player = profiles[0];
-    let newNumData = { user_id: player.id, formatted: formatted, is_secret_variant: null };
+    
+    let newNumData = {
+        user_id: player.id,
+        formatted: formatted,
+        is_secret_variant: null
+    };
+
     if (isSecret) {
+        // Логика для секретного номера
         newNumData.op = '-';
         newNumData.op_name = 'SECRET';
         newNumData.digits = formatted.split('').map(Number);
         newNumData.rarity_key = 'secret';
         newNumData.rarity_name = 'супер секретный';
+        
         const isJackpot = formatted === '0123456789';
         newNumData.price = isJackpot ? 900000000 : Math.floor(400000000 + Math.random() * 100000000);
         newNumData.is_secret_variant = formatted;
     } else {
+        // Логика для обычного номера
         const cleanDigits = formatted.replace(/\D/g, '');
         let digitsArray = cleanDigits.slice(1).split('').map(Number); 
         while (digitsArray.length < 7) digitsArray.push(0);
         if (digitsArray.length > 7) digitsArray = digitsArray.slice(0, 7);
+
         const rarityKey = classifyByPattern(digitsArray);
         const rarityObj = RARITIES.find(r => r.key === rarityKey) || RARITIES[5];
         const opCode = cleanDigits.slice(1, 4);
         let opName = 'МТС';
         if (['928', '924', '926'].includes(opCode)) opName = 'Мегафон';
         if (['977', '905', '900'].includes(opCode)) opName = 'Билайн';
+
         newNumData.op = opCode;
         newNumData.op_name = opName;
         newNumData.digits = digitsArray;
@@ -3600,49 +3437,98 @@ async function confirmGiveNumber(isSecret = false) {
         newNumData.rarity_name = getRarityName(rarityKey).toLowerCase();
         newNumData.price = calculatePrice(rarityObj, { digits: digitsArray, opObj: { name: opName }, rarity: rarityObj });
     }
-    const { error } = await sb.from('saved_numbers').insert(newNumData);
-    if (error) { showToast('error', 'Ошибка базы', error.message); }
-    else { showToast('success', 'Номер выдан!', `Игроку с ID: ${player.telegram_id}`); closeAdminGiveNumber(); }
-}
 
+    const { error } = await sb.from('saved_numbers').insert(newNumData);
+    
+    if (error) {
+        showToast('error', 'Ошибка базы', error.message);
+    } else {
+        showToast('success', 'Номер выдан!', `Игроку с ID: ${player.telegram_id}`);
+        closeAdminGiveNumber();
+    }
+}
+// ==================== СИСТЕМА ЛОГОВ ====================
+
+// Запись лога в БД
 async function addLog(actionType, details) {
     if (!currentUser) return;
     try {
-        await sb.from('admin_logs').insert({ user_id: currentUser.id, username: currentUser.username, action_type: actionType, details: details });
-    } catch (e) { console.error('Log error:', e); }
+        await sb.from('admin_logs').insert({
+            user_id: currentUser.id,
+            username: currentUser.username,
+            action_type: actionType,
+            details: details
+        });
+    } catch (e) {
+        console.error('Log error:', e);
+    }
 }
+
+// Открытие экрана логов
 function openAdminLogs() {
     document.getElementById('adminScreen').classList.remove('active');
     document.getElementById('adminLogsScreen').classList.add('active');
     renderAdminLogs();
 }
+
+// Закрытие экрана логов
 function closeAdminLogs() {
     document.getElementById('adminLogsScreen').classList.remove('active');
     document.getElementById('adminScreen').classList.add('active');
 }
+
+// Отрисовка списка логов
 async function renderAdminLogs() {
     const list = document.getElementById('adminLogsList');
     list.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Загрузка логов...</div>';
-    const { data, error } = await sb.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(100);
-    if (error) { list.innerHTML = '<div style="color:#ef4444;padding:20px;">Ошибка: ' + escapeHtml(error.message) + '</div>'; return; }
-    if (!data || data.length === 0) { list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Логов пока нет</div>'; return; }
+    
+    // Запрашиваем последние 100 записей
+    const { data, error } = await sb.from('admin_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+    if (error) {
+        list.innerHTML = '<div style="color:#ef4444;padding:20px;">Ошибка: ' + error.message + '</div>';
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Логов пока нет</div>';
+        return;
+    }
+
     list.innerHTML = data.map(log => {
-        let icon = 'fa-info-circle'; let color = '#888';
+        let icon = 'fa-info-circle';
+        let color = '#888';
+        
+        // Красим иконки в зависимости от действия
         if (log.action_type === 'roll') { icon = 'fa-dice'; color = '#a855f7'; }
         if (log.action_type === 'sell') { icon = 'fa-coins'; color = '#f59e0b'; }
         if (log.action_type === 'upgrade') { icon = 'fa-arrow-up'; color = '#22c55e'; }
         if (log.action_type === 'admin_gift') { icon = 'fa-gift'; color = '#ef4444'; }
-        const date = new Date(log.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+        const date = new Date(log.created_at).toLocaleString('ru-RU', { 
+            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
+        });
+
         return `<div class="promo-list-item" style="border-left: 3px solid ${color};">
             <div class="promo-list-header">
-                <div style="font-size: 13px; font-weight: 700; color: #fff;"><i class="fa-solid ${icon}" style="color: ${color}; margin-right: 6px;"></i>${escapeHtml(log.username)}</div>
+                <div style="font-size: 13px; font-weight: 700; color: #fff;">
+                    <i class="fa-solid ${icon}" style="color: ${color}; margin-right: 6px;"></i>
+                    ${log.username}
+                </div>
                 <div style="font-size: 11px; color: #888;">${date}</div>
             </div>
-            <div style="font-size: 12px; color: #ccc; margin-top: 4px;">${escapeHtml(log.details)}</div>
+            <div style="font-size: 12px; color: #ccc; margin-top: 4px;">
+                ${log.details}
+            </div>
         </div>`;
     }).join('');
 }
+// ==================== ТЕХ. РАБОТЫ ====================
 
+// Проверка режима при запуске игры
 async function checkMaintenance() {
     const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
     if (data && data.maintenance_mode) {
@@ -3650,32 +3536,55 @@ async function checkMaintenance() {
             showToast('error', 'Внимание!', 'Включен режим тех. работ (вы админ)');
             return;
         }
+        
         document.getElementById('gameRoot').style.display = 'none';
         document.getElementById('loadingScreen').classList.add('hidden');
-        showMaintenanceScreen(data.maintenance_text);
+        
+        let overlay = document.getElementById('maintenanceOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'maintenanceOverlay';
+            overlay.style.cssText = 'position: fixed; inset: 0; background: #0d0d0d; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; gap: 20px;';
+            document.body.appendChild(overlay);
+        }
+        overlay.innerHTML = `
+            <div style="font-size: 60px;">🛠️</div>
+            <div style="font-size: 24px; font-weight: 800; color: #fff;">Технические работы</div>
+            <div style="font-size: 15px; color: #aaa; line-height: 1.6;">${data.maintenance_text || 'Скоро вернёмся!'}</div>
+            <button onclick="location.reload()" style="margin-top: 20px; background: #2a2a2a; color: #fff; border: none; border-radius: 12px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer;">Обновить</button>
+        `;
+        overlay.style.display = 'flex';
     } else {
         const overlay = document.getElementById('maintenanceOverlay');
         if (overlay) overlay.style.display = 'none';
     }
 }
+
+// Переключатель в админке
 async function toggleMaintenance() {
-    if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
     const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
     if (!data) return;
+    
     const newStatus = !data.maintenance_mode;
     if (newStatus && !confirm('Включить тех. работы? Все игроки будут выкинуты из игры!')) return;
+    
     await sb.from('app_settings').update({ maintenance_mode: newStatus }).eq('id', 1);
+    
     updateMaintenanceButtonUI(newStatus);
     showToast('success', newStatus ? 'Тех. работы включены' : 'Тех. работы выключены', '');
 }
+
+// Обновление кнопки в админке
 async function updateMaintenanceButtonUI(status) {
     const statusEl = document.getElementById('maintenanceStatus');
     const iconEl = document.getElementById('maintenanceIcon');
     if (!statusEl) return;
+    
     if (status === undefined) {
         const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
         status = data ? data.maintenance_mode : false;
     }
+    
     if (status) {
         statusEl.textContent = 'ВКЛЮЧЕНЫ (игроки заблокированы)';
         statusEl.style.color = '#ef4444';
@@ -3686,50 +3595,6 @@ async function updateMaintenanceButtonUI(status) {
         iconEl.style.background = 'rgba(239,68,68,0.15)';
     }
 }
-
-// Перехватываем ошибки и выводим их на экран телефона
-window.addEventListener('error', function(event) {
-    document.getElementById('loadingScreen').classList.add('hidden');
-    let errDiv = document.getElementById('phoneError');
-    if (!errDiv) {
-        errDiv = document.createElement('div');
-        errDiv.id = 'phoneError';
-        errDiv.style.cssText = 'position:fixed;top:20px;left:20px;right:20px;background:red;color:white;padding:20px;z-index:999999;font-size:14px;border-radius:10px;word-break:break-all;';
-        document.body.appendChild(errDiv);
-    }
-    errDiv.innerHTML = '<b>ОШИБКА:</b><br>' + escapeHtml(event.message) + '<br><br><b>Строка:</b> ' + event.lineno;
-});
-
-// ===== ЖЕСТКИЙ ЗАПУСК =====
-(function() {
-    // 1. Инициализируем Telegram
-    if (window.Telegram && window.Telegram.WebApp) {
-        tg.ready();
-        tg.expand();
-        telegramUser = tg.initDataUnsafe?.user || { id: 12345678, first_name: 'Тест' };
-    } else {
-        telegramUser = { id: 12345678, first_name: 'Тест' };
-    }
-
-    // 2. Запускаем bootstrap() — он проверит тех. работы и покажет игру
-    bootstrap().catch(e => {
-        console.error('Bootstrap failed:', e);
-        // Fallback: показываем игру даже если сервер не ответил
-        document.getElementById('loadingScreen').classList.add('hidden');
-        document.getElementById('gameRoot').style.display = 'block';
-        document.getElementById('balanceDisplay').innerHTML = '0 <span>₽</span>';
-        setTimeout(() => {
-            try { refreshFromServer(); } catch(err) { console.warn('Server not responding:', err); }
-        }, 100);
-    });
-})();
-/* Улучшение плавности скролла на iOS/Android */
-html, body, .menu-sheet, .collection-screen, .profile-screen, .shop-screen {
-    -webkit-overflow-scrolling: touch; 
-    scroll-behavior: smooth;
-}
-.main-content { animation: fadeIn 0.3s ease; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </script>
 </body>
 </html>
