@@ -681,7 +681,19 @@
     .news-carousel::-webkit-scrollbar { display: none; }
     .news-card { min-width: 85%; scroll-snap-align: center; background: linear-gradient(135deg, #2a1a3a, #1a0f2a); border: 1px solid #a855f7; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
     .news-card-title { font-size: 14px; font-weight: 800; color: #e9d5ff; display: flex; align-items: center; gap: 6px; }
-    .news-card-desc { font-size: 12px; color: #ccc; line-height: 1.4; }
+    .news-card-desc { 
+    font-size: 13px; 
+    color: #e0e0e0; 
+    line-height: 1.45; 
+    white-space: normal; /* Разрешаем перенос текста */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Максимум 2 строки, потом троеточие */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.news-indicator { display: flex; justify-content: center; gap: 6px; margin-top: -8px; margin-bottom: 16px; }
+.news-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; transition: all 0.3s; }
+.news-dot.active { background: #e0e0e0; width: 18px; border-radius: 4px; }
     #adminNewsScreen { z-index: 10000; }
     #adminLogsScreen { z-index: 10001 !important; }
 </style>
@@ -713,7 +725,8 @@
 </div>
 
 <div class="main-content">
- <div class="news-carousel" id="newsCarousel"></div>
+<div class="news-carousel" id="newsCarousel"></div>
+<div class="news-indicator" id="newsIndicator"></div>
 
     <div class="sim-card start-card" id="simCard">
         <div class="start-hand">👋</div>
@@ -1450,16 +1463,34 @@ async function loadNewsFeed() {
     if (!carousel) return;
     const now = new Date();
     const activeNews = (data || []).filter(n => !n.expires_at || new Date(n.expires_at) > now);
+    
     if (activeNews.length === 0) {
         carousel.innerHTML = `<div class="news-card"><div class="news-card-title">📢 Добро пожаловать!</div><div class="news-card-desc">Скоро здесь появятся новости от администрации.</div></div>`;
+        document.getElementById('newsIndicator').innerHTML = '';
         return;
     }
+    
     carousel.innerHTML = activeNews.map(n => `
         <div class="news-card">
-            <div class="news-card-title">${n.icon || '📢'} ${n.title}</div>
+            <div class="news-card-title" style="font-size: 15px;">${n.icon || '📢'} ${n.title}</div>
             <div class="news-card-desc">${n.description}</div>
         </div>
     `).join('');
+
+    // Генерируем точки внизу
+    const indicator = document.getElementById('newsIndicator');
+    indicator.innerHTML = activeNews.map((_, i) => `<div class="news-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></div>`).join('');
+    
+    // Связываем скролл с переключением точек
+    carousel.addEventListener('scroll', () => {
+        const scrollPos = carousel.scrollLeft;
+        const cardWidth = carousel.offsetWidth * 0.85 + 10;
+        const activeIndex = Math.round(scrollPos / cardWidth);
+        document.querySelectorAll('.news-dot').forEach((dot, i) => {
+            dot.classList.toggle('active', i === activeIndex);
+        });
+    });
+
     startNewsAutoScroll();
 }
 
@@ -3164,9 +3195,14 @@ if (headerAv) headerAv.innerHTML = avatarHtml;
         freeRolls = cached.freeRolls || 0;
         luckBoost = cached.luckBoost || { x2: 0, x5: 0, x10: 0, x15: 0 };
         updateBalance();
-        updateRollButtons();
-        updateLuckUI();
-        startLuckTimer();
+updateRollButtons();
+updateLuckUI();
+startLuckTimer();
+
+// Фикс бага: показываем правильный уровень из кэша сразу
+if (cached.profile && cached.profile.level && levelDisplay) {
+    levelDisplay.textContent = 'Ур. ' + cached.profile.level;
+}
     } else {
         document.getElementById('balanceDisplay').innerHTML =
             '<span class="skeleton-balance"></span> <span>₽</span>';
@@ -3554,6 +3590,13 @@ async function updateMaintenanceButtonUI(status) {
         alert('ОШИБКА: ' + (e.message || 'Неизвестно'));
     }
 })();
+/* Улучшение плавности скролла на iOS/Android */
+html, body, .menu-sheet, .collection-screen, .profile-screen, .shop-screen {
+    -webkit-overflow-scrolling: touch; 
+    scroll-behavior: smooth;
+}
+.main-content { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </script>
 </body>
 </html>
