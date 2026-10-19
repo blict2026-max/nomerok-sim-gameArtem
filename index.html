@@ -3585,14 +3585,28 @@ async function updateMaintenanceButtonUI(status) {
     }
 }
 
+window.addEventListener('error', function(event) {
+    document.getElementById('loadingScreen').classList.add('hidden');
+    const errorScreen = document.getElementById('errorScreen');
+    if (errorScreen) {
+        errorScreen.classList.add('active');
+        errorScreen.querySelector('.error-title').textContent = 'Ошибка в коде';
+        errorScreen.querySelector('.error-text').innerHTML = 'Детали:<br><span style="color:#ef4444;font-size:12px;word-break:break-all;">' + event.message + '<br>Строка: ' + event.lineno + '</span>';
+    }
+});
+
 (async () => {
     try {
         await bootstrap();
     } catch (e) {
         console.error(e);
-        const lt = document.getElementById('loadingText');
-        if (lt) lt.textContent = 'ОШИБКА: ' + (e.message || 'Неизвестно');
-        alert('ОШИБКА: ' + (e.message || 'Неизвестно'));
+        document.getElementById('loadingScreen').classList.add('hidden');
+        const errorScreen = document.getElementById('errorScreen');
+        if (errorScreen) {
+            errorScreen.classList.add('active');
+            errorScreen.querySelector('.error-title').textContent = 'Ошибка запуска';
+            errorScreen.querySelector('.error-text').innerHTML = 'Детали:<br><span style="color:#ef4444;font-size:12px;word-break:break-all;">' + e.message + '</span>';
+        }
     }
 })();
 /* Улучшение плавности скролла на iOS/Android */
