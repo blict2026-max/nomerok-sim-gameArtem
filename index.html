@@ -1444,17 +1444,32 @@ function initNewsFeed() {
 let newsAutoScrollInterval = null;
 function startNewsAutoScroll() {
     const carousel = document.getElementById('newsCarousel');
+    const indicator = document.getElementById('newsIndicator');
     if (!carousel) return;
     if (newsAutoScrollInterval) clearInterval(newsAutoScrollInterval);
+    
+    let currentIndex = 0;
+
     newsAutoScrollInterval = setInterval(() => {
         if (document.getElementById('gameRoot').style.display === 'none') return;
-        const scrollAmount = carousel.offsetWidth * 0.85;
-        const maxScroll = carousel.scrollWidth - carousel.clientWidth;
-        if (carousel.scrollLeft >= maxScroll - 10) {
+        if (!indicator || indicator.children.length === 0) return;
+
+        const totalCards = indicator.children.length;
+        const scrollAmount = carousel.offsetWidth * 0.85 + 10;
+
+        currentIndex++;
+        if (currentIndex >= totalCards) {
+            currentIndex = 0;
             carousel.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-            carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            carousel.scrollTo({ left: currentIndex * scrollAmount, behavior: 'smooth' });
         }
+
+        // Принудительно обновляем точки
+        Array.from(indicator.children).forEach((dot, i) => {
+            dot.classList.toggle('active', i === currentIndex);
+        });
+
     }, 3000);
 }
 async function loadNewsFeed() {
@@ -1480,16 +1495,6 @@ async function loadNewsFeed() {
     // Генерируем точки внизу
     const indicator = document.getElementById('newsIndicator');
     indicator.innerHTML = activeNews.map((_, i) => `<div class="news-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></div>`).join('');
-    
-    // Связываем скролл с переключением точек
-    carousel.addEventListener('scroll', () => {
-        const scrollPos = carousel.scrollLeft;
-        const cardWidth = carousel.offsetWidth * 0.85 + 10;
-        const activeIndex = Math.round(scrollPos / cardWidth);
-        document.querySelectorAll('.news-dot').forEach((dot, i) => {
-            dot.classList.toggle('active', i === activeIndex);
-        });
-    });
 
     startNewsAutoScroll();
 }
