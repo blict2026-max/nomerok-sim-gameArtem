@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Sim Card Game.v2</title>
+<title>Sim Card Game</title>
 <link rel="preconnect" href="https://docubgerphcbftmwyltl.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="https://docubgerphcbftmwyltl.supabase.co">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -1306,6 +1306,8 @@ let selectedLotIndex = null;
 let currentAuctionTab = 'all';
 let auctionTickInterval = null;
 let simDetailTarget = null;
+let isSavingNumber = false; // флаг от двойного сохранения
+let isApplyingNotification = false; // флаг от двойного применения уведомлений
 
 const balanceDisplay = document.getElementById('balanceDisplay');
 const profileBalance = document.getElementById('profileBalance');
@@ -1344,6 +1346,7 @@ const TAGS = {
     yard: { label: 'Лярд', class: 'tag-yard' }
 };
 
+// ===== Безопасный UUID =====
 function uuidv4() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         try { return crypto.randomUUID(); } catch(_) {}
@@ -1352,6 +1355,12 @@ function uuidv4() {
         const r = Math.random() * 16 | 0;
         return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
+}
+
+// ===== Экранирование HTML (защита от XSS) =====
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 function getRarityColor(key) {
@@ -1386,15 +1395,15 @@ function renderTag(tag) {
     if (!tag) return '';
     const t = TAGS[tag];
     if (!t) return '';
-    return `<span class="user-tag ${t.class}">${t.label}</span>`;
+    return `<span class="user-tag ${t.class}">${escapeHtml(t.label)}</span>`;
 }
-function formatPrice(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
+function formatPrice(n) { return (n || 0).toLocaleString('ru-RU') + ' ₽'; }
 function formatRatingValue(n) {
     if (n >= 1000000000000) return (n / 1000000000000).toFixed(2).replace('.', ',') + ' трлн';
     if (n >= 1000000000) return (n / 1000000000).toFixed(2).replace('.', ',') + ' млрд';
     if (n >= 1000000) return (n / 1000000).toFixed(2).replace('.', ',') + ' млн';
     if (n >= 1000) return (n / 1000).toFixed(2).replace('.', ',') + ' тыс';
-    return n.toLocaleString('ru-RU');
+    return (n || 0).toLocaleString('ru-RU');
 }
 function formatTimer(ms) {
     if (ms <= 0) return '00:00';
@@ -1416,6 +1425,7 @@ function showToast(type, title, sub) {
     setTimeout(() => toast.classList.remove('active'), 3000);
 }
 
+// ===== Безопасная инициализация Audio =====
 let sounds = { click: null, win: null, drop: null };
 try {
     sounds.click = new Audio('https://actions.google.com/sounds/v1/ui/click_002.ogg');
@@ -1432,29 +1442,27 @@ document.addEventListener('click', (e) => {
     }
 });
 
+let newsChannel = null;
+let newsAutoScrollInterval = null;
 function initNewsFeed() {
-    sb.channel('news_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'news_feed' }, payload => {
+    if (newsChannel) { try { sb.removeChannel(newsChannel); } catch(_) {} }
+    newsChannel = sb.channel('news_channel_' + Date.now())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'news_feed' }, () => {
           loadNewsFeed();
       }).subscribe();
     loadNewsFeed();
 }
-let newsAutoScrollInterval = null;
 function startNewsAutoScroll() {
     const carousel = document.getElementById('newsCarousel');
     const indicator = document.getElementById('newsIndicator');
     if (!carousel) return;
     if (newsAutoScrollInterval) clearInterval(newsAutoScrollInterval);
-    
     let currentIndex = 0;
-
     newsAutoScrollInterval = setInterval(() => {
         if (document.getElementById('gameRoot').style.display === 'none') return;
         if (!indicator || indicator.children.length === 0) return;
-
         const totalCards = indicator.children.length;
         const scrollAmount = carousel.offsetWidth * 0.85 + 10;
-
         currentIndex++;
         if (currentIndex >= totalCards) {
             currentIndex = 0;
@@ -1462,11 +1470,9 @@ function startNewsAutoScroll() {
         } else {
             carousel.scrollTo({ left: currentIndex * scrollAmount, behavior: 'smooth' });
         }
-
         Array.from(indicator.children).forEach((dot, i) => {
             dot.classList.toggle('active', i === currentIndex);
         });
-
     }, 3000);
 }
 async function loadNewsFeed() {
@@ -1475,23 +1481,19 @@ async function loadNewsFeed() {
     if (!carousel) return;
     const now = new Date();
     const activeNews = (data || []).filter(n => !n.expires_at || new Date(n.expires_at) > now);
-    
     if (activeNews.length === 0) {
         carousel.innerHTML = `<div class="news-card"><div class="news-card-title">📢 Добро пожаловать!</div><div class="news-card-desc">Скоро здесь появятся новости от администрации.</div></div>`;
         document.getElementById('newsIndicator').innerHTML = '';
         return;
     }
-    
     carousel.innerHTML = activeNews.map(n => `
         <div class="news-card">
-            <div class="news-card-title" style="font-size: 15px;">${n.icon || '📢'} ${n.title}</div>
-            <div class="news-card-desc">${n.description}</div>
+            <div class="news-card-title" style="font-size: 15px;">${escapeHtml(n.icon || '📢')} ${escapeHtml(n.title)}</div>
+            <div class="news-card-desc">${escapeHtml(n.description)}</div>
         </div>
     `).join('');
-
     const indicator = document.getElementById('newsIndicator');
     indicator.innerHTML = activeNews.map((_, i) => `<div class="news-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></div>`).join('');
-
     startNewsAutoScroll();
 }
 
@@ -1550,10 +1552,10 @@ async function claimBP(index) {
     if (r.type === 'money') { balance += r.val; updateBalance(); }
     if (r.type === 'roll') { freeRolls += r.val; updateRollButtons(); }
     if (r.type === 'luck') { activateLuckBoost('x2', 60); }
-    if (r.type === 'frame') { applyFrame(r.val); }
+    if (r.type === 'frame') { await applyFrame(r.val); }
     const { data } = await sb.from('battle_pass').select('*').eq('user_id', currentUser.id).maybeSingle();
     let claimed = data ? data.claimed_rewards : [];
-    claimed.push(index);
+    if (!claimed.includes(index)) claimed.push(index);
     if (data) await sb.from('battle_pass').update({ claimed_rewards: claimed }).eq('user_id', currentUser.id);
     else await sb.from('battle_pass').insert({ user_id: currentUser.id, points: 0, claimed_rewards: claimed });
     await saveUserData();
@@ -1571,7 +1573,7 @@ function switchShopTab(tab) {
 async function buyItem(itemId) {
     if (!tg || !tg.showPopup) {
         if (itemId.startsWith('vip')) await applyVIP(itemId);
-        else if (itemId.startsWith('rolls')) freeRolls += itemId === 'rolls5' ? 5 : 20;
+        else if (itemId.startsWith('rolls')) { freeRolls += itemId === 'rolls5' ? 5 : 20; updateRollButtons(); }
         else await applyFrame(itemId);
         showToast('success', 'Куплено (тест)', '');
         return;
@@ -1729,7 +1731,7 @@ function renderPatternBadge(container, numberObj) {
     if (old) old.remove();
     const badge = document.createElement('div');
     badge.className = 'pattern-badge';
-    badge.innerHTML = `×${info.mult.toFixed(2)} <span class="pattern-name">${info.name}</span>`;
+    badge.innerHTML = `×${info.mult.toFixed(2)} <span class="pattern-name">${escapeHtml(info.name)}</span>`;
     container.appendChild(badge);
 }
 function calculatePrice(rarity, numberObj) {
@@ -1808,7 +1810,13 @@ function buildNumberFromDigits(opObj, digits, rarity) {
     const formatted = `+7 ${opObj.code} ${digits[0]}${digits[1]}${digits[2]}-${digits[3]}${digits[4]}-${digits[5]}${digits[6]}`;
     return { op: opObj.code, opObj, digits, formatted, rarity };
 }
-async function generateUniqueNumber(rarity) {
+async function generateUniqueNumber(rarity, _depth = 0) {
+    if (_depth > 5) {
+        // Защита от бесконечной рекурсии — отдаём обычный
+        const opObj = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
+        const digits = generateDigitsForRarity(RARITIES[5]);
+        return buildNumberFromDigits(opObj, digits, RARITIES[5]);
+    }
     const limit = TIRAGE_LIMITS[rarity.key];
     if (limit === Infinity) {
         const opObj = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
@@ -1817,14 +1825,15 @@ async function generateUniqueNumber(rarity) {
     }
     if (rarity.key === 'secret') {
         const variants = ['0','1','2','3','4','5','6','7','8','9','0123456789','10','11','12','13','14','15','16'];
-        const shuffled = variants.sort(() => Math.random() - 0.5);
+        const shuffled = [...variants].sort(() => Math.random() - 0.5);
         for (const v of shuffled) {
             const { count } = await sb.from('saved_numbers').select('id', { count: 'exact', head: true }).eq('rarity_key', 'secret').eq('formatted', v);
             if ((count || 0) < limit) {
                 return { op: '-', opObj: { code: '-', name: 'SECRET', country: '🌌 Неизвестно' }, digits: v.split('').map(Number), formatted: v, rarity: rarity, isSecretVariant: v };
             }
         }
-        return generateUniqueNumber(RARITIES[3]);
+        // Все secret заняты — отдаём legendary (с защитой от рекурсии)
+        return generateUniqueNumber(RARITIES[3], _depth + 1);
     }
     for (let attempt = 0; attempt < 30; attempt++) {
         const opObj = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
@@ -1833,7 +1842,7 @@ async function generateUniqueNumber(rarity) {
         const { count } = await sb.from('saved_numbers').select('id', { count: 'exact', head: true }).eq('formatted', num.formatted);
         if ((count || 0) < limit) return num;
     }
-    return generateUniqueNumber(RARITIES[3]);
+    return generateUniqueNumber(RARITIES[3], _depth + 1);
 }
 
 const LUCK_TIERS = [
@@ -1884,18 +1893,22 @@ function startLuckTimer() {
 }
 function calculateChances() {
     const boost = getLuckMultiplier();
+    // База нормализована к 100%
     const base = { common: 87, rare: 6, epic: 4, legendary: 0.1, mythic: 0.001, secret: 0.0001 };
-    if (boost <= 1) return { ...base, boost: 1 };
+    const baseSum = Object.values(base).reduce((a, b) => a + b, 0);
+    const normBase = {};
+    Object.keys(base).forEach(k => normBase[k] = base[k] * 100 / baseSum);
+    if (boost <= 1) return { ...normBase, boost: 1 };
     const boostFactor = Math.min(0.85, (boost - 1) / (boost + 1));
-    const commonReduction = base.common * boostFactor;
-    const rareTotal = base.rare + base.epic + base.legendary + base.mythic + base.secret;
+    const commonReduction = normBase.common * boostFactor;
+    const rareTotal = normBase.rare + normBase.epic + normBase.legendary + normBase.mythic + normBase.secret;
     const scale = (rareTotal + commonReduction) / rareTotal;
     const boosted = {
-        common: base.common - commonReduction, rare: base.rare * scale,
-        epic: base.epic * scale * (1 + (boost - 1) * 0.08),
-        legendary: base.legendary * scale * (1 + (boost - 1) * 0.12),
-        mythic: base.mythic * scale * (1 + (boost - 1) * 0.18),
-        secret: base.secret * scale * (1 + (boost - 1) * 0.25)
+        common: normBase.common - commonReduction, rare: normBase.rare * scale,
+        epic: normBase.epic * scale * (1 + (boost - 1) * 0.08),
+        legendary: normBase.legendary * scale * (1 + (boost - 1) * 0.12),
+        mythic: normBase.mythic * scale * (1 + (boost - 1) * 0.18),
+        secret: normBase.secret * scale * (1 + (boost - 1) * 0.25)
     };
     const total = Object.values(boosted).reduce((a, b) => a + b, 0);
     const norm = 100 / total;
@@ -1907,8 +1920,8 @@ function formatChancePercent(v) {
     if (v >= 10) return v.toFixed(1).replace(/\.0$/, '') + '%';
     if (v >= 1) return v.toFixed(2).replace(/\.?0+$/, '') + '%';
     if (v >= 0.01) return v.toFixed(3).replace(/\.?0+$/, '') + '%';
-    if (v >= 0.0001) return v.toFixed(5).replace(/\.?0+$/, '') + '%';
-    return v.toExponential(1) + '%';
+    if (v >= 0.0001) return v.toFixed(4).replace(/\.?0+$/, '') + '%';
+    return v.toFixed(6) + '%';
 }
 function renderChancesScreen() {
     const list = document.getElementById('chancesList');
@@ -1962,12 +1975,12 @@ function renderMainNumber(n) {
     if (isSecret) {
         card.innerHTML = `${badgeIcon ? `<div class="op-badge ${badgeClass}">${badgeIcon}</div>` : ''}
             <div class="sim-top"><div class="sim-logo"><div class="sim-logo-top"><div class="red-box">SEC</div><span>SECRET</span></div><div class="sim-country">🌌 Неизвестно</div></div></div>
-            <div class="sim-number rarity-secret" id="simNumber" style="font-size: 56px; text-align: center; font-weight: 900;">${n.formatted}</div>
+            <div class="sim-number rarity-secret" id="simNumber" style="font-size: 56px; text-align: center; font-weight: 900;">${escapeHtml(n.formatted)}</div>
             <div class="sim-footer"><div class="sim-type">Супер секретный</div></div>`;
     } else {
         card.innerHTML = `${badgeIcon ? `<div class="op-badge ${badgeClass}">${badgeIcon}</div>` : ''}
-            <div class="sim-top"><div class="sim-logo"><div class="sim-logo-top"><div class="red-box">${getOpShort(opName)}</div><span>${opName}</span></div><div class="sim-country">${n.opObj.country}</div></div></div>
-            <div class="sim-number rarity-${n.rarity.key}" id="simNumber">${n.formatted}</div>
+            <div class="sim-top"><div class="sim-logo"><div class="sim-logo-top"><div class="red-box">${getOpShort(opName)}</div><span>${escapeHtml(opName)}</span></div><div class="sim-country">${escapeHtml(n.opObj.country)}</div></div></div>
+            <div class="sim-number rarity-${n.rarity.key}" id="simNumber">${escapeHtml(n.formatted)}</div>
             <div class="sim-footer"><div class="sim-type">${getRarityName(n.rarity.key)}</div></div>`;
     }
     renderPatternBadge(card, n);
@@ -1984,7 +1997,6 @@ function showDropOverlay(n) {
     title.className = 'drop-title ' + key;
     const opName = n.opObj ? n.opObj.name : 'SECRET';
     const opClass = getOperatorClass(opName);
-    const badgeClass = getOpBadgeClass(opName);
     cardInner.className = 'drop-card-inner rarity-' + key + (opClass ? ' ' + opClass : '');
     document.getElementById('dropDcRedBox').textContent = getOpShort(opName);
     document.getElementById('dropDcOpName').textContent = opName;
@@ -2002,18 +2014,39 @@ function showDropOverlay(n) {
         else navigator.vibrate([150, 60, 150, 60, 300]);
     }
 }
-function closeDropOverlay() { document.getElementById('dropOverlay').classList.remove('active'); dropPendingNumber = null; document.getElementById('saveSellRow').classList.add('visible'); }
-async function dropSave() { if (!dropPendingNumber) return; await saveNumberToDB(dropPendingNumber); recentNumbers = recentNumbers.filter(n => n !== dropPendingNumber); closeDropOverlay(); renderMiniCards(); }
+function closeDropOverlay() {
+    document.getElementById('dropOverlay').classList.remove('active');
+    // Сбрасываем dropPendingNumber только если он уже не сохранён
+    if (dropPendingNumber) {
+        dropPendingNumber = null;
+        document.getElementById('saveSellRow').classList.add('visible');
+    }
+}
+async function dropSave() {
+    if (!dropPendingNumber) return;
+    const n = dropPendingNumber;
+    dropPendingNumber = null; // сбрасываем ДО await, чтобы двойной клик не сработал
+    await saveNumberToDB(n);
+    recentNumbers = recentNumbers.filter(x => x !== n);
+    // Сбрасываем currentRolledNumber, если это он
+    if (currentRolledNumber === n) currentRolledNumber = null;
+    closeDropOverlay();
+    document.getElementById('saveSellRow').classList.remove('visible');
+    renderMiniCards();
+}
 
 async function rollOne() {
     const finalRarity = pickRarity();
     const finalNumber = await generateUniqueNumber(finalRarity);
     const price = calculatePrice(finalNumber.rarity, finalNumber);
-    return new Promise(async (resolve) => {
-        const card = document.getElementById('simCard');
-        if (card.classList.contains('start-card')) { renderMainNumber(finalNumber); resolve({ ...finalNumber, price, rarity: finalNumber.rarity }); return; }
-        const numEl = document.getElementById('simNumber');
-        if (!numEl) { renderMainNumber(finalNumber); resolve({ ...finalNumber, price, rarity: finalNumber.rarity }); return; }
+    const card = document.getElementById('simCard');
+    const numEl = document.getElementById('simNumber');
+    if (card.classList.contains('start-card') || !numEl) {
+        renderMainNumber(finalNumber);
+        return { ...finalNumber, price, rarity: finalNumber.rarity };
+    }
+    // Анимация прокрутки без Promise-обёртки
+    await new Promise((resolve) => {
         numEl.className = 'sim-number';
         let frames = 0;
         const interval = setInterval(() => {
@@ -2022,9 +2055,11 @@ async function rollOne() {
             for (let i = 0; i < 7; i++) rd.push(Math.floor(Math.random() * 10));
             const op = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
             numEl.textContent = `+7 ${op.code} ${rd[0]}${rd[1]}${rd[2]}-${rd[3]}${rd[4]}-${rd[5]}${rd[6]}`;
-            if (frames >= 20) { clearInterval(interval); renderMainNumber(finalNumber); resolve({ ...finalNumber, price, rarity: finalNumber.rarity }); }
+            if (frames >= 20) { clearInterval(interval); resolve(); }
         }, 60);
     });
+    renderMainNumber(finalNumber);
+    return { ...finalNumber, price, rarity: finalNumber.rarity };
 }
 
 async function startRoll(count) {
@@ -2057,7 +2092,8 @@ async function startRoll(count) {
     const best = results.reduce((b, r) => order.indexOf(r.rarity.key) > order.indexOf(b.rarity.key) ? r : b, results[0]);
     if (['legendary', 'mythic', 'secret'].includes(best.rarity.key)) currentUser.pity_counter = 0;
     else currentUser.pity_counter = (currentUser.pity_counter || 0) + count;
-    await sb.from('profiles').update({ pity_counter: currentUser.pity_counter }).eq('id', currentUser.id);
+    await sb.from('profiles').update({ pity_counter: currentUser.pity_counter, bp_points: (currentUser.bp_points || 0) + (count * 2) }).eq('id', currentUser.id);
+    currentUser.bp_points = (currentUser.bp_points || 0) + (count * 2);
     results.reverse().forEach(r => recentNumbers.unshift(r));
     recentNumbers = recentNumbers.slice(0, 5);
     renderMiniCards();
@@ -2068,8 +2104,6 @@ async function startRoll(count) {
     document.getElementById('rollX5Btn').disabled = false;
     updateRollButtons();
     await addXP(count * 10);
-    currentUser.bp_points = (currentUser.bp_points || 0) + (count * 2);
-    await sb.from('profiles').update({ bp_points: currentUser.bp_points }).eq('id', currentUser.id);
     await saveUserData();
     addLog('roll', `Сделал ${count} круток. Лучшее: ${best.rarity.name} ${best.formatted}`);
 }
@@ -2109,32 +2143,42 @@ function openChoiceModal(n) {
 function closeChoiceModal() { document.getElementById('choiceModal').classList.remove('active'); modalTargetNumber = null; }
 async function modalSave() {
     if (!modalTargetNumber) return;
-    await saveNumberToDB(modalTargetNumber);
-    const i = recentNumbers.indexOf(modalTargetNumber);
+    const n = modalTargetNumber;
+    modalTargetNumber = null;
+    await saveNumberToDB(n);
+    const i = recentNumbers.indexOf(n);
     if (i > -1) recentNumbers.splice(i, 1);
-    if (currentRolledNumber === modalTargetNumber) { currentRolledNumber = null; document.getElementById('saveSellRow').classList.remove('visible'); }
+    if (currentRolledNumber === n) { currentRolledNumber = null; document.getElementById('saveSellRow').classList.remove('visible'); }
     renderMiniCards(); closeChoiceModal();
 }
 async function modalSell() {
     if (!modalTargetNumber) return;
-    balance += modalTargetNumber.price; updateBalance(); await saveUserData();
-    showToast('success', 'Продан!', '+' + formatPrice(modalTargetNumber.price));
-    const i = recentNumbers.indexOf(modalTargetNumber);
+    const n = modalTargetNumber;
+    modalTargetNumber = null;
+    balance += n.price; updateBalance(); await saveUserData();
+    showToast('success', 'Продан!', '+' + formatPrice(n.price));
+    const i = recentNumbers.indexOf(n);
     if (i > -1) recentNumbers.splice(i, 1);
-    if (currentRolledNumber === modalTargetNumber) { currentRolledNumber = null; document.getElementById('saveSellRow').classList.remove('visible'); }
+    if (currentRolledNumber === n) { currentRolledNumber = null; document.getElementById('saveSellRow').classList.remove('visible'); }
     renderMiniCards(); closeChoiceModal();
 }
 async function saveNumber() {
     if (!currentRolledNumber) return;
-    await saveNumberToDB(currentRolledNumber);
-    const i = recentNumbers.indexOf(currentRolledNumber);
+    const n = currentRolledNumber;
+    currentRolledNumber = null;
+    await saveNumberToDB(n);
+    const i = recentNumbers.indexOf(n);
     if (i > -1) recentNumbers.splice(i, 1);
     renderMiniCards();
     document.getElementById('saveSellRow').classList.remove('visible');
-    currentRolledNumber = null;
 }
 async function saveNumberToDB(n) {
-    if (!currentUser) return;
+    if (!currentUser) return false;
+    if (isSavingNumber) {
+        showToast('error', 'Подождите', 'Сохранение уже идёт');
+        return false;
+    }
+    isSavingNumber = true;
     try {
         const { data, error } = await sb.from('saved_numbers').insert({
             user_id: currentUser.id, formatted: n.formatted, op: n.op,
@@ -2151,7 +2195,9 @@ async function saveNumberToDB(n) {
         });
         updateCollection(); updateProfileUI();
         showToast('success', 'Сохранён!', n.formatted);
-    } catch (e) { showToast('error', 'Ошибка', e.message); }
+        return true;
+    } catch (e) { showToast('error', 'Ошибка', e.message); return false; }
+    finally { isSavingNumber = false; }
 }
 async function sellAll() {
     const all = [...recentNumbers];
@@ -2198,10 +2244,10 @@ function updateCollection() {
         card.className = 'sim-card-item rarity-' + n.rarity.key;
         card.innerHTML = `
             <div class="sci-top">
-                <div class="sci-op-badge">${opShort}</div>
+                <div class="sci-op-badge">${escapeHtml(opShort)}</div>
                 <div class="sci-chip"></div>
             </div>
-            <div class="sci-number">${n.formatted}</div>
+            <div class="sci-number">${escapeHtml(n.formatted)}</div>
             <div class="sci-bottom">
                 <div class="sci-rarity">${getRarityName(n.rarity.key)}</div>
                 <div class="sci-price">${formatPrice(n.price)}</div>
@@ -2231,6 +2277,7 @@ function closeSimDetail() {
 async function simDetailSell() {
     if (!simDetailTarget) return;
     const n = simDetailTarget;
+    simDetailTarget = null;
     balance += n.price; updateBalance();
     await sb.from('saved_numbers').delete().eq('id', n.id);
     savedNumbers = savedNumbers.filter(x => x.id !== n.id);
@@ -2243,6 +2290,8 @@ async function simDetailSell() {
 async function simDetailDelete() {
     if (!simDetailTarget) return;
     const n = simDetailTarget;
+    if (!confirm(`Удалить номер ${n.formatted}? Это необратимо.`)) return;
+    simDetailTarget = null;
     await sb.from('saved_numbers').delete().eq('id', n.id);
     savedNumbers = savedNumbers.filter(x => x.id !== n.id);
     updateCollection(); updateProfileUI();
@@ -2253,24 +2302,24 @@ async function simDetailDelete() {
 function renderRating() {
     const list = document.getElementById('ratingList');
     if (!list) return;
-    const sorted = [...allPlayersList];
-    sorted.forEach(p => {
+    // Не мутируем allPlayersList — создаём копии
+    const sorted = allPlayersList.map(p => {
         let total = p.balance || 0;
         if (p.id === currentUser.id) total += savedNumbers.reduce((s, n) => s + n.price, 0);
-        p._ratingValue = total;
+        return { ...p, _ratingValue: total };
     });
     sorted.sort((a, b) => b._ratingValue - a._ratingValue);
     const meIdx = sorted.findIndex(p => p.id === currentUser.id);
     document.getElementById('myPlace').textContent = meIdx >= 0 ? meIdx + 1 : '—';
     document.getElementById('myValue').textContent = formatRatingValue(meIdx >= 0 ? sorted[meIdx]._ratingValue : 0) + ' ₽';
-    if (currentUser.avatar_url) document.getElementById('myRatingAvatar').innerHTML = `<img src="${currentUser.avatar_url}" alt="">`;
-    document.getElementById('myRatingName').innerHTML = `${currentUser.username} ${renderTag(currentUser.tag)}`;
+    if (currentUser.avatar_url) document.getElementById('myRatingAvatar').innerHTML = `<img src="${escapeHtml(currentUser.avatar_url)}" alt="">`;
+    document.getElementById('myRatingName').innerHTML = `${escapeHtml(currentUser.username)} ${renderTag(currentUser.tag)}`;
     list.innerHTML = sorted.map((p, i) => {
-        const av = p.avatar_url ? `<img src="${p.avatar_url}" alt="">` : '<i class="fa-solid fa-crown" style="color:#f59e0b;"></i>';
+        const av = p.avatar_url ? `<img src="${escapeHtml(p.avatar_url)}" alt="">` : '<i class="fa-solid fa-crown" style="color:#f59e0b;"></i>';
         return `<div class="rating-row">
             <div class="rating-place ${i===0?'top-1':i===1?'top-2':i===2?'top-3':''}">${i+1}</div>
             <div class="rating-avatar">${av}</div>
-            <div class="rating-info"><div class="rating-name">${p.username} ${renderTag(p.tag)}</div></div>
+            <div class="rating-info"><div class="rating-name">${escapeHtml(p.username)} ${renderTag(p.tag)}</div></div>
             <div class="rating-value">${formatRatingValue(p._ratingValue)} ₽</div>
         </div>`;
     }).join('');
@@ -2311,18 +2360,24 @@ async function checkNumber() {
         const { data } = await sb.from('saved_numbers').select('*').eq('rarity_key', 'secret').eq('formatted', formatted).limit(1);
         if (data && data.length) found = data[0];
     } else {
-        const { data } = await sb.from('saved_numbers').select('*').limit(2000);
-        if (data) found = data.find(n => n.formatted.replace(/\D/g, '') === '7' + searchDigits);
+        // Ищем прямо на сервере по formatted (формат всегда одинаковый)
+        const { data } = await sb.from('saved_numbers').select('*').eq('formatted', formatted).limit(1);
+        if (data && data.length) found = data[0];
+        // Fallback: если формат мог быть записан иначе — ищем по цифрам через ilike
+        if (!found) {
+            const { data: data2 } = await sb.from('saved_numbers').select('*').ilike('formatted', `%${searchDigits.slice(0,3)}%${searchDigits.slice(3)}%`).limit(5);
+            if (data2) found = data2.find(n => n.formatted.replace(/\D/g, '').endsWith(searchDigits)) || null;
+        }
     }
     if (found) {
         const { data: owner } = await sb.from('profiles').select('*').eq('id', found.user_id).maybeSingle();
-        const av = owner && owner.avatar_url ? `<img src="${owner.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
-        const ownerName = owner ? owner.username : 'Неизвестно';
-        const ownerTg = owner && owner.tg_username ? `@${owner.tg_username}` : '';
+        const av = owner && owner.avatar_url ? `<img src="${escapeHtml(owner.avatar_url)}" alt="">` : '<i class="fa-solid fa-crown"></i>';
+        const ownerName = escapeHtml(owner ? owner.username : 'Неизвестно');
+        const ownerTg = owner && owner.tg_username ? `@${escapeHtml(owner.tg_username)}` : '';
         const tirageLimit = TIRAGE_LIMITS[found.rarity_key];
         const tirageText = tirageLimit === Infinity ? '∞ из ∞' : `1 из ${tirageLimit}`;
         resultEl.innerHTML = `
-            <div class="check-result-number">${found.formatted}</div>
+            <div class="check-result-number">${escapeHtml(found.formatted)}</div>
             <div class="check-status busy">Занят</div>
             <div class="check-info-row">
                 <div class="check-info-col"><div class="check-info-label">Редкость</div><div class="check-info-value" style="color:${getRarityColor(found.rarity_key)};">${getRarityName(found.rarity_key)}</div></div>
@@ -2335,7 +2390,7 @@ async function checkNumber() {
             </div>`;
     } else {
         resultEl.innerHTML = `
-            <div class="check-result-number">${formatted}</div>
+            <div class="check-result-number">${escapeHtml(formatted)}</div>
             <div class="check-status free">Свободен</div>
             <div class="check-info-row">
                 <div class="check-info-col"><div class="check-info-label">Статус</div><div class="check-info-value" style="color:#4ade80;">Ни у кого</div></div>
@@ -2346,12 +2401,10 @@ async function checkNumber() {
 async function activatePromo() {
     const input = document.getElementById('promoInput').value.trim().toUpperCase();
     if (!input) { showToast('error', 'Введите промокод', ''); return; }
-
     if (usedPromoCodes.includes(input)) {
         showToast('error', 'Уже использован', 'Этот код уже активирован');
         return;
     }
-
     const { data: used, error: checkErr } = await sb.from('used_promocodes')
         .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
     if (checkErr) { showToast('error', 'Ошибка БД', checkErr.message); return; }
@@ -2382,8 +2435,9 @@ async function activatePromo() {
 }
 
 function subscribeToNotifications() {
-    if (notificationRealtimeChannel) sb.removeChannel(notificationRealtimeChannel);
-    notificationRealtimeChannel = sb.channel('notif_' + currentUser.id)
+    if (!currentUser) return;
+    if (notificationRealtimeChannel) { try { sb.removeChannel(notificationRealtimeChannel); } catch(_) {} }
+    notificationRealtimeChannel = sb.channel('notif_' + currentUser.id + '_' + Date.now())
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` }, payload => {
             const n = payload.new;
             notifications.unshift(n);
@@ -2392,13 +2446,26 @@ function subscribeToNotifications() {
         }).subscribe();
 }
 async function applyNotification(n) {
-    const d = n.data || {};
-    let changed = false;
-    if (d.money) { balance += d.money; changed = true; }
-    if (d.rolls) { freeRolls += d.rolls; changed = true; }
-    ['x2','x5','x10','x15'].forEach(k => { if (d[k]) { activateLuckBoost(k, d[k]); changed = true; } });
-    if (changed) { updateBalance(); updateRollButtons(); updateLuckUI(); await saveUserData(); }
-    await sb.from('notifications').update({ claimed: true }).eq('id', n.id);
+    // Защита от двойного применения
+    if (n.claimed) return;
+    if (isApplyingNotification) return;
+    isApplyingNotification = true;
+    try {
+        // Сначала атомарно помечаем claimed и проверяем, не помечено ли уже кем-то
+        const { data: updated, error } = await sb.from('notifications')
+            .update({ claimed: true })
+            .eq('id', n.id)
+            .eq('claimed', false)
+            .select('id');
+        if (error) { console.warn('Notif claim error:', error); isApplyingNotification = false; return; }
+        if (!updated || updated.length === 0) { isApplyingNotification = false; return; } // уже обработано
+        const d = n.data || {};
+        let changed = false;
+        if (d.money) { balance += d.money; changed = true; }
+        if (d.rolls) { freeRolls += d.rolls; changed = true; }
+        ['x2','x5','x10','x15'].forEach(k => { if (d[k]) { activateLuckBoost(k, d[k]); changed = true; } });
+        if (changed) { updateBalance(); updateRollButtons(); updateLuckUI(); await saveUserData(); }
+    } finally { isApplyingNotification = false; }
 }
 function renderNotifications() {
     const list = document.getElementById('notificationsList');
@@ -2407,223 +2474,266 @@ function renderNotifications() {
         <div class="notif-item">
             <div class="notif-icon"><i class="fa-solid fa-bell"></i></div>
             <div class="notif-body">
-                <div class="notif-title">${n.title}</div>
-                <div class="notif-text">${n.body || ''}</div>
+                <div class="notif-title">${escapeHtml(n.title)}</div>
+                <div class="notif-text">${escapeHtml(n.body || '')}</div>
                 <div class="notif-time">${new Date(n.created_at).toLocaleString('ru-RU')}</div>
             </div>
         </div>`).join('');
 }
-
-function openAuction() {
-    closeMenu();
-    document.getElementById('auctionScreen').classList.add('active');
-    const list = document.getElementById('auctionList');
-    list.innerHTML = `
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>`;
-    Promise.all([loadAuctionLots(), loadAllPlayers()]).then(() => {
-        renderAuction();
-    });
-    subscribeToLots();
-    startAuctionTick();
-}
-function closeAuction() { document.getElementById('auctionScreen').classList.remove('active'); }
-function switchAuctionTab(t) { currentAuctionTab = t; document.querySelectorAll('.auction-tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); renderAuction(); }
-function subscribeToLots() {
-    if (auctionRealtimeChannel) return;
-    auctionRealtimeChannel = sb.channel('auction_g').on('postgres_changes', { event: '*', schema: 'public', table: 'auction_lots' }, () => loadAuctionLots().then(renderAuction)).subscribe();
-}
-function startAuctionTick() {
-    if (auctionTickInterval) return;
-    auctionTickInterval = setInterval(async () => {
-        const s = document.getElementById('auctionScreen');
-        if (!s || !s.classList.contains('active')) return;
-        const now = Date.now();
-        for (const l of auctionLots) if (!l.ended && now >= l.endsAt) await processLotEnd(l);
-        updateAuctionTimers();
-    }, 5000);
-}
-async function processLotEnd(lot) {
-    await sb.from('auction_lots').update({ ended: true }).eq('id', lot.id);
-    if (lot.sellerId === currentUser.id && lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
-        balance += lot.currentBid; updateBalance(); await saveUserData();
-        showToast('success', 'Лот продан!', `+${formatPrice(lot.currentBid)}`);
+    // АУКЦИОН
+    function openAuction() {
+        closeMenu();
+        document.getElementById('auctionScreen').classList.add('active');
+        const list = document.getElementById('auctionList');
+        list.innerHTML = `
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>`;
+        Promise.all([loadAuctionLots(), loadAllPlayers()]).then(() => {
+            renderAuction();
+        });
+        subscribeToLots();
+        startAuctionTick();
     }
-    if (lot.currentBidderId === currentUser.id && lot.sellerId !== currentUser.id) showToast('success', 'Ты выиграл лот!', lot.number.formatted);
-    await loadAuctionLots(); renderAuction();
-}
-function updateAuctionTimers() {
-    document.querySelectorAll('.auction-timer[data-ends-at]').forEach(el => {
-        const end = parseInt(el.dataset.endsAt, 10);
-        const rem = end - Date.now();
-        if (rem <= 0) { el.className = 'auction-timer ended'; el.innerHTML = 'Завершён'; return; }
-        el.className = 'auction-timer ' + (rem < 60000 ? 'warm' : 'cold');
-        const s = Math.floor(rem / 1000); const m = Math.floor(s / 60); const ss = s % 60;
-        el.innerHTML = `${m}:${String(ss).padStart(2,'0')}`;
-    });
-}
-async function loadAuctionLots() {
-    const { data } = await sb.from('auction_lots').select('*').eq('ended', false).order('ends_at', { ascending: true });
-    auctionLots = (data || []).map(r => ({
-        id: r.id, sellerId: r.seller_id, sellerName: r.seller_name,
-        number: r.number_data, startPrice: r.start_price, buyoutPrice: r.buyout_price,
-        currentBid: r.current_bid, currentBidderId: r.current_bidder_id,
-        currentBidderName: r.current_bidder_name, bidsCount: r.bids_count,
-        endsAt: new Date(r.ends_at).getTime(), isMine: r.seller_id === currentUser.id, ended: r.ended
-    }));
-}
-function renderAuction() {
-    const list = document.getElementById('auctionList');
-    const now = Date.now();
-    let items = currentAuctionTab === 'my' ? auctionLots.filter(l => l.isMine) : auctionLots;
-    if (items.length === 0) { list.innerHTML = `<div class="auction-empty"><i class="fa-solid fa-gavel"></i>${currentAuctionTab === 'my' ? 'Нет лотов' : 'Нет активных лотов'}</div>`; return; }
-    items.sort((a, b) => (a.ended === b.ended) ? a.endsAt - b.endsAt : (a.ended ? 1 : -1));
-    list.innerHTML = items.map(lot => {
-        const rem = lot.endsAt - now;
-        const ended = lot.ended || rem <= 0;
-        const tc = ended ? 'ended' : (rem < 60000 ? 'warm' : 'cold');
-        const isHigh = lot.currentBidderId === currentUser.id;
-        const isMine = lot.sellerId === currentUser.id;
-        const minNext = Math.floor(lot.currentBid * 1.1);
-        let actions = '';
-        if (isMine) actions = `<button class="auction-btn cancel" onclick="cancelLot('${lot.id}')"><i class="fa-solid fa-xmark"></i> Снять</button>`;
-        else if (ended) {
-            if (isHigh) actions = `<button class="auction-btn take" onclick="claimLot('${lot.id}')"><i class="fa-solid fa-hand-holding"></i> Забрать</button>`;
-            else actions = `<button class="auction-btn" disabled style="background:#2a2a2a;color:#555;">Завершён</button>`;
-        } else {
-            actions = `<button class="auction-btn bid" onclick="placeBid('${lot.id}')"><i class="fa-solid fa-gavel"></i> ${formatPrice(minNext)}</button>`;
-            if (lot.buyoutPrice > 0) actions += `<button class="auction-btn buyout" onclick="buyoutLot('${lot.id}')"><i class="fa-solid fa-bolt"></i> ${formatPrice(lot.buyoutPrice)}</button>`;
+    function closeAuction() {
+        document.getElementById('auctionScreen').classList.remove('active');
+        if (auctionTickInterval) { clearInterval(auctionTickInterval); auctionTickInterval = null; }
+    }
+    function switchAuctionTab(t) { currentAuctionTab = t; document.querySelectorAll('.auction-tab').forEach(x => x.classList.toggle('active', x.dataset.tab === t)); renderAuction(); }
+    function subscribeToLots() {
+        if (auctionRealtimeChannel) { try { sb.removeChannel(auctionRealtimeChannel); } catch(_) {} }
+        auctionRealtimeChannel = sb.channel('auction_g_' + Date.now()).on('postgres_changes', { event: '*', schema: 'public', table: 'auction_lots' }, () => loadAuctionLots().then(renderAuction)).subscribe();
+    }
+    function startAuctionTick() {
+        if (auctionTickInterval) return;
+        auctionTickInterval = setInterval(async () => {
+            const s = document.getElementById('auctionScreen');
+            if (!s || !s.classList.contains('active')) return;
+            const now = Date.now();
+            for (const l of auctionLots) if (!l.ended && now >= l.endsAt) await processLotEnd(l);
+            updateAuctionTimers();
+        }, 5000);
+    }
+    async function processLotEnd(lot) {
+        await sb.from('auction_lots').update({ ended: true }).eq('id', lot.id);
+        // Если у лота есть победитель — начисляем продавцу, а победитель забирает номер
+        if (lot.currentBidderId && lot.sellerId !== currentUser.id && lot.currentBidderId !== currentUser.id) {
+            // Продавец получает деньги
+            const { data: sp } = await sb.from('profiles').select('balance').eq('id', lot.sellerId).single();
+            if (sp) await sb.from('profiles').update({ balance: (sp.balance || 0) + lot.currentBid }).eq('id', lot.sellerId);
+            // Победителю — номер
+            await sb.from('saved_numbers').insert({
+                user_id: lot.currentBidderId, formatted: lot.number.formatted, op: lot.number.op,
+                op_name: lot.number.opObj ? lot.number.opObj.name : null, digits: lot.number.digits,
+                rarity_key: lot.number.rarity.key, rarity_name: lot.number.rarity.name,
+                price: lot.number.price, is_secret_variant: lot.number.isSecretVariant || null
+            });
+        } else if (!lot.currentBidderId) {
+            // Никто не поставил — возвращаем номер продавцу
+            await sb.from('saved_numbers').insert({
+                user_id: lot.sellerId, formatted: lot.number.formatted, op: lot.number.op,
+                op_name: lot.number.opObj ? lot.number.opObj.name : null, digits: lot.number.digits,
+                rarity_key: lot.number.rarity.key, rarity_name: lot.number.rarity.name,
+                price: lot.number.price, is_secret_variant: lot.number.isSecretVariant || null
+            });
         }
-        return `<div class="auction-card rarity-${lot.number.rarity.key} ${isMine ? 'my-lot' : ''}">
-            ${isMine ? '<div class="my-lot-badge">Мой лот</div>' : ''}
-            <div class="auction-card-top"><div class="auction-number">${lot.number.formatted}</div><div class="auction-timer ${tc}" data-ends-at="${lot.endsAt}">${ended ? 'Завершён' : '...'}</div></div>
-            <div class="auction-card-info"><div class="auction-rarity" style="color:${getRarityColor(lot.number.rarity.key)};">${getRarityName(lot.number.rarity.key)}</div><div class="auction-seller">${lot.sellerName}</div></div>
-            <div class="auction-bid-row"><div><div class="auction-bid-label">${isHigh ? 'Твоя' : 'Ставка'}</div><div class="auction-bid-value">${formatPrice(lot.currentBid)}</div></div><div style="text-align:right;"><div class="auction-bid-label">Ставок</div><div>${lot.bidsCount}</div></div></div>
-            <div class="auction-actions">${actions}</div>
-        </div>`;
-    }).join('');
-    updateAuctionTimers();
-}
-async function placeBid(id) {
-    const lot = auctionLots.find(l => l.id === id);
-    if (!lot || lot.ended) { showToast('error', 'Завершён', ''); return; }
-    const next = Math.floor(lot.currentBid * 1.1);
-    if (balance < next) { showToast('error', 'Мало средств', formatPrice(next)); return; }
-    if (lot.currentBidderId === currentUser.id) { showToast('error', 'Ты лидер', ''); return; }
-    balance -= next; updateBalance();
-    const { error } = await sb.from('auction_lots').update({ current_bid: next, current_bidder_id: currentUser.id, current_bidder_name: currentUser.username, bids_count: lot.bidsCount + 1 }).eq('id', id);
-    if (error) { balance += next; updateBalance(); return; }
-    await saveUserData(); showToast('success', 'Ставка!', formatPrice(next));
-    await loadAuctionLots(); renderAuction();
-}
-async function buyoutLot(id) {
-    const lot = auctionLots.find(l => l.id === id);
-    if (!lot || lot.ended || !lot.buyoutPrice) return;
-    if (balance < lot.buyoutPrice) { showToast('error', 'Мало средств', ''); return; }
-    balance -= lot.buyoutPrice; updateBalance();
-    await saveNumberToDB({ ...lot.number, price: lot.buyoutPrice });
-    if (lot.sellerId !== currentUser.id) {
-        const { data: sp } = await sb.from('profiles').select('balance').eq('id', lot.sellerId).single();
-        if (sp) await sb.from('profiles').update({ balance: (sp.balance || 0) + lot.buyoutPrice }).eq('id', lot.sellerId);
+        if (lot.sellerId === currentUser.id && lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
+            balance += lot.currentBid; updateBalance(); await saveUserData();
+            showToast('success', 'Лот продан!', `+${formatPrice(lot.currentBid)}`);
+        }
+        if (lot.currentBidderId === currentUser.id && lot.sellerId !== currentUser.id) showToast('success', 'Ты выиграл лот!', lot.number.formatted);
+        await loadAuctionLots(); renderAuction();
     }
-    await sb.from('auction_lots').update({ ended: true }).eq('id', id);
-    await saveUserData(); showToast('success', 'Выкуплено!', lot.number.formatted);
-    await loadAuctionLots(); renderAuction();
-}
-async function claimLot(id) {
-    const lot = auctionLots.find(l => l.id === id);
-    if (!lot || lot.currentBidderId !== currentUser.id) return;
-    await saveNumberToDB({ ...lot.number, price: lot.currentBid });
-    await sb.from('auction_lots').delete().eq('id', id);
-    showToast('success', 'Забран!', lot.number.formatted);
-    await loadAuctionLots(); renderAuction();
-}
-async function cancelLot(id) {
-    const lot = auctionLots.find(l => l.id === id);
-    if (!lot || lot.sellerId !== currentUser.id) return;
-    await saveNumberToDB(lot.number);
-    await sb.from('auction_lots').delete().eq('id', id);
-    showToast('success', 'Снят', lot.number.formatted);
-    await loadAuctionLots(); renderAuction();
-}
-function openCreateLot() {
-    if (savedNumbers.length === 0) { showToast('error', 'Коллекция пуста', ''); return; }
-    document.getElementById('lotNumberPicker').style.display = 'block';
-    document.getElementById('lotPricePicker').style.display = 'none';
-    renderLotCollection();
-    document.getElementById('lotModal').classList.add('active');
-}
-function closeCreateLot() { document.getElementById('lotModal').classList.remove('active'); }
-function renderLotCollection() {
-    const list = document.getElementById('lotCollectionList');
-    list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectLotNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
-}
-function selectLotNumber(i) {
-    selectedLotIndex = i;
-    const n = savedNumbers[i];
-    document.getElementById('lotNumberPicker').style.display = 'none';
-    document.getElementById('lotPricePicker').style.display = 'block';
-    document.getElementById('lotStartPrice').value = Math.max(1, Math.floor(n.price * 0.6));
-    document.getElementById('lotBuyoutPrice').value = Math.floor(n.price * 1.5);
-    document.getElementById('lotDuration').value = 24;
-    validateLotForm();
-}
-function validateLotForm() {
-    const s = parseInt(document.getElementById('lotStartPrice').value, 10);
-    const b = parseInt(document.getElementById('lotBuyoutPrice').value, 10);
-    const d = parseInt(document.getElementById('lotDuration').value, 10);
-    document.getElementById('lotConfirmBtn').disabled = !(s > 0 && d > 0 && d <= 168 && (!b || b > s));
-}
-document.getElementById('lotStartPrice').addEventListener('input', validateLotForm);
-document.getElementById('lotBuyoutPrice').addEventListener('input', validateLotForm);
-document.getElementById('lotDuration').addEventListener('input', validateLotForm);
-async function confirmCreateLot() {
-    if (selectedLotIndex === null) return;
-    const s = parseInt(document.getElementById('lotStartPrice').value, 10);
-    const b = parseInt(document.getElementById('lotBuyoutPrice').value, 10) || null;
-    const h = parseInt(document.getElementById('lotDuration').value, 10);
-    const num = savedNumbers[selectedLotIndex];
-    await sb.from('saved_numbers').delete().eq('id', num.id);
-    savedNumbers = savedNumbers.filter(x => x.id !== num.id);
-    updateCollection(); updateProfileUI();
-    const { error } = await sb.from('auction_lots').insert({
-        seller_id: currentUser.id, seller_name: currentUser.username,
-        number_data: { formatted: num.formatted, op: num.op, opObj: num.opObj, digits: num.digits, rarity: num.rarity, isSecretVariant: num.isSecretVariant, price: num.price },
-        start_price: s, buyout_price: b, current_bid: s,
-        ends_at: new Date(Date.now() + h * 3600000).toISOString()
-    });
-    if (error) { showToast('error', 'Ошибка', error.message); return; }
-    closeCreateLot(); showToast('success', 'Выставлен!', num.formatted);
-    await loadAuctionLots(); switchAuctionTab('my');
-}
+    function updateAuctionTimers() {
+        document.querySelectorAll('.auction-timer[data-ends-at]').forEach(el => {
+            const end = parseInt(el.dataset.endsAt, 10);
+            const rem = end - Date.now();
+            if (rem <= 0) { el.className = 'auction-timer ended'; el.innerHTML = 'Завершён'; return; }
+            el.className = 'auction-timer ' + (rem < 60000 ? 'warm' : 'cold');
+            const s = Math.floor(rem / 1000); const m = Math.floor(s / 60); const ss = s % 60;
+            el.innerHTML = `${m}:${String(ss).padStart(2,'0')}`;
+        });
+    }
+    async function loadAuctionLots() {
+        const { data } = await sb.from('auction_lots').select('*').eq('ended', false).order('ends_at', { ascending: true });
+        auctionLots = (data || []).map(r => ({
+            id: r.id, sellerId: r.seller_id, sellerName: r.seller_name,
+            number: r.number_data, startPrice: r.start_price, buyoutPrice: r.buyout_price,
+            currentBid: r.current_bid, currentBidderId: r.current_bidder_id,
+            currentBidderName: r.current_bidder_name, bidsCount: r.bids_count,
+            endsAt: new Date(r.ends_at).getTime(), isMine: r.seller_id === currentUser.id, ended: r.ended
+        }));
+    }
+    function renderAuction() {
+        const list = document.getElementById('auctionList');
+        const now = Date.now();
+        let items = currentAuctionTab === 'my' ? auctionLots.filter(l => l.isMine) : auctionLots;
+        if (items.length === 0) { list.innerHTML = `<div class="auction-empty"><i class="fa-solid fa-gavel"></i>${currentAuctionTab === 'my' ? 'Нет лотов' : 'Нет активных лотов'}</div>`; return; }
+        items.sort((a, b) => (a.ended === b.ended) ? a.endsAt - b.endsAt : (a.ended ? 1 : -1));
+        list.innerHTML = items.map(lot => {
+            const rem = lot.endsAt - now;
+            const ended = lot.ended || rem <= 0;
+            const tc = ended ? 'ended' : (rem < 60000 ? 'warm' : 'cold');
+            const isHigh = lot.currentBidderId === currentUser.id;
+            const isMine = lot.sellerId === currentUser.id;
+            const minNext = Math.floor(lot.currentBid * 1.1);
+            let actions = '';
+            if (isMine) actions = `<button class="auction-btn cancel" onclick="cancelLot('${lot.id}')"><i class="fa-solid fa-xmark"></i> Снять</button>`;
+            else if (ended) {
+                if (isHigh) actions = `<button class="auction-btn take" onclick="claimLot('${lot.id}')"><i class="fa-solid fa-hand-holding"></i> Забрать</button>`;
+                else actions = `<button class="auction-btn" disabled style="background:#2a2a2a;color:#555;">Завершён</button>`;
+            } else {
+                actions = `<button class="auction-btn bid" onclick="placeBid('${lot.id}')"><i class="fa-solid fa-gavel"></i> ${formatPrice(minNext)}</button>`;
+                if (lot.buyoutPrice > 0) actions += `<button class="auction-btn buyout" onclick="buyoutLot('${lot.id}')"><i class="fa-solid fa-bolt"></i> ${formatPrice(lot.buyoutPrice)}</button>`;
+            }
+            return `<div class="auction-card rarity-${lot.number.rarity.key} ${isMine ? 'my-lot' : ''}">
+                ${isMine ? '<div class="my-lot-badge">Мой лот</div>' : ''}
+                <div class="auction-card-top"><div class="auction-number">${escapeHtml(lot.number.formatted)}</div><div class="auction-timer ${tc}" data-ends-at="${lot.endsAt}">${ended ? 'Завершён' : '...'}</div></div>
+                <div class="auction-card-info"><div class="auction-rarity" style="color:${getRarityColor(lot.number.rarity.key)};">${getRarityName(lot.number.rarity.key)}</div><div class="auction-seller">${escapeHtml(lot.sellerName)}</div></div>
+                <div class="auction-bid-row"><div><div class="auction-bid-label">${isHigh ? 'Твоя' : 'Ставка'}</div><div class="auction-bid-value">${formatPrice(lot.currentBid)}</div></div><div style="text-align:right;"><div class="auction-bid-label">Ставок</div><div>${lot.bidsCount}</div></div></div>
+                <div class="auction-actions">${actions}</div>
+            </div>`;
+        }).join('');
+        updateAuctionTimers();
+    }
+    async function placeBid(id) {
+        const lot = auctionLots.find(l => l.id === id);
+        if (!lot || lot.ended) { showToast('error', 'Завершён', ''); return; }
+        const next = Math.floor(lot.currentBid * 1.1);
+        if (balance < next) { showToast('error', 'Мало средств', formatPrice(next)); return; }
+        if (lot.currentBidderId === currentUser.id) { showToast('error', 'Ты лидер', ''); return; }
+        // Возвращаем ставку предыдущему лидеру
+        if (lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
+            const { data: prev } = await sb.from('profiles').select('balance').eq('id', lot.currentBidderId).single();
+            if (prev) await sb.from('profiles').update({ balance: (prev.balance || 0) + lot.currentBid }).eq('id', lot.currentBidderId);
+            await sb.from('notifications').insert({
+                user_id: lot.currentBidderId, type: 'bid_refund', title: 'Ставка перебита',
+                body: `Возврат ${formatPrice(lot.currentBid)} по лоту ${lot.number.formatted}`, data: {}
+            });
+        }
+        balance -= next; updateBalance();
+        const { error } = await sb.from('auction_lots').update({ current_bid: next, current_bidder_id: currentUser.id, current_bidder_name: currentUser.username, bids_count: lot.bidsCount + 1 }).eq('id', id);
+        if (error) { balance += next; updateBalance(); return; }
+        await saveUserData(); showToast('success', 'Ставка!', formatPrice(next));
+        await loadAuctionLots(); renderAuction();
+    }
+    async function buyoutLot(id) {
+        const lot = auctionLots.find(l => l.id === id);
+        if (!lot || lot.ended || !lot.buyoutPrice) return;
+        if (balance < lot.buyoutPrice) { showToast('error', 'Мало средств', ''); return; }
+        // Возвращаем ставку предыдущему лидеру, если он не мы
+        if (lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
+            const { data: prev } = await sb.from('profiles').select('balance').eq('id', lot.currentBidderId).single();
+            if (prev) await sb.from('profiles').update({ balance: (prev.balance || 0) + lot.currentBid }).eq('id', lot.currentBidderId);
+        }
+        balance -= lot.buyoutPrice; updateBalance();
+        await saveNumberToDB({ ...lot.number, price: lot.buyoutPrice });
+        if (lot.sellerId !== currentUser.id) {
+            const { data: sp } = await sb.from('profiles').select('balance').eq('id', lot.sellerId).single();
+            if (sp) await sb.from('profiles').update({ balance: (sp.balance || 0) + lot.buyoutPrice }).eq('id', lot.sellerId);
+        }
+        await sb.from('auction_lots').update({ ended: true }).eq('id', id);
+        await saveUserData(); showToast('success', 'Выкуплено!', lot.number.formatted);
+        await loadAuctionLots(); renderAuction();
+    }
+    async function claimLot(id) {
+        const lot = auctionLots.find(l => l.id === id);
+        if (!lot || lot.currentBidderId !== currentUser.id) return;
+        await saveNumberToDB({ ...lot.number, price: lot.currentBid });
+        await sb.from('auction_lots').delete().eq('id', id);
+        showToast('success', 'Забран!', lot.number.formatted);
+        await loadAuctionLots(); renderAuction();
+    }
+    async function cancelLot(id) {
+        const lot = auctionLots.find(l => l.id === id);
+        if (!lot || lot.sellerId !== currentUser.id) return;
+        // Возвращаем ставку лидеру, если он есть
+        if (lot.currentBidderId && lot.currentBidderId !== currentUser.id) {
+            const { data: prev } = await sb.from('profiles').select('balance').eq('id', lot.currentBidderId).single();
+            if (prev) await sb.from('profiles').update({ balance: (prev.balance || 0) + lot.currentBid }).eq('id', lot.currentBidderId);
+        }
+        await saveNumberToDB(lot.number);
+        await sb.from('auction_lots').delete().eq('id', id);
+        showToast('success', 'Снят', lot.number.formatted);
+        await loadAuctionLots(); renderAuction();
+    }
+    function openCreateLot() {
+        if (savedNumbers.length === 0) { showToast('error', 'Коллекция пуста', ''); return; }
+        document.getElementById('lotNumberPicker').style.display = 'block';
+        document.getElementById('lotPricePicker').style.display = 'none';
+        renderLotCollection();
+        document.getElementById('lotModal').classList.add('active');
+    }
+    function closeCreateLot() { document.getElementById('lotModal').classList.remove('active'); }
+    function renderLotCollection() {
+        const list = document.getElementById('lotCollectionList');
+        list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectLotNumber(${i})"><div class="gci-number">${escapeHtml(n.formatted)}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
+    }
+    function selectLotNumber(i) {
+        selectedLotIndex = i;
+        const n = savedNumbers[i];
+        document.getElementById('lotNumberPicker').style.display = 'none';
+        document.getElementById('lotPricePicker').style.display = 'block';
+        document.getElementById('lotStartPrice').value = Math.max(1, Math.floor(n.price * 0.6));
+        document.getElementById('lotBuyoutPrice').value = Math.floor(n.price * 1.5);
+        document.getElementById('lotDuration').value = 24;
+        validateLotForm();
+    }
+    function validateLotForm() {
+        const s = parseInt(document.getElementById('lotStartPrice').value, 10);
+        const b = parseInt(document.getElementById('lotBuyoutPrice').value, 10);
+        const d = parseInt(document.getElementById('lotDuration').value, 10);
+        document.getElementById('lotConfirmBtn').disabled = !(s > 0 && d > 0 && d <= 168 && (!b || b > s));
+    }
+    document.getElementById('lotStartPrice').addEventListener('input', validateLotForm);
+    document.getElementById('lotBuyoutPrice').addEventListener('input', validateLotForm);
+    document.getElementById('lotDuration').addEventListener('input', validateLotForm);
+    async function confirmCreateLot() {
+        if (selectedLotIndex === null) return;
+        const s = parseInt(document.getElementById('lotStartPrice').value, 10);
+        const b = parseInt(document.getElementById('lotBuyoutPrice').value, 10) || null;
+        const h = parseInt(document.getElementById('lotDuration').value, 10);
+        const num = savedNumbers[selectedLotIndex];
+        await sb.from('saved_numbers').delete().eq('id', num.id);
+        savedNumbers = savedNumbers.filter(x => x.id !== num.id);
+        updateCollection(); updateProfileUI();
+        const { error } = await sb.from('auction_lots').insert({
+            seller_id: currentUser.id, seller_name: currentUser.username,
+            number_data: { formatted: num.formatted, op: num.op, opObj: num.opObj, digits: num.digits, rarity: num.rarity, isSecretVariant: num.isSecretVariant, price: num.price },
+            start_price: s, buyout_price: b, current_bid: s,
+            ends_at: new Date(Date.now() + h * 3600000).toISOString()
+        });
+        if (error) { showToast('error', 'Ошибка', error.message); return; }
+        closeCreateLot(); showToast('success', 'Выставлен!', num.formatted);
+        await loadAuctionLots(); switchAuctionTab('my');
+    }
 
-async function renderAdminPlayersList() {
-    await loadAllPlayers();
-    const list = document.getElementById('adminPlayersList');
-    list.innerHTML = allPlayersList.map(p => {
-        const av = p.avatar_url ? `<img src="${p.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
-        return `<div class="player-card" onclick="openAdminPlayerDetail('${p.id}')">
-            <div class="player-avatar">${av}</div>
-            <div class="player-info"><div class="player-name">${p.username} ${renderTag(p.tag)} ${p.is_owner ? '👑' : ''}</div><div class="player-sub">Ур. ${p.level || 1} · ${(p.balance || 0).toLocaleString('ru-RU')} ₽</div></div>
-            <i class="fa-solid fa-chevron-right player-arrow"></i>
-        </div>`;
-    }).join('');
-}
-async function renderAdminPlayerDetail(id) {
+    async function renderAdminPlayersList() {
+        await loadAllPlayers();
+        const list = document.getElementById('adminPlayersList');
+        list.innerHTML = allPlayersList.map(p => {
+            const av = p.avatar_url ? `<img src="${escapeHtml(p.avatar_url)}" alt="">` : '<i class="fa-solid fa-crown"></i>';
+            return `<div class="player-card" onclick="openAdminPlayerDetail('${p.id}')">
+                <div class="player-avatar">${av}</div>
+                <div class="player-info"><div class="player-name">${escapeHtml(p.username)} ${renderTag(p.tag)} ${p.is_owner ? '👑' : ''}</div><div class="player-sub">Ур. ${p.level || 1} · ${(p.balance || 0).toLocaleString('ru-RU')} ₽</div></div>
+                <i class="fa-solid fa-chevron-right player-arrow"></i>
+            </div>`;
+        }).join('');
+    }
+    async function renderAdminPlayerDetail(id) {
     adminTargetPlayerId = id;
     const p = allPlayersList.find(x => x.id === id);
     if (!p) return;
-    const av = p.avatar_url ? '<img src="' + p.avatar_url + '" alt="">' : '<i class="fa-solid fa-crown"></i>';
-    const tgName = p.tg_username ? '@' + p.tg_username : '';
+    const av = p.avatar_url ? '<img src="' + escapeHtml(p.avatar_url) + '" alt="">' : '<i class="fa-solid fa-crown"></i>';
+    const tgName = p.tg_username ? '@' + escapeHtml(p.tg_username) : '';
     const playerTag = renderTag(p.tag);
     const ownerIcon = p.is_owner ? '👑' : '';
     let html = '';
     html += '<div class="player-detail-header">';
     html += '  <div class="player-detail-avatar">' + av + '</div>';
-    html += '  <div class="player-detail-name">' + p.username + ' ' + playerTag + ' ' + ownerIcon + '</div>';
+    html += '  <div class="player-detail-name">' + escapeHtml(p.username) + ' ' + playerTag + ' ' + ownerIcon + '</div>';
     html += '  <div class="player-detail-username">' + tgName + '</div>';
-    html += '  <div style="font-size: 11px; color: #a855f7; margin-top: 4px; font-weight: 700; letter-spacing: 1px;">[ID: ' + p.telegram_id + ']</div>';
+    html += '  <div style="font-size: 11px; color: #a855f7; margin-top: 4px; font-weight: 700; letter-spacing: 1px;">[ID: ' + escapeHtml(p.telegram_id) + ']</div>';
     html += '</div>';
     html += '<div class="player-detail-stats">';
     html += '  <div class="player-detail-stat"><span class="label">Баланс</span><span class="value">' + (p.balance || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
@@ -2637,449 +2747,459 @@ async function renderAdminPlayerDetail(id) {
     html += '</div>';
     document.getElementById('adminPlayerDetailContent').innerHTML = html;
 }
-async function adminViewCollection() {
-    if (!adminTargetPlayerId) return;
-    const p = allPlayersList.find(x => x.id === adminTargetPlayerId);
-    const { data } = await sb.from('saved_numbers').select('*').eq('user_id', adminTargetPlayerId);
-    document.getElementById('adminCollectionTitle').textContent = 'Коллекция: ' + p.username;
-    const grid = document.getElementById('adminCollectionGrid');
-    if (!data || data.length === 0) grid.innerHTML = '<div class="collection-empty">Нет номеров</div>';
-    else grid.innerHTML = data.map(n => `<div class="sim-card-item rarity-${n.rarity_key}"><div class="sci-top"><div class="sci-op-badge">${getOpShort(n.op_name || 'SECRET')}</div><div class="sci-chip"></div></div><div class="sci-number">${n.formatted}</div><div class="sci-bottom"><div class="sci-rarity">${getRarityName(n.rarity_key)}</div><div class="sci-price">${formatPrice(n.price)}</div></div></div>`).join('');
-    document.getElementById('adminCollectionScreen').classList.add('active');
-}
-async function adminSetTag(tag) {
-    if (!adminTargetPlayerId) return;
-    await sb.from('profiles').update({ tag }).eq('id', adminTargetPlayerId);
-    if (adminTargetPlayerId === currentUser.id) { currentUser.tag = tag; updateProfileUI(); }
-    document.getElementById('tagModal').classList.remove('active');
-    await loadAllPlayers(); renderAdminPlayerDetail(adminTargetPlayerId);
-    showToast('success', 'Тег обновлён', '');
-}
-async function adminGiveMoney() {
-    if (!adminTargetPlayerId) return;
-    const p = allPlayersList.find(x => x.id === adminTargetPlayerId);
-    await sb.from('profiles').update({ balance: (p.balance || 0) + 10000 }).eq('id', adminTargetPlayerId);
-    await sb.from('notifications').insert({ user_id: adminTargetPlayerId, type: 'gift', title: '+10 000 ₽ от владельца', body: 'Деньги зачислены', data: {} });
-    await loadAllPlayers(); renderAdminPlayerDetail(adminTargetPlayerId);
-    addLog('admin_gift', `Выдал 10 000 ₽ игроку ${p.username}`);
-    showToast('success', '+10 000 ₽', p.username);
-}
-async function adminSendGift() {
-    if (!adminTargetPlayerId) return;
-    const m = parseInt(document.getElementById('giftMoney').value) || 0;
-    const r = parseInt(document.getElementById('giftRolls').value) || 0;
-    const l = parseInt(document.getElementById('giftLuck').value) || 0;
-    if (!m && !r && !l) { showToast('error', 'Пусто', ''); return; }
-    const data = {};
-    if (m) data.money = m;
-    if (r) data.rolls = r;
-    if (l) data.x2 = l;
-    await sb.from('notifications').insert({
-        user_id: adminTargetPlayerId, type: 'gift', title: '🎁 Подарок!',
-        body: [m ? `+${m} ₽` : '', r ? `+${r} круток` : '', l ? `×2 на ${l} мин` : ''].filter(Boolean).join(', '),
-        data
-    });
-    document.getElementById('giftModal').classList.remove('active');
-    document.getElementById('giftMoney').value = '';
-    document.getElementById('giftRolls').value = '';
-    document.getElementById('giftLuck').value = '';
-    showToast('success', 'Отправлен!', '');
-}
-async function renderAdminStats() {
-    const content = document.getElementById('adminStatsContent');
-    content.innerHTML = '<div style="text-align:center;color:#888;padding:40px;">Загрузка...</div>';
-    try {
-        await loadAllPlayers();
-        const tp = allPlayersList.length;
-        const onlineCut = Date.now() - 300000;
-        const online = allPlayersList.filter(p => p.updated_at && new Date(p.updated_at).getTime() > onlineCut).length;
-        const tb = allPlayersList.reduce((s, p) => s + (p.balance || 0), 0);
-        const tr = allPlayersList.reduce((s, p) => s + (p.total_rolls || 0), 0);
-        const { count: tn } = await sb.from('saved_numbers').select('*', { count: 'exact', head: true });
-        const { count: tl } = await sb.from('auction_lots').select('*', { count: 'exact', head: true }).eq('ended', false);
-        const { data: nums } = await sb.from('saved_numbers').select('rarity_key');
-        const rc = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
-        (nums || []).forEach(n => { if (rc[n.rarity_key] !== undefined) rc[n.rarity_key]++; });
-        content.innerHTML = `
-            <div class="stats-grid">
-                <div class="stats-tile"><div class="st-value blue">${tp}</div><div class="st-label">Игроков</div></div>
-                <div class="stats-tile"><div class="st-value green">${online}</div><div class="st-label">Онлайн</div></div>
-                <div class="stats-tile"><div class="st-value gold">${formatRatingValue(tb)} ₽</div><div class="st-label">Общий капитал</div></div>
-                <div class="stats-tile"><div class="st-value">${tn || 0}</div><div class="st-label">Номеров</div></div>
-                <div class="stats-tile"><div class="st-value blue">${tl || 0}</div><div class="st-label">Лотов</div></div>
-                <div class="stats-tile"><div class="st-value">${tr.toLocaleString('ru-RU')}</div><div class="st-label">Всего круток</div></div>
-            </div>
-            <div class="rarity-breakdown"><div class="rb-title">Топ-3 по балансу</div>${allPlayersList.slice(0,3).map((p,i) => `<div class="rb-row"><span>${i+1}. ${p.username}</span><b>${(p.balance||0).toLocaleString('ru-RU')} ₽</b></div>`).join('')}</div>
-            <div class="rarity-breakdown"><div class="rb-title">По редкостям</div>
-                <div class="rb-row"><span style="color:#9ca3af;">Обычных</span><b>${rc.common}</b></div>
-                <div class="rb-row"><span style="color:#3b82f6;">Редких</span><b>${rc.rare}</b></div>
-                <div class="rb-row"><span style="color:#a855f7;">Эпиков</span><b>${rc.epic}</b></div>
-                <div class="rb-row"><span style="color:#f59e0b;">Легендарок</span><b>${rc.legendary}</b></div>
-                <div class="rb-row"><span style="color:#ef4444;">Мификов</span><b>${rc.mythic}</b></div>
-                <div class="rb-row"><span style="color:#c084fc;">Секретных</span><b>${rc.secret}</b></div>
-            </div>`;
-    } catch (e) { content.innerHTML = `<div style="color:#ef4444;padding:40px;text-align:center;">${e.message}</div>`; }
-}
-async function resetSeasonGlobal() {
-    if (!confirm('Сбросить ВСЕХ? Необратимо!')) return;
-    await sb.from('saved_numbers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await sb.from('auction_lots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await sb.from('profiles').update({ balance: 0, total_rolls: 0 }).neq('id', '00000000-0000-0000-0000-000000000000');
-    showToast('success', 'Сезон сброшен', ''); closeAdminReset(); location.reload();
-}
+    async function adminViewCollection() {
+        if (!adminTargetPlayerId) return;
+        const p = allPlayersList.find(x => x.id === adminTargetPlayerId);
+        const { data } = await sb.from('saved_numbers').select('*').eq('user_id', adminTargetPlayerId);
+        document.getElementById('adminCollectionTitle').textContent = 'Коллекция: ' + (p ? p.username : '');
+        const grid = document.getElementById('adminCollectionGrid');
+        if (!data || data.length === 0) grid.innerHTML = '<div class="collection-empty">Нет номеров</div>';
+        else grid.innerHTML = data.map(n => `<div class="sim-card-item rarity-${n.rarity_key}"><div class="sci-top"><div class="sci-op-badge">${getOpShort(n.op_name || 'SECRET')}</div><div class="sci-chip"></div></div><div class="sci-number">${escapeHtml(n.formatted)}</div><div class="sci-bottom"><div class="sci-rarity">${getRarityName(n.rarity_key)}</div><div class="sci-price">${formatPrice(n.price)}</div></div></div>`).join('');
+        document.getElementById('adminCollectionScreen').classList.add('active');
+    }
+    async function adminSetTag(tag) {
+        if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
+        if (!adminTargetPlayerId) return;
+        await sb.from('profiles').update({ tag }).eq('id', adminTargetPlayerId);
+        if (adminTargetPlayerId === currentUser.id) { currentUser.tag = tag; updateProfileUI(); }
+        document.getElementById('tagModal').classList.remove('active');
+        await loadAllPlayers(); renderAdminPlayerDetail(adminTargetPlayerId);
+        showToast('success', 'Тег обновлён', '');
+    }
+    async function adminGiveMoney() {
+        if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
+        if (!adminTargetPlayerId) return;
+        const p = allPlayersList.find(x => x.id === adminTargetPlayerId);
+        await sb.from('profiles').update({ balance: (p.balance || 0) + 10000 }).eq('id', adminTargetPlayerId);
+        await sb.from('notifications').insert({ user_id: adminTargetPlayerId, type: 'gift', title: '+10 000 ₽ от владельца', body: 'Деньги зачислены', data: {} });
+        await loadAllPlayers(); renderAdminPlayerDetail(adminTargetPlayerId);
+        addLog('admin_gift', `Выдал 10 000 ₽ игроку ${p.username}`);
+        showToast('success', '+10 000 ₽', p.username);
+    }
+    async function adminSendGift() {
+        if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
+        if (!adminTargetPlayerId) return;
+        const m = parseInt(document.getElementById('giftMoney').value) || 0;
+        const r = parseInt(document.getElementById('giftRolls').value) || 0;
+        const l = parseInt(document.getElementById('giftLuck').value) || 0;
+        if (!m && !r && !l) { showToast('error', 'Пусто', ''); return; }
+        const data = {};
+        if (m) data.money = m;
+        if (r) data.rolls = r;
+        if (l) data.x2 = l;
+        await sb.from('notifications').insert({
+            user_id: adminTargetPlayerId, type: 'gift', title: '🎁 Подарок!',
+            body: [m ? `+${m} ₽` : '', r ? `+${r} круток` : '', l ? `×2 на ${l} мин` : ''].filter(Boolean).join(', '),
+            data
+        });
+        document.getElementById('giftModal').classList.remove('active');
+        document.getElementById('giftMoney').value = '';
+        document.getElementById('giftRolls').value = '';
+        document.getElementById('giftLuck').value = '';
+        showToast('success', 'Отправлен!', '');
+    }
+    async function renderAdminStats() {
+        const content = document.getElementById('adminStatsContent');
+        content.innerHTML = '<div style="text-align:center;color:#888;padding:40px;">Загрузка...</div>';
+        try {
+            await loadAllPlayers();
+            const tp = allPlayersList.length;
+            const onlineCut = Date.now() - 300000;
+            const online = allPlayersList.filter(p => p.updated_at && new Date(p.updated_at).getTime() > onlineCut).length;
+            const tb = allPlayersList.reduce((s, p) => s + (p.balance || 0), 0);
+            const tr = allPlayersList.reduce((s, p) => s + (p.total_rolls || 0), 0);
+            const { count: tn } = await sb.from('saved_numbers').select('*', { count: 'exact', head: true });
+            const { count: tl } = await sb.from('auction_lots').select('*', { count: 'exact', head: true }).eq('ended', false);
+            const { data: nums } = await sb.from('saved_numbers').select('rarity_key');
+            const rc = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
+            (nums || []).forEach(n => { if (rc[n.rarity_key] !== undefined) rc[n.rarity_key]++; });
+            const topByBalance = [...allPlayersList].sort((a,b) => (b.balance||0) - (a.balance||0)).slice(0,3);
+            content.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stats-tile"><div class="st-value blue">${tp}</div><div class="st-label">Игроков</div></div>
+                    <div class="stats-tile"><div class="st-value green">${online}</div><div class="st-label">Онлайн</div></div>
+                    <div class="stats-tile"><div class="st-value gold">${formatRatingValue(tb)} ₽</div><div class="st-label">Общий капитал</div></div>
+                    <div class="stats-tile"><div class="st-value">${tn || 0}</div><div class="st-label">Номеров</div></div>
+                    <div class="stats-tile"><div class="st-value blue">${tl || 0}</div><div class="st-label">Лотов</div></div>
+                    <div class="stats-tile"><div class="st-value">${tr.toLocaleString('ru-RU')}</div><div class="st-label">Всего круток</div></div>
+                </div>
+                <div class="rarity-breakdown"><div class="rb-title">Топ-3 по балансу</div>${topByBalance.map((p,i) => `<div class="rb-row"><span>${i+1}. ${escapeHtml(p.username)}</span><b>${(p.balance||0).toLocaleString('ru-RU')} ₽</b></div>`).join('')}</div>
+                <div class="rarity-breakdown"><div class="rb-title">По редкостям</div>
+                    <div class="rb-row"><span style="color:#9ca3af;">Обычных</span><b>${rc.common}</b></div>
+                    <div class="rb-row"><span style="color:#3b82f6;">Редких</span><b>${rc.rare}</b></div>
+                    <div class="rb-row"><span style="color:#a855f7;">Эпиков</span><b>${rc.epic}</b></div>
+                    <div class="rb-row"><span style="color:#f59e0b;">Легендарок</span><b>${rc.legendary}</b></div>
+                    <div class="rb-row"><span style="color:#ef4444;">Мификов</span><b>${rc.mythic}</b></div>
+                    <div class="rb-row"><span style="color:#c084fc;">Секретных</span><b>${rc.secret}</b></div>
+                </div>`;
+        } catch (e) { content.innerHTML = `<div style="color:#ef4444;padding:40px;text-align:center;">${escapeHtml(e.message)}</div>`; }
+    }
+    async function resetSeasonGlobal() {
+        if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
+        if (!confirm('Сбросить ВСЕХ? Необратимо!')) return;
+        await sb.from('saved_numbers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await sb.from('auction_lots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await sb.from('profiles').update({ balance: 0, total_rolls: 0 }).neq('id', '00000000-0000-0000-0000-000000000000');
+        showToast('success', 'Сезон сброшен', ''); closeAdminReset(); location.reload();
+    }
 
-function generateRandomCode() {
-    const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code = '';
-    for (let i = 0; i < 8; i++) code += c[Math.floor(Math.random() * c.length)];
-    document.getElementById('newPromoCode').value = code;
-}
-function toggleRewardItem(cb, id) {
-    const i = document.getElementById(id); if (i) i.disabled = !cb.checked;
-    const p = cb.closest('.promo-reward-item'); if (p) p.classList.toggle('checked', cb.checked);
-}
-async function renderPromoList() {
-    const { data } = await sb.from('promo_codes').select('*').order('created_at', { ascending: false });
-    const list = document.getElementById('promoList');
-    if (!data || !data.length) { list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Нет промокодов</div>'; return; }
-    list.innerHTML = data.map(p => {
-        const exp = p.expires_at && new Date(p.expires_at) < new Date();
-        const used = p.uses_left <= 0;
-        return `<div class="promo-list-item"><div class="promo-list-header"><div class="promo-list-code">${p.code}</div><div class="promo-list-status ${exp ? 'expired' : used ? 'used-up' : 'active'}">${exp ? 'Истёк' : used ? 'Исчерпан' : 'Активен'}</div></div><div class="promo-list-info-row"><span>Активаций</span><b>${p.uses_left} / ${p.max_uses}</b></div><div class="promo-list-actions"><button class="promo-copy-btn" onclick="navigator.clipboard.writeText('${p.code}');showToast('success','Скопировано','${p.code}')"><i class="fa-solid fa-copy"></i> Копировать</button><button class="promo-del-btn" onclick="deletePromo('${p.id}')"><i class="fa-solid fa-trash"></i> Удалить</button></div></div>`;
-    }).join('');
-}
-async function createPromoCode() {
-    const code = document.getElementById('newPromoCode').value.trim().toUpperCase();
-    const uses = parseInt(document.getElementById('newPromoUses').value) || 1;
-    const hours = parseInt(document.getElementById('newPromoHours').value) || 0;
-    if (!code || code.length < 3) { showToast('error', 'Короткий код', ''); return; }
-    const rewards = {};
-    if (document.getElementById('rewardMoney').checked) rewards.money = parseInt(document.getElementById('moneyInput').value) || 0;
-    if (document.getElementById('rewardRolls').checked) rewards.rolls = parseInt(document.getElementById('rollsInput').value) || 0;
-    ['x2','x5','x10','x15'].forEach(k => {
-        const cb = document.getElementById('reward' + k.charAt(0).toUpperCase() + k.slice(1));
-        const inp = document.getElementById(k + 'Input');
-        if (cb && cb.checked) rewards[k] = parseInt(inp.value) || 0;
-    });
-    const expiresAt = hours > 0 ? new Date(Date.now() + hours * 3600000).toISOString() : null;
-    const { error } = await sb.from('promo_codes').insert({ code, uses_left: uses, max_uses: uses, expires_at: expiresAt, rewards });
-    if (error) { showToast('error', 'Ошибка', error.message); return; }
-    showToast('success', 'Создан!', code);
-    document.getElementById('newPromoCode').value = '';
-    await renderPromoList();
-}
-async function deletePromo(id) { await sb.from('promo_codes').delete().eq('id', id); await renderPromoList(); showToast('success', 'Удалён', ''); }
+    function generateRandomCode() {
+        const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let code = '';
+        for (let i = 0; i < 8; i++) code += c[Math.floor(Math.random() * c.length)];
+        document.getElementById('newPromoCode').value = code;
+    }
+    function toggleRewardItem(cb, id) {
+        const i = document.getElementById(id); if (i) i.disabled = !cb.checked;
+        const p = cb.closest('.promo-reward-item'); if (p) p.classList.toggle('checked', cb.checked);
+    }
+    async function renderPromoList() {
+        const { data } = await sb.from('promo_codes').select('*').order('created_at', { ascending: false });
+        const list = document.getElementById('promoList');
+        if (!data || !data.length) { list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Нет промокодов</div>'; return; }
+        list.innerHTML = data.map(p => {
+            const exp = p.expires_at && new Date(p.expires_at) < new Date();
+            const used = p.uses_left <= 0;
+            return `<div class="promo-list-item"><div class="promo-list-header"><div class="promo-list-code">${escapeHtml(p.code)}</div><div class="promo-list-status ${exp ? 'expired' : used ? 'used-up' : 'active'}">${exp ? 'Истёк' : used ? 'Исчерпан' : 'Активен'}</div></div><div class="promo-list-info-row"><span>Активаций</span><b>${p.uses_left} / ${p.max_uses}</b></div><div class="promo-list-actions"><button class="promo-copy-btn" onclick="navigator.clipboard.writeText('${escapeHtml(p.code)}');showToast('success','Скопировано','${escapeHtml(p.code)}')"><i class="fa-solid fa-copy"></i> Копировать</button><button class="promo-del-btn" onclick="deletePromo('${p.id}')"><i class="fa-solid fa-trash"></i> Удалить</button></div></div>`;
+        }).join('');
+    }
+    async function createPromoCode() {
+        if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
+        const code = document.getElementById('newPromoCode').value.trim().toUpperCase();
+        const uses = parseInt(document.getElementById('newPromoUses').value) || 1;
+        const hours = parseInt(document.getElementById('newPromoHours').value) || 0;
+        if (!code || code.length < 3) { showToast('error', 'Короткий код', ''); return; }
+        const rewards = {};
+        if (document.getElementById('rewardMoney').checked) rewards.money = parseInt(document.getElementById('moneyInput').value) || 0;
+        if (document.getElementById('rewardRolls').checked) rewards.rolls = parseInt(document.getElementById('rollsInput').value) || 0;
+        ['x2','x5','x10','x15'].forEach(k => {
+            const cb = document.getElementById('reward' + k.charAt(0).toUpperCase() + k.slice(1));
+            const inp = document.getElementById(k + 'Input');
+            if (cb && cb.checked) rewards[k] = parseInt(inp.value) || 0;
+        });
+        const expiresAt = hours > 0 ? new Date(Date.now() + hours * 3600000).toISOString() : null;
+        const { error } = await sb.from('promo_codes').insert({ code, uses_left: uses, max_uses: uses, expires_at: expiresAt, rewards });
+        if (error) { showToast('error', 'Ошибка', error.message); return; }
+        showToast('success', 'Создан!', code);
+        document.getElementById('newPromoCode').value = '';
+        await renderPromoList();
+    }
+    async function deletePromo(id) { await sb.from('promo_codes').delete().eq('id', id); await renderPromoList(); showToast('success', 'Удалён', ''); }
 
-const slider = document.getElementById('slider');
-const upgradeBtn = document.getElementById('upgradeBtn');
-const resultText = document.getElementById('resultText');
-const successZone = document.getElementById('successZone');
-const multButtons = document.querySelectorAll('#multipliers .mult-btn');
-let currentChance = 60, currentMultiplier = 1.5, isAnimatingUpgrade = false, gameBetNumber = null;
-multButtons.forEach(b => b.addEventListener('click', () => {
-    if (isAnimatingUpgrade) return;
-    multButtons.forEach(x => x.classList.remove('active')); b.classList.add('active');
-    currentChance = parseInt(b.getAttribute('data-chance')); currentMultiplier = parseFloat(b.getAttribute('data-mult'));
-    successZone.style.width = currentChance + '%';
-    upgradeBtn.textContent = `Улучшить ×${currentMultiplier} • ${currentChance}%`;
-    slider.style.left = '0%'; resultText.classList.remove('visible');
-}));
-function openGameCollection() { renderGameCollection(); document.getElementById('gameCollectionModal').classList.add('active'); }
-function closeGameCollection() { document.getElementById('gameCollectionModal').classList.remove('active'); }
-function renderGameCollection() {
-    const list = document.getElementById('gameCollectionList');
-    if (savedNumbers.length === 0) { list.innerHTML = '<div class="game-collection-empty" style="text-align:center;color:#6b7a90;padding:30px;">Нет номеров</div>'; return; }
-    list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectGameNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
-}
-function selectGameNumber(i) { gameBetNumber = savedNumbers[i]; updateGameBetCard(); closeGameCollection(); }
-function updateGameBetCard() {
-    const card = document.getElementById('gameBetCard');
-    const numEl = document.getElementById('gameBetNumber');
-    const priceEl = document.getElementById('gameBetPrice');
-    if (!gameBetNumber) { card.classList.add('empty'); numEl.textContent = '— не выбран —'; priceEl.textContent = ''; return; }
-    card.classList.remove('empty');
-    numEl.textContent = gameBetNumber.formatted;
-    numEl.style.color = getRarityColor(gameBetNumber.rarity.key);
-    priceEl.textContent = 'Цена: ' + formatPrice(gameBetNumber.price);
-}
-function startUpgrade() {
-    if (isAnimatingUpgrade || !gameBetNumber) return;
-    isAnimatingUpgrade = true; upgradeBtn.disabled = true;
-    resultText.classList.remove('visible');
-    const win = Math.random() * 100 < currentChance;
-    let target;
-    if (win) { const min = 2, max = Math.max(currentChance - 2, min + 1); target = Math.random() * (max - min) + min; }
-    else { const min = currentChance + 2, max = 98; target = Math.random() * (max - min) + min; }
-    animateToTarget(target, win);
-}
-function animateToTarget(target, win) {
-    const start = performance.now(); const DUR = 3500;
-    function frame(t) {
-        const el = (t - start) / 1000;
-        const prog = Math.min(el / (DUR / 1000), 1);
-        const easeOut = 1 - Math.pow(1 - prog, 3);
-        const amp = 50 * (1 - easeOut);
-        const osc = Math.sin(el * 7 * Math.PI * 2) * amp;
-        let pos = (50 + osc) * (1 - easeOut) + target * easeOut;
-        if (pos < 0) pos = 0; if (pos > 100) pos = 100;
-        slider.style.left = pos + '%';
-        if (prog >= 1) { slider.style.left = target + '%'; showUpgradeResult(win); return; }
+    const slider = document.getElementById('slider');
+    const upgradeBtn = document.getElementById('upgradeBtn');
+    const resultText = document.getElementById('resultText');
+    const successZone = document.getElementById('successZone');
+    const multButtons = document.querySelectorAll('#multipliers .mult-btn');
+    let currentChance = 60, currentMultiplier = 1.5, isAnimatingUpgrade = false, gameBetNumber = null;
+    multButtons.forEach(b => b.addEventListener('click', () => {
+        if (isAnimatingUpgrade) return;
+        multButtons.forEach(x => x.classList.remove('active')); b.classList.add('active');
+        currentChance = parseInt(b.getAttribute('data-chance')); currentMultiplier = parseFloat(b.getAttribute('data-mult'));
+        successZone.style.width = currentChance + '%';
+        upgradeBtn.textContent = `Улучшить ×${currentMultiplier} • ${currentChance}%`;
+        slider.style.left = '0%'; resultText.classList.remove('visible');
+    }));
+    function openGameCollection() { renderGameCollection(); document.getElementById('gameCollectionModal').classList.add('active'); }
+    function closeGameCollection() { document.getElementById('gameCollectionModal').classList.remove('active'); }
+    function renderGameCollection() {
+        const list = document.getElementById('gameCollectionList');
+        if (savedNumbers.length === 0) { list.innerHTML = '<div class="game-collection-empty" style="text-align:center;color:#6b7a90;padding:30px;">Нет номеров</div>'; return; }
+        list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectGameNumber(${i})"><div class="gci-number">${escapeHtml(n.formatted)}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
+    }
+    function selectGameNumber(i) { gameBetNumber = savedNumbers[i]; updateGameBetCard(); closeGameCollection(); }
+    function updateGameBetCard() {
+        const card = document.getElementById('gameBetCard');
+        const numEl = document.getElementById('gameBetNumber');
+        const priceEl = document.getElementById('gameBetPrice');
+        if (!gameBetNumber) { card.classList.add('empty'); numEl.textContent = '— не выбран —'; priceEl.textContent = ''; return; }
+        card.classList.remove('empty');
+        numEl.textContent = gameBetNumber.formatted;
+        numEl.style.color = getRarityColor(gameBetNumber.rarity.key);
+        priceEl.textContent = 'Цена: ' + formatPrice(gameBetNumber.price);
+    }
+    function startUpgrade() {
+        if (isAnimatingUpgrade || !gameBetNumber) return;
+        isAnimatingUpgrade = true; upgradeBtn.disabled = true;
+        resultText.classList.remove('visible');
+        const win = Math.random() * 100 < currentChance;
+        let target;
+        if (win) { const min = 2, max = Math.max(currentChance - 2, min + 1); target = Math.random() * (max - min) + min; }
+        else { const min = currentChance + 2, max = 98; target = Math.random() * (max - min) + min; }
+        animateToTarget(target, win);
+    }
+    function animateToTarget(target, win) {
+        const start = performance.now(); const DUR = 3500;
+        function frame(t) {
+            const el = (t - start) / 1000;
+            const prog = Math.min(el / (DUR / 1000), 1);
+            const easeOut = 1 - Math.pow(1 - prog, 3);
+            const amp = 50 * (1 - easeOut);
+            const osc = Math.sin(el * 7 * Math.PI * 2) * amp;
+            let pos = (50 + osc) * (1 - easeOut) + target * easeOut;
+            if (pos < 0) pos = 0; if (pos > 100) pos = 100;
+            slider.style.left = pos + '%';
+            if (prog >= 1) { slider.style.left = target + '%'; showUpgradeResult(win); return; }
+            requestAnimationFrame(frame);
+        }
         requestAnimationFrame(frame);
     }
-    requestAnimationFrame(frame);
-}
-async function showUpgradeResult(win) {
-    if (win) {
-        resultText.textContent = "🏆 ВЫИГРАЛ!";
-        resultText.className = 'result-text result-success visible';
-        const np = Math.floor(gameBetNumber.price * currentMultiplier);
-        await sb.from('saved_numbers').update({ price: np }).eq('id', gameBetNumber.id);
-        gameBetNumber.price = np;
-        updateCollection(); updateProfileUI(); updateGameBetCard();
-        addLog('upgrade', `Апгрейд удачный: ${gameBetNumber.formatted} (теперь ${formatPrice(gameBetNumber.price)})`);
-        showToast('success', 'Выигрыш!', formatPrice(np));
+    async function showUpgradeResult(win) {
+        if (win) {
+            resultText.textContent = "🏆 ВЫИГРАЛ!";
+            resultText.className = 'result-text result-success visible';
+            const np = Math.floor(gameBetNumber.price * currentMultiplier);
+            await sb.from('saved_numbers').update({ price: np }).eq('id', gameBetNumber.id);
+            gameBetNumber.price = np;
+            updateCollection(); updateProfileUI(); updateGameBetCard();
+            addLog('upgrade', `Апгрейд удачный: ${gameBetNumber.formatted} (теперь ${formatPrice(gameBetNumber.price)})`);
+            showToast('success', 'Выигрыш!', formatPrice(np));
+            safePlay(sounds.win);
+        } else {
+            resultText.textContent = "💀 ПРОИГРАЛ!";
+            resultText.className = 'result-text result-fail visible';
+            await sb.from('saved_numbers').delete().eq('id', gameBetNumber.id);
+            savedNumbers = savedNumbers.filter(x => x.id !== gameBetNumber.id);
+            gameBetNumber = null; updateCollection(); updateProfileUI(); updateGameBetCard();
+            showToast('error', 'Сгорел', '');
+        }
+        isAnimatingUpgrade = false; upgradeBtn.disabled = false;
+    }
+    upgradeBtn.addEventListener('click', startUpgrade);
+
+    const MINES_SIZE = 25;
+    let minesState = { active: false, betNumber: null, minesCount: 3, multiplier: 1.07, minePositions: [], openedCells: [], currentPrice: 0, basePrice: 0, dead: false };
+    function openMinesGame() { closeMenu(); resetMinesState(); document.getElementById('minesGameScreen').classList.add('active'); renderMinesField(); updateMinesUI(); }
+    async function closeMinesGame() {
+        if (minesState.active && !minesState.dead && minesState.betNumber) {
+            const num = minesState.betNumber;
+            await sb.from('saved_numbers').delete().eq('id', num.id);
+            savedNumbers = savedNumbers.filter(x => x.id !== num.id);
+            updateCollection(); updateProfileUI();
+            showToast('error', 'Сгорел', '');
+        }
+        document.getElementById('minesGameScreen').classList.remove('active'); resetMinesState();
+    }
+    function resetMinesState() {
+        minesState = { active: false, betNumber: null, minesCount: 3, multiplier: 1.07, minePositions: [], openedCells: [], currentPrice: 0, basePrice: 0, dead: false };
+        document.querySelectorAll('#minesMultipliers .mult-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('#minesMultipliers .mult-btn')?.classList.add('active');
+        document.getElementById('minesHint').textContent = 'Выбери номер и жми на клетки';
+        document.getElementById('minesHint').className = 'mines-hint';
+    }
+    function openMinesCollection() {
+        if (minesState.active) return;
+        const list = document.getElementById('minesCollectionList');
+        if (savedNumbers.length === 0) list.innerHTML = '<div style="text-align:center;color:#6b7a90;padding:30px;">Нет номеров</div>';
+        else list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectMinesNumber(${i})"><div class="gci-number">${escapeHtml(n.formatted)}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
+        document.getElementById('minesCollectionModal').classList.add('active');
+    }
+    function closeMinesCollection() { document.getElementById('minesCollectionModal').classList.remove('active'); }
+    function selectMinesNumber(i) {
+        if (minesState.active) return;
+        const num = savedNumbers[i]; minesState.betNumber = num; minesState.basePrice = num.price; minesState.currentPrice = num.price;
+        updateMinesBetCard(); closeMinesCollection();
+    }
+    function updateMinesBetCard() {
+        const card = document.getElementById('minesBetCard');
+        const numEl = document.getElementById('minesBetNumber');
+        const priceEl = document.getElementById('minesBetPrice');
+        if (!minesState.betNumber) { card.classList.add('empty'); numEl.textContent = '— не выбран —'; priceEl.textContent = ''; return; }
+        card.classList.remove('empty');
+        numEl.textContent = minesState.betNumber.formatted;
+        numEl.style.color = getRarityColor(minesState.betNumber.rarity.key);
+        priceEl.textContent = 'Цена: ' + formatPrice(minesState.betNumber.price);
+    }
+    function renderMinesField() {
+        const f = document.getElementById('minesField'); f.innerHTML = '';
+        for (let i = 0; i < MINES_SIZE; i++) {
+            const c = document.createElement('div'); c.className = 'mine-cell'; c.dataset.index = i;
+            c.onclick = () => openMineCell(i); f.appendChild(c);
+        }
+    }
+    document.querySelectorAll('#minesMultipliers .mult-btn').forEach(b => b.addEventListener('click', () => {
+        if (minesState.active) return;
+        document.querySelectorAll('#minesMultipliers .mult-btn').forEach(x => x.classList.remove('active')); b.classList.add('active');
+        minesState.minesCount = parseInt(b.getAttribute('data-mines')); minesState.multiplier = parseFloat(b.getAttribute('data-mult'));
+    }));
+    function startMinesRound() {
+        const pos = [];
+        while (pos.length < minesState.minesCount) { const p = Math.floor(Math.random() * MINES_SIZE); if (!pos.includes(p)) pos.push(p); }
+        minesState.minePositions = pos; minesState.openedCells = []; minesState.active = true; minesState.dead = false;
+        minesState.currentPrice = minesState.basePrice;
+        document.getElementById('minesHint').textContent = 'Открывай клетки!';
+        updateMinesUI(); renderMinesField();
+    }
+    function openMineCell(i) {
+        if (!minesState.betNumber) { showToast('error', 'Выбери номер', ''); return; }
+        if (minesState.dead || minesState.openedCells.includes(i)) return;
+        if (!minesState.active) startMinesRound();
+        const c = document.querySelector(`.mine-cell[data-index="${i}"]`);
+        if (!c) return;
+        minesState.openedCells.push(i); c.classList.add('opened');
+        if (minesState.minePositions.includes(i)) { c.classList.add('mine'); c.textContent = '💣'; loseMinesGame(); return; }
+        minesState.currentPrice = Math.floor(minesState.currentPrice * minesState.multiplier);
+        c.innerHTML = `<span class="cell-mult">×${minesState.multiplier.toFixed(2)}</span>`;
+        updateMinesUI();
+    }
+    function updateMinesUI() {
+        document.getElementById('minesCurrentPrice').textContent = formatPrice(minesState.currentPrice);
+        document.getElementById('minesOpenedCount').textContent = minesState.openedCells.length;
+        const btn = document.getElementById('minesTakeBtn');
+        if (minesState.active && !minesState.dead && minesState.openedCells.length > 0) { btn.disabled = false; btn.textContent = 'Забрать ' + formatPrice(minesState.currentPrice); }
+        else { btn.disabled = true; btn.textContent = 'Забрать ' + formatPrice(minesState.currentPrice); }
+    }
+    async function loseMinesGame() {
+        minesState.dead = true; minesState.active = false;
+        minesState.minePositions.forEach(i => { const c = document.querySelector(`.mine-cell[data-index="${i}"]`); if (c && !c.classList.contains('opened')) { c.classList.add('opened', 'mine'); c.textContent = '💣'; } });
+        await sb.from('saved_numbers').delete().eq('id', minesState.betNumber.id);
+        savedNumbers = savedNumbers.filter(x => x.id !== minesState.betNumber.id);
+        updateCollection(); updateProfileUI();
+        document.getElementById('minesHint').textContent = '💥 Взрыв! Номер сгорел';
+        document.getElementById('minesHint').className = 'mines-hint lose';
+        showToast('error', 'Сгорел!', minesState.betNumber.formatted);
+        minesState.betNumber = null; updateMinesBetCard();
+    }
+    async function takeMinesWin() {
+        if (!minesState.active || minesState.dead || !minesState.betNumber) return;
+        if (minesState.openedCells.length === 0) { showToast('error', 'Открой клетку', ''); return; }
+        const num = minesState.betNumber; const np = minesState.currentPrice;
+        await sb.from('saved_numbers').update({ price: np }).eq('id', num.id);
+        num.price = np; updateCollection(); updateProfileUI();
+        showToast('success', 'Забрал!', formatPrice(np));
         safePlay(sounds.win);
-    } else {
-        resultText.textContent = "💀 ПРОИГРАЛ!";
-        resultText.className = 'result-text result-fail visible';
-        await sb.from('saved_numbers').delete().eq('id', gameBetNumber.id);
-        savedNumbers = savedNumbers.filter(x => x.id !== gameBetNumber.id);
-        gameBetNumber = null; updateCollection(); updateProfileUI(); updateGameBetCard();
-        showToast('error', 'Сгорел', '');
+        minesState.active = false;
+        setTimeout(() => { resetMinesState(); renderMinesField(); updateMinesUI(); updateMinesBetCard(); }, 1500);
     }
-    isAnimatingUpgrade = false; upgradeBtn.disabled = false;
-}
-upgradeBtn.addEventListener('click', startUpgrade);
 
-const MINES_SIZE = 25;
-let minesState = { active: false, betNumber: null, minesCount: 3, multiplier: 1.07, minePositions: [], openedCells: [], currentPrice: 0, basePrice: 0, dead: false };
-function openMinesGame() { closeMenu(); resetMinesState(); document.getElementById('minesGameScreen').classList.add('active'); renderMinesField(); updateMinesUI(); }
-function closeMinesGame() {
-    if (minesState.active && !minesState.dead && minesState.betNumber) {
-        sb.from('saved_numbers').delete().eq('id', minesState.betNumber.id).then(() => { savedNumbers = savedNumbers.filter(x => x.id !== minesState.betNumber.id); updateCollection(); updateProfileUI(); });
-        showToast('error', 'Сгорел', '');
+    function updateBalance() {
+        balanceDisplay.innerHTML = balance.toLocaleString('ru-RU') + ' <span>₽</span>';
+        if (profileBalance) profileBalance.textContent = balance.toLocaleString('ru-RU');
     }
-    document.getElementById('minesGameScreen').classList.remove('active'); resetMinesState();
-}
-function resetMinesState() {
-    minesState = { active: false, betNumber: null, minesCount: 3, multiplier: 1.07, minePositions: [], openedCells: [], currentPrice: 0, basePrice: 0, dead: false };
-    document.querySelectorAll('#minesMultipliers .mult-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('#minesMultipliers .mult-btn')?.classList.add('active');
-    document.getElementById('minesHint').textContent = 'Выбери номер и жми на клетки';
-    document.getElementById('minesHint').className = 'mines-hint';
-}
-function openMinesCollection() {
-    if (minesState.active) return;
-    const list = document.getElementById('minesCollectionList');
-    if (savedNumbers.length === 0) list.innerHTML = '<div style="text-align:center;color:#6b7a90;padding:30px;">Нет номеров</div>';
-    else list.innerHTML = savedNumbers.map((n, i) => `<div class="game-collection-item rarity-${n.rarity.key}" onclick="selectMinesNumber(${i})"><div class="gci-number">${n.formatted}</div><div class="gci-info"><span style="color:${getRarityColor(n.rarity.key)};">${getRarityName(n.rarity.key)}</span><span style="color:#f39c12;">${formatPrice(n.price)}</span></div></div>`).join('');
-    document.getElementById('minesCollectionModal').classList.add('active');
-}
-function closeMinesCollection() { document.getElementById('minesCollectionModal').classList.remove('active'); }
-function selectMinesNumber(i) {
-    if (minesState.active) return;
-    const num = savedNumbers[i]; minesState.betNumber = num; minesState.basePrice = num.price; minesState.currentPrice = num.price;
-    updateMinesBetCard(); closeMinesCollection();
-}
-function updateMinesBetCard() {
-    const card = document.getElementById('minesBetCard');
-    const numEl = document.getElementById('minesBetNumber');
-    const priceEl = document.getElementById('minesBetPrice');
-    if (!minesState.betNumber) { card.classList.add('empty'); numEl.textContent = '— не выбран —'; priceEl.textContent = ''; return; }
-    card.classList.remove('empty');
-    numEl.textContent = minesState.betNumber.formatted;
-    numEl.style.color = getRarityColor(minesState.betNumber.rarity.key);
-    priceEl.textContent = 'Цена: ' + formatPrice(minesState.betNumber.price);
-}
-function renderMinesField() {
-    const f = document.getElementById('minesField'); f.innerHTML = '';
-    for (let i = 0; i < MINES_SIZE; i++) {
-        const c = document.createElement('div'); c.className = 'mine-cell'; c.dataset.index = i;
-        c.onclick = () => openMineCell(i); f.appendChild(c);
+    function updateAdminVisibility() {
+        const s = document.getElementById('adminSection');
+        const m = document.getElementById('adminMenu');
+        if (currentUser && currentUser.is_owner) { s.style.display = 'block'; m.style.display = 'grid'; }
+        else { s.style.display = 'none'; m.style.display = 'none'; }
     }
-}
-document.querySelectorAll('#minesMultipliers .mult-btn').forEach(b => b.addEventListener('click', () => {
-    if (minesState.active) return;
-    document.querySelectorAll('#minesMultipliers .mult-btn').forEach(x => x.classList.remove('active')); b.classList.add('active');
-    minesState.minesCount = parseInt(b.getAttribute('data-mines')); minesState.multiplier = parseFloat(b.getAttribute('data-mult'));
-}));
-function startMinesRound() {
-    const pos = [];
-    while (pos.length < minesState.minesCount) { const p = Math.floor(Math.random() * MINES_SIZE); if (!pos.includes(p)) pos.push(p); }
-    minesState.minePositions = pos; minesState.openedCells = []; minesState.active = true; minesState.dead = false;
-    minesState.currentPrice = minesState.basePrice;
-    document.getElementById('minesHint').textContent = 'Открывай клетки!';
-    updateMinesUI(); renderMinesField();
-}
-function openMineCell(i) {
-    if (!minesState.betNumber) { showToast('error', 'Выбери номер', ''); return; }
-    if (minesState.dead || minesState.openedCells.includes(i)) return;
-    if (!minesState.active) startMinesRound();
-    const c = document.querySelector(`.mine-cell[data-index="${i}"]`);
-    if (!c) return;
-    minesState.openedCells.push(i); c.classList.add('opened');
-    if (minesState.minePositions.includes(i)) { c.classList.add('mine'); c.textContent = '💣'; loseMinesGame(); return; }
-    minesState.currentPrice = Math.floor(minesState.currentPrice * minesState.multiplier);
-    c.innerHTML = `<span class="cell-mult">×${minesState.multiplier.toFixed(2)}</span>`;
-    updateMinesUI();
-}
-function updateMinesUI() {
-    document.getElementById('minesCurrentPrice').textContent = formatPrice(minesState.currentPrice);
-    document.getElementById('minesOpenedCount').textContent = minesState.openedCells.length;
-    const btn = document.getElementById('minesTakeBtn');
-    if (minesState.active && !minesState.dead && minesState.openedCells.length > 0) { btn.disabled = false; btn.textContent = 'Забрать ' + formatPrice(minesState.currentPrice); }
-    else { btn.disabled = true; btn.textContent = 'Забрать ' + formatPrice(minesState.currentPrice); }
-}
-async function loseMinesGame() {
-    minesState.dead = true; minesState.active = false;
-    minesState.minePositions.forEach(i => { const c = document.querySelector(`.mine-cell[data-index="${i}"]`); if (c && !c.classList.contains('opened')) { c.classList.add('opened', 'mine'); c.textContent = '💣'; } });
-    await sb.from('saved_numbers').delete().eq('id', minesState.betNumber.id);
-    savedNumbers = savedNumbers.filter(x => x.id !== minesState.betNumber.id);
-    updateCollection(); updateProfileUI();
-    document.getElementById('minesHint').textContent = '💥 Взрыв! Номер сгорел';
-    document.getElementById('minesHint').className = 'mines-hint lose';
-    showToast('error', 'Сгорел!', minesState.betNumber.formatted);
-    minesState.betNumber = null; updateMinesBetCard();
-}
-async function takeMinesWin() {
-    if (!minesState.active || minesState.dead || !minesState.betNumber) return;
-    const num = minesState.betNumber; const np = minesState.currentPrice;
-    await sb.from('saved_numbers').update({ price: np }).eq('id', num.id);
-    num.price = np; updateCollection(); updateProfileUI();
-    showToast('success', 'Забрал!', formatPrice(np));
-    safePlay(sounds.win);
-    minesState.active = false;
-    setTimeout(() => { resetMinesState(); renderMinesField(); updateMinesUI(); updateMinesBetCard(); }, 1500);
-}
+    function updateRollButtons() {
+        const rollBtn = document.getElementById('rollBtn');
+        const rollBtnText = document.getElementById('rollBtnText');
+        const rollBtnPrice = document.getElementById('rollBtnPrice');
+        const rollX5Btn = document.getElementById('rollX5Btn');
+        if (!rollBtn) return;
+        rollBtn.querySelectorAll('.free-badge').forEach(b => b.remove());
+        rollX5Btn.querySelectorAll('.free-badge').forEach(b => b.remove());
+        rollBtn.classList.remove('free', 'x5-armed');
+        rollX5Btn.classList.remove('free', 'armed');
+        if (freeRolls > 0) {
+            rollBtn.classList.add('free'); rollX5Btn.classList.add('free');
+            rollBtnText.textContent = 'Крутить бесплатно';
+            rollBtnPrice.textContent = '';
+            const bm = document.createElement('div'); bm.className = 'free-badge'; bm.textContent = freeRolls > 99 ? '99+' : freeRolls; rollBtn.appendChild(bm);
+            const bx = document.createElement('div'); bx.className = 'free-badge'; bx.textContent = Math.min(freeRolls, 5); rollX5Btn.appendChild(bx);
+        } else if (x5Armed) {
+            rollX5Btn.classList.add('armed'); rollBtn.classList.add('x5-armed');
+            rollBtnText.textContent = 'Крутить x5'; rollBtnPrice.textContent = '2 500 ₽';
+        } else {
+            rollBtnText.textContent = 'Крутить'; rollBtnPrice.textContent = '500 ₽';
+        }
+    }
+    function updateProfileUI() {
+        const count = savedNumbers.length;
+        document.getElementById('profCount').textContent = count;
+        if (profileBalance) profileBalance.textContent = balance.toLocaleString('ru-RU');
+        document.getElementById('profRolls').textContent = (currentUser.total_rolls || 0).toLocaleString('ru-RU');
+        document.getElementById('profEarned').textContent = formatRatingValue(balance);
+        document.getElementById('profLevel').textContent = currentUser.level || 1;
+        const xpNeeded = (currentUser.level || 1) * 1000;
+        const xpPercent = Math.min(100, ((currentUser.xp || 0) / xpNeeded) * 100);
+        if (xpMiniBar) xpMiniBar.style.width = xpPercent + '%';
+        const counts = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
+        savedNumbers.forEach(n => counts[n.rarity.key]++);
+        document.getElementById('profCountCommon').textContent = counts.common;
+        document.getElementById('profCountRare').textContent = counts.rare;
+        document.getElementById('profCountEpic').textContent = counts.epic;
+        document.getElementById('profCountLegendary').textContent = counts.legendary;
+        document.getElementById('profCountMythic').textContent = counts.mythic;
+        document.getElementById('profCountSecret').textContent = counts.secret;
+        const maxCount = Math.max(count, 1);
+        document.getElementById('profBarCommon').style.width = (counts.common / maxCount * 100) + '%';
+        document.getElementById('profBarRare').style.width = (counts.rare / maxCount * 100) + '%';
+        document.getElementById('profBarEpic').style.width = (counts.epic / maxCount * 100) + '%';
+        document.getElementById('profBarLegendary').style.width = (counts.legendary / maxCount * 100) + '%';
+        document.getElementById('profBarMythic').style.width = (counts.mythic / maxCount * 100) + '%';
+        document.getElementById('profBarSecret').style.width = (counts.secret / maxCount * 100) + '%';
+        const order = ['common', 'rare', 'epic', 'legendary', 'mythic', 'secret'];
+        let bestRarity = 'common';
+        savedNumbers.forEach(n => { if (order.indexOf(n.rarity.key) > order.indexOf(bestRarity)) bestRarity = n.rarity.key; });
+        document.getElementById('profBest').textContent = count > 0 ? getRarityName(bestRarity) : '—';
+        const pn = document.getElementById('profileUsername');
+        if (pn && currentUser) {
+            const tgName = currentUser.tg_username ? `@${escapeHtml(currentUser.tg_username)}` : '';
+            pn.innerHTML = `<b>${escapeHtml(currentUser.username)}</b> ${renderTag(currentUser.tag)}<br><span style="color:#555;font-size:12px;">${tgName}</span>`;
+        }
+        if (levelDisplay) levelDisplay.textContent = 'Ур. ' + (currentUser.level || 1);
+        const avatarHtml = buildAvatarHtml(currentUser.avatar_url);
+        const headerAv = document.getElementById('headerAvatar');
+        const profAv = document.getElementById('profileAvatarEl');
+        if (headerAv) {
+            headerAv.className = 'icon-circle avatar'; 
+            if (currentUser.avatar_frame) headerAv.classList.add(currentUser.avatar_frame);
+            headerAv.innerHTML = avatarHtml;
+        }
+        if (profAv) {
+            profAv.className = 'profile-avatar'; 
+            if (currentUser.avatar_frame) profAv.classList.add(currentUser.avatar_frame);
+            profAv.innerHTML = avatarHtml;
+        }
+    }
+    function handleX5Click() { x5Armed = !x5Armed; updateRollButtons(); }
+    function handleMainClick() { const c = x5Armed ? 5 : 1; startRoll(c); x5Armed = false; updateRollButtons(); }
 
-function updateBalance() {
-    balanceDisplay.innerHTML = balance.toLocaleString('ru-RU') + ' <span>₽</span>';
-    if (profileBalance) profileBalance.textContent = balance.toLocaleString('ru-RU');
-}
-function updateAdminVisibility() {
-    const s = document.getElementById('adminSection');
-    const m = document.getElementById('adminMenu');
-    if (currentUser && currentUser.is_owner) { s.style.display = 'block'; m.style.display = 'grid'; }
-    else { s.style.display = 'none'; m.style.display = 'none'; }
-}
-function updateRollButtons() {
-    const rollBtn = document.getElementById('rollBtn');
-    const rollBtnText = document.getElementById('rollBtnText');
-    const rollBtnPrice = document.getElementById('rollBtnPrice');
-    const rollX5Btn = document.getElementById('rollX5Btn');
-    if (!rollBtn) return;
-    rollBtn.querySelectorAll('.free-badge').forEach(b => b.remove());
-    rollX5Btn.querySelectorAll('.free-badge').forEach(b => b.remove());
-    rollBtn.classList.remove('free', 'x5-armed');
-    rollX5Btn.classList.remove('free', 'armed');
-    if (freeRolls > 0) {
-        rollBtn.classList.add('free'); rollX5Btn.classList.add('free');
-        rollBtnText.textContent = 'Крутить бесплатно';
-        rollBtnPrice.textContent = '';
-        const bm = document.createElement('div'); bm.className = 'free-badge'; bm.textContent = freeRolls > 99 ? '99+' : freeRolls; rollBtn.appendChild(bm);
-        const bx = document.createElement('div'); bx.className = 'free-badge'; bx.textContent = Math.min(freeRolls, 5); rollX5Btn.appendChild(bx);
-    } else if (x5Armed) {
-        rollX5Btn.classList.add('armed'); rollBtn.classList.add('x5-armed');
-        rollBtnText.textContent = 'Крутить x5'; rollBtnPrice.textContent = '2 500 ₽';
-    } else {
-        rollBtnText.textContent = 'Крутить'; rollBtnPrice.textContent = '500 ₽';
-    }
-}
-function updateProfileUI() {
-    const count = savedNumbers.length;
-    document.getElementById('profCount').textContent = count;
-    if (profileBalance) profileBalance.textContent = balance.toLocaleString('ru-RU');
-    document.getElementById('profRolls').textContent = (currentUser.total_rolls || 0).toLocaleString('ru-RU');
-    document.getElementById('profEarned').textContent = formatRatingValue(balance);
-    document.getElementById('profLevel').textContent = currentUser.level || 1;
-    const xpNeeded = (currentUser.level || 1) * 1000;
-    const xpPercent = Math.min(100, ((currentUser.xp || 0) / xpNeeded) * 100);
-    if (xpMiniBar) xpMiniBar.style.width = xpPercent + '%';
-    const counts = { common: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, secret: 0 };
-    savedNumbers.forEach(n => counts[n.rarity.key]++);
-    document.getElementById('profCountCommon').textContent = counts.common;
-    document.getElementById('profCountRare').textContent = counts.rare;
-    document.getElementById('profCountEpic').textContent = counts.epic;
-    document.getElementById('profCountLegendary').textContent = counts.legendary;
-    document.getElementById('profCountMythic').textContent = counts.mythic;
-    document.getElementById('profCountSecret').textContent = counts.secret;
-    const maxCount = Math.max(count, 1);
-    document.getElementById('profBarCommon').style.width = (counts.common / maxCount * 100) + '%';
-    document.getElementById('profBarRare').style.width = (counts.rare / maxCount * 100) + '%';
-    document.getElementById('profBarEpic').style.width = (counts.epic / maxCount * 100) + '%';
-    document.getElementById('profBarLegendary').style.width = (counts.legendary / maxCount * 100) + '%';
-    document.getElementById('profBarMythic').style.width = (counts.mythic / maxCount * 100) + '%';
-    document.getElementById('profBarSecret').style.width = (counts.secret / maxCount * 100) + '%';
-    const order = ['common', 'rare', 'epic', 'legendary', 'mythic', 'secret'];
-    let bestRarity = 'common';
-    savedNumbers.forEach(n => { if (order.indexOf(n.rarity.key) > order.indexOf(bestRarity)) bestRarity = n.rarity.key; });
-    document.getElementById('profBest').textContent = count > 0 ? getRarityName(bestRarity) : '—';
-    const pn = document.getElementById('profileUsername');
-    if (pn && currentUser) {
-        const tgName = currentUser.tg_username ? `@${currentUser.tg_username}` : '';
-        pn.innerHTML = `<b>${currentUser.username}</b> ${renderTag(currentUser.tag)}<br><span style="color:#555;font-size:12px;">${tgName}</span>`;
-    }
-    if (levelDisplay) levelDisplay.textContent = 'Ур. ' + (currentUser.level || 1);
-    const avatarHtml = buildAvatarHtml(currentUser.avatar_url);
-    const headerAv = document.getElementById('headerAvatar');
-    const profAv = document.getElementById('profileAvatarEl');
-    if (headerAv) {
-        headerAv.className = 'icon-circle avatar'; 
-        if (currentUser.avatar_frame) headerAv.classList.add(currentUser.avatar_frame);
-        headerAv.innerHTML = avatarHtml;
-    }
-    if (profAv) {
-        profAv.className = 'profile-avatar'; 
-        if (currentUser.avatar_frame) profAv.classList.add(currentUser.avatar_frame);
-        profAv.innerHTML = avatarHtml;
-    }
-}
-function handleX5Click() { x5Armed = !x5Armed; updateRollButtons(); }
-function handleMainClick() { const c = x5Armed ? 5 : 1; startRoll(c); x5Armed = false; updateRollButtons(); }
-
-function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
-function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
-function openCollection() { closeMenu(); currentFilter = 'all'; updateCollection(); setTimeout(() => document.getElementById('collectionScreen').classList.add('active'), 300); }
-function closeCollection() { document.getElementById('collectionScreen').classList.remove('active'); }
-function openProfile() { closeMenu(); updateProfileUI(); setTimeout(() => document.getElementById('profileScreen').classList.add('active'), 300); }
-function closeProfile() { document.getElementById('profileScreen').classList.remove('active'); }
-function openChances() { closeMenu(); renderChancesScreen(); setTimeout(() => document.getElementById('chancesScreen').classList.add('active'), 300); }
-function closeChances() { document.getElementById('chancesScreen').classList.remove('active'); }
-function openRating() { closeMenu(); renderRating(); setTimeout(() => document.getElementById('ratingScreen').classList.add('active'), 300); }
-function closeRating() { document.getElementById('ratingScreen').classList.remove('active'); }
-function openGames() { closeMenu(); setTimeout(() => document.getElementById('gamesScreen').classList.add('active'), 300); }
-function closeGames() { document.getElementById('gamesScreen').classList.remove('active'); }
-function openUpgradeGame() { document.getElementById('upgradeGameScreen').classList.add('active'); }
-function closeUpgradeGame() { document.getElementById('upgradeGameScreen').classList.remove('active'); }
-function openPromo() { closeMenu(); setTimeout(() => document.getElementById('promoScreen').classList.add('active'), 300); }
-function closePromo() { document.getElementById('promoScreen').classList.remove('active'); }
-function openCheckNumber() { closeMenu(); document.getElementById('checkScreen').classList.add('active'); }
-function closeCheckNumber() { document.getElementById('checkScreen').classList.remove('active'); }
-function openNotifications() { closeMenu(); renderNotifications(); setTimeout(() => document.getElementById('notificationsScreen').classList.add('active'), 300); }
-function closeNotifications() { document.getElementById('notificationsScreen').classList.remove('active'); }
+    function openMenu() { document.getElementById('overlay').classList.add('active'); document.getElementById('menuSheet').classList.add('active'); }
+    function closeMenu() { document.getElementById('overlay').classList.remove('active'); document.getElementById('menuSheet').classList.remove('active'); }
+    function openCollection() { closeMenu(); currentFilter = 'all'; updateCollection(); setTimeout(() => document.getElementById('collectionScreen').classList.add('active'), 300); }
+    function closeCollection() { document.getElementById('collectionScreen').classList.remove('active'); }
+    function openProfile() { closeMenu(); updateProfileUI(); setTimeout(() => document.getElementById('profileScreen').classList.add('active'), 300); }
+    function closeProfile() { document.getElementById('profileScreen').classList.remove('active'); }
+    function openChances() { closeMenu(); renderChancesScreen(); setTimeout(() => document.getElementById('chancesScreen').classList.add('active'), 300); }
+    function closeChances() { document.getElementById('chancesScreen').classList.remove('active'); }
+    function openRating() { closeMenu(); renderRating(); setTimeout(() => document.getElementById('ratingScreen').classList.add('active'), 300); }
+    function closeRating() { document.getElementById('ratingScreen').classList.remove('active'); }
+    function openGames() { closeMenu(); setTimeout(() => document.getElementById('gamesScreen').classList.add('active'), 300); }
+    function closeGames() { document.getElementById('gamesScreen').classList.remove('active'); }
+    function openUpgradeGame() { document.getElementById('upgradeGameScreen').classList.add('active'); }
+    function closeUpgradeGame() { document.getElementById('upgradeGameScreen').classList.remove('active'); }
+    function openPromo() { closeMenu(); setTimeout(() => document.getElementById('promoScreen').classList.add('active'), 300); }
+    function closePromo() { document.getElementById('promoScreen').classList.remove('active'); }
+    function openCheckNumber() { closeMenu(); document.getElementById('checkScreen').classList.add('active'); }
+    function closeCheckNumber() { document.getElementById('checkScreen').classList.remove('active'); }
+    function openNotifications() { closeMenu(); renderNotifications(); setTimeout(() => document.getElementById('notificationsScreen').classList.add('active'), 300); }
+    function closeNotifications() { document.getElementById('notificationsScreen').classList.remove('active'); }
 function openAdmin() { 
     closeMenu(); 
     updateMaintenanceButtonUI(); 
     setTimeout(() => document.getElementById('adminScreen').classList.add('active'), 300); 
 }
-function closeAdmin() { document.getElementById('adminScreen').classList.remove('active'); }
-function openAdminPlayers() { renderAdminPlayersList(); document.getElementById('adminPlayersScreen').classList.add('active'); }
-function closeAdminPlayers() { document.getElementById('adminPlayersScreen').classList.remove('active'); }
-function openAdminPlayerDetail(id) { renderAdminPlayerDetail(id); document.getElementById('adminPlayerDetail').classList.add('active'); }
-function closeAdminPlayerDetail() { document.getElementById('adminPlayerDetail').classList.remove('active'); }
-function closeAdminCollection() { document.getElementById('adminCollectionScreen').classList.remove('active'); }
-function openAdminStats() { renderAdminStats(); document.getElementById('adminStatsScreen').classList.add('active'); }
-function closeAdminStats() { document.getElementById('adminStatsScreen').classList.remove('active'); }
-function openAdminReset() { document.getElementById('adminResetScreen').classList.add('active'); }
-function closeAdminReset() { document.getElementById('adminResetScreen').classList.remove('active'); }
-function openAdminPromo() { document.getElementById('adminPromoScreen').classList.add('active'); renderPromoList(); }
-function closeAdminPromo() { document.getElementById('adminPromoScreen').classList.remove('active'); }
-function shareBot() {
-    const link = 'https://t.me/NomerokGameSim_bot';
-    const text = '🎮 Играй в Sim Card Game!';
-    const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
-    if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
-    else window.open(url, '_blank');
-}
+    function closeAdmin() { document.getElementById('adminScreen').classList.remove('active'); }
+    function openAdminPlayers() { renderAdminPlayersList(); document.getElementById('adminPlayersScreen').classList.add('active'); }
+    function closeAdminPlayers() { document.getElementById('adminPlayersScreen').classList.remove('active'); }
+    function openAdminPlayerDetail(id) { renderAdminPlayerDetail(id); document.getElementById('adminPlayerDetail').classList.add('active'); }
+    function closeAdminPlayerDetail() { document.getElementById('adminPlayerDetail').classList.remove('active'); }
+    function closeAdminCollection() { document.getElementById('adminCollectionScreen').classList.remove('active'); }
+    function openAdminStats() { renderAdminStats(); document.getElementById('adminStatsScreen').classList.add('active'); }
+    function closeAdminStats() { document.getElementById('adminStatsScreen').classList.remove('active'); }
+    function openAdminReset() { document.getElementById('adminResetScreen').classList.add('active'); }
+    function closeAdminReset() { document.getElementById('adminResetScreen').classList.remove('active'); }
+    function openAdminPromo() { document.getElementById('adminPromoScreen').classList.add('active'); renderPromoList(); }
+    function closeAdminPromo() { document.getElementById('adminPromoScreen').classList.remove('active'); }
+    function shareBot() {
+        const link = 'https://t.me/NomerokGameSim_bot';
+        const text = '🎮 Играй в Sim Card Game!';
+        const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+        if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
+        else window.open(url, '_blank');
+    }
 function openAdminNews() {
     document.getElementById('adminScreen').classList.remove('active');
     document.getElementById('adminNewsScreen').classList.add('active');
@@ -3093,6 +3213,7 @@ function closeAdminNews() {
     document.getElementById('adminScreen').classList.add('active');
 }
 async function createNews() {
+    if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
     const title = document.getElementById('newsTitleInput').value.trim();
     const desc = document.getElementById('newsDescInput').value.trim();
     const hours = parseInt(document.getElementById('newsHoursInput').value) || 0;
@@ -3124,10 +3245,10 @@ async function renderAdminNewsList() {
         }
         return `<div class="promo-list-item">
             <div class="promo-list-header">
-                <div class="promo-list-code" style="font-size: 14px;">${n.title}</div>
+                <div class="promo-list-code" style="font-size: 14px;">${escapeHtml(n.title)}</div>
                 <div class="promo-list-status ${isExpired ? 'expired' : 'active'}">${timeText}</div>
             </div>
-            <div class="promo-list-info-row"><span style="color:#aaa;">${n.description}</span></div>
+            <div class="promo-list-info-row"><span style="color:#aaa;">${escapeHtml(n.description)}</span></div>
             <div class="promo-list-actions">
                 <button class="promo-del-btn" onclick="deleteNews('${n.id}')"><i class="fa-solid fa-trash"></i> Удалить</button>
             </div>
@@ -3135,6 +3256,7 @@ async function renderAdminNewsList() {
     }).join('');
 }
 async function deleteNews(id) {
+    if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
     if (!confirm('Удалить новость?')) return;
     await sb.from('news_feed').delete().eq('id', id);
     showToast('success', 'Удалена', '');
@@ -3142,6 +3264,7 @@ async function deleteNews(id) {
     renderAdminNewsList();
 }
 
+// ===== КЭШ ПРОФИЛЯ =====
 function cacheProfile() {
     if (!currentUser || !telegramUser) return;
     try {
@@ -3177,9 +3300,10 @@ function loadCachedProfile() {
     } catch(_) { return null; }
 }
 
+// ===== БЫСТРЫЙ ПОКАЗ =====
 function buildAvatarHtml(url) {
     if (!url) return '<i class="fa-solid fa-crown"></i>';
-    return '<img src="' + url + '" alt="" loading="eager" decoding="async" style="width:100%;height:100%;object-fit:cover;background:linear-gradient(135deg,#2a2200,#1a1500);" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'<i class=&quot;fa-solid fa-crown&quot;></i>\';">';
+    return '<img src="' + escapeHtml(url) + '" alt="" loading="eager" decoding="async" style="width:100%;height:100%;object-fit:cover;background:linear-gradient(135deg,#2a2200,#1a1500);" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'<i class=&quot;fa-solid fa-crown&quot;></i>\';">';
 }
 
 function showGameImmediately() {
@@ -3207,6 +3331,61 @@ if (cached.profile && cached.profile.level && levelDisplay) {
 
     document.getElementById('gameRoot').style.display = 'block';
     document.getElementById('loadingScreen').classList.add('hidden');
+}
+
+// ===== ОСНОВНОЙ BOOTSTRAP =====
+async function checkIfAdmin() {
+    try {
+        const { data } = await sb.from('profiles').select('is_owner').eq('telegram_id', telegramUser.id).maybeSingle();
+        return data && data.is_owner;
+    } catch(e) { return false; }
+}
+
+function showMaintenanceScreen(text) {
+    let overlay = document.getElementById('maintenanceOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'maintenanceOverlay';
+        overlay.style.cssText = 'position: fixed; inset: 0; background: #0d0d0d; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; gap: 20px;';
+        document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = `
+        <div style="font-size: 60px;">🛠️</div>
+        <div style="font-size: 24px; font-weight: 800; color: #fff;">Технические работы</div>
+        <div style="font-size: 15px; color: #aaa; line-height: 1.6;">${escapeHtml(text || 'Скоро вернёмся!')}</div>
+        <button onclick="location.reload()" style="margin-top: 20px; background: #2a2a2a; color: #fff; border: none; border-radius: 12px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer;">Обновить</button>
+    `;
+    overlay.style.display = 'flex';
+    document.getElementById('gameRoot').style.display = 'none';
+}
+
+async function bootstrap() {
+    if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('errorScreen').classList.add('active');
+        return;
+    }
+    tg.ready(); tg.expand();
+    telegramUser = tg.initDataUnsafe.user;
+
+    // Проверяем тех. работы ДО показа игры
+    document.getElementById('loadingText').textContent = 'Проверка сервера...';
+    try {
+        const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
+        if (data && data.maintenance_mode) {
+            const isAdmin = await checkIfAdmin();
+            if (!isAdmin) {
+                showMaintenanceScreen(data.maintenance_text);
+                document.getElementById('loadingScreen').classList.add('hidden');
+                return;
+            }
+        }
+    } catch(e) {
+        console.warn('Maintenance check failed:', e);
+    }
+
+    showGameImmediately();
+    await refreshFromServer();
 }
 
 // ===== ЗАГРУЗКА С СЕРВЕРА =====
@@ -3301,7 +3480,8 @@ async function loadSavedNumbers() {
     }));
 }
 async function loadAllPlayers() {
-    const { data } = await sb.from('profiles').select('*').order('balance', { ascending: false }).limit(100);
+    // Загружаем больше игроков для корректного рейтинга
+    const { data } = await sb.from('profiles').select('*').order('balance', { ascending: false }).limit(500);
     allPlayersList = data || [];
 }
 
@@ -3322,17 +3502,17 @@ function renderAdminGiveCard(formatted, ownerName = null, isSecret = false) {
     if (ownerName) {
         resEl.innerHTML = `
             <div class="check-result visible" style="margin: 0; background: #1c1c1c; border-radius: 20px;">
-                <div class="check-result-number">${formatted}</div>
+                <div class="check-result-number">${escapeHtml(formatted)}</div>
                 <div class="check-status busy">Занят</div>
                 <div class="check-info-row">
-                    <div class="check-info-col"><div class="check-info-label">Владелец</div><div class="check-info-value">${ownerName}</div></div>
+                    <div class="check-info-col"><div class="check-info-label">Владелец</div><div class="check-info-value">${escapeHtml(ownerName)}</div></div>
                 </div>
             </div>
         `;
     } else {
         resEl.innerHTML = `
             <div class="check-result visible" style="margin: 0; background: #1c1c1c; border-radius: 20px; margin-bottom: 16px;">
-                <div class="check-result-number">${formatted}</div>
+                <div class="check-result-number">${escapeHtml(formatted)}</div>
                 <div class="check-status free">Свободен</div>
                 <div class="check-info-row" style="margin-top: 10px;">
                     <div class="check-info-col">
@@ -3384,6 +3564,7 @@ async function searchAdminSecretNumber() {
     }
 }
 async function confirmGiveNumber(isSecret = false) {
+    if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
     const target = document.getElementById('adminGiveTarget').value.trim();
     if (!target) { showToast('error', 'Введите ID игрока', ''); return; }
     let formatted = isSecret ? adminFoundSecret : adminFoundNumber;
@@ -3443,7 +3624,7 @@ async function renderAdminLogs() {
     const list = document.getElementById('adminLogsList');
     list.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Загрузка логов...</div>';
     const { data, error } = await sb.from('admin_logs').select('*').order('created_at', { ascending: false }).limit(100);
-    if (error) { list.innerHTML = '<div style="color:#ef4444;padding:20px;">Ошибка: ' + error.message + '</div>'; return; }
+    if (error) { list.innerHTML = '<div style="color:#ef4444;padding:20px;">Ошибка: ' + escapeHtml(error.message) + '</div>'; return; }
     if (!data || data.length === 0) { list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Логов пока нет</div>'; return; }
     list.innerHTML = data.map(log => {
         let icon = 'fa-info-circle'; let color = '#888';
@@ -3454,10 +3635,10 @@ async function renderAdminLogs() {
         const date = new Date(log.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
         return `<div class="promo-list-item" style="border-left: 3px solid ${color};">
             <div class="promo-list-header">
-                <div style="font-size: 13px; font-weight: 700; color: #fff;"><i class="fa-solid ${icon}" style="color: ${color}; margin-right: 6px;"></i>${log.username}</div>
+                <div style="font-size: 13px; font-weight: 700; color: #fff;"><i class="fa-solid ${icon}" style="color: ${color}; margin-right: 6px;"></i>${escapeHtml(log.username)}</div>
                 <div style="font-size: 11px; color: #888;">${date}</div>
             </div>
-            <div style="font-size: 12px; color: #ccc; margin-top: 4px;">${log.details}</div>
+            <div style="font-size: 12px; color: #ccc; margin-top: 4px;">${escapeHtml(log.details)}</div>
         </div>`;
     }).join('');
 }
@@ -3471,26 +3652,14 @@ async function checkMaintenance() {
         }
         document.getElementById('gameRoot').style.display = 'none';
         document.getElementById('loadingScreen').classList.add('hidden');
-        let overlay = document.getElementById('maintenanceOverlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'maintenanceOverlay';
-            overlay.style.cssText = 'position: fixed; inset: 0; background: #0d0d0d; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; gap: 20px;';
-            document.body.appendChild(overlay);
-        }
-        overlay.innerHTML = `
-            <div style="font-size: 60px;">🛠️</div>
-            <div style="font-size: 24px; font-weight: 800; color: #fff;">Технические работы</div>
-            <div style="font-size: 15px; color: #aaa; line-height: 1.6;">${data.maintenance_text || 'Скоро вернёмся!'}</div>
-            <button onclick="location.reload()" style="margin-top: 20px; background: #2a2a2a; color: #fff; border: none; border-radius: 12px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer;">Обновить</button>
-        `;
-        overlay.style.display = 'flex';
+        showMaintenanceScreen(data.maintenance_text);
     } else {
         const overlay = document.getElementById('maintenanceOverlay');
         if (overlay) overlay.style.display = 'none';
     }
 }
 async function toggleMaintenance() {
+    if (!currentUser || !currentUser.is_owner) { showToast('error', 'Нет прав', ''); return; }
     const { data } = await sb.from('app_settings').select('*').eq('id', 1).maybeSingle();
     if (!data) return;
     const newStatus = !data.maintenance_mode;
@@ -3518,6 +3687,7 @@ async function updateMaintenanceButtonUI(status) {
     }
 }
 
+// Перехватываем ошибки и выводим их на экран телефона
 window.addEventListener('error', function(event) {
     document.getElementById('loadingScreen').classList.add('hidden');
     let errDiv = document.getElementById('phoneError');
@@ -3527,35 +3697,33 @@ window.addEventListener('error', function(event) {
         errDiv.style.cssText = 'position:fixed;top:20px;left:20px;right:20px;background:red;color:white;padding:20px;z-index:999999;font-size:14px;border-radius:10px;word-break:break-all;';
         document.body.appendChild(errDiv);
     }
-    errDiv.innerHTML = '<b>ОШИБКА:</b><br>' + event.message + '<br><br><b>Строка:</b> ' + event.lineno;
+    errDiv.innerHTML = '<b>ОШИБКА:</b><br>' + escapeHtml(event.message) + '<br><br><b>Строка:</b> ' + event.lineno;
 });
 
-// ===== ЖЕСТКИЙ ЗАПУСК БЕЗ ОЖИДАНИЯ СЕРВЕРА =====
+// ===== ЖЕСТКИЙ ЗАПУСК =====
 (function() {
     // 1. Инициализируем Telegram
     if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-        telegramUser = window.Telegram.WebApp.initDataUnsafe?.user || { id: 12345678, first_name: 'Тест' };
+        tg.ready();
+        tg.expand();
+        telegramUser = tg.initDataUnsafe?.user || { id: 12345678, first_name: 'Тест' };
     } else {
         telegramUser = { id: 12345678, first_name: 'Тест' };
     }
 
-    // 2. Мгновенно убираем экран загрузки и показываем игру
-    document.getElementById('loadingScreen').classList.add('hidden');
-    document.getElementById('gameRoot').style.display = 'block';
-    document.getElementById('balanceDisplay').innerHTML = '0 <span>₽</span>';
-
-    // 3. Запускаем загрузку данных в фоне
-    setTimeout(() => {
-        try {
-            refreshFromServer();
-        } catch(e) {
-            console.warn('Сервер не отвечает:', e);
-        }
-    }, 100);
+    // 2. Запускаем bootstrap() — он проверит тех. работы и покажет игру
+    bootstrap().catch(e => {
+        console.error('Bootstrap failed:', e);
+        // Fallback: показываем игру даже если сервер не ответил
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('gameRoot').style.display = 'block';
+        document.getElementById('balanceDisplay').innerHTML = '0 <span>₽</span>';
+        setTimeout(() => {
+            try { refreshFromServer(); } catch(err) { console.warn('Server not responding:', err); }
+        }, 100);
+    });
 })();
-
+/* Улучшение плавности скролла на iOS/Android */
 html, body, .menu-sheet, .collection-screen, .profile-screen, .shop-screen {
     -webkit-overflow-scrolling: touch; 
     scroll-behavior: smooth;
