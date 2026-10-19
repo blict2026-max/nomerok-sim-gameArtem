@@ -3598,12 +3598,33 @@ window.addEventListener('error', function(event) {
     errDiv.innerHTML = '<b>ОШИБКА:</b><br>' + event.message + '<br><br><b>Строка:</b> ' + event.lineno;
 });
 
-(async () => {
-    try {
-        await bootstrap();
-    } catch (e) {
-        window.dispatchEvent(new ErrorEvent('error', { message: e.message }));
+// ===== ЖЕСТКИЙ ЗАПУСК БЕЗ ОЖИДАНИЯ СЕРВЕРА =====
+(function() {
+    // 1. Инициализируем Telegram
+    if (window.Telegram && window.Telegram.WebApp) {
+        tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        telegramUser = tg.initDataUnsafe?.user || { id: 12345678, first_name: 'Тест' };
+    } else {
+        telegramUser = { id: 12345678, first_name: 'Тест' };
     }
+
+    // 2. Мгновенно убираем экран загрузки и показываем игру
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('gameRoot').style.display = 'block';
+
+    // 3. Показываем заглушку баланса, чтобы не было пустоты
+    document.getElementById('balanceDisplay').innerHTML = '0 <span>₽</span>';
+
+    // 4. Запускаем загрузку данных в фоне (если сервер ответит, данные обновятся)
+    setTimeout(() => {
+        try {
+            refreshFromServer();
+        } catch(e) {
+            console.warn('Сервер не отвечает:', e);
+        }
+    }, 100);
 })();
 /* Улучшение плавности скролла на iOS/Android */
 html, body, .menu-sheet, .collection-screen, .profile-screen, .shop-screen {
