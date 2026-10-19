@@ -1272,6 +1272,7 @@ let telegramUser = null;
 // ==================== СОСТОЯНИЕ ====================
 let currentUser = null;
 let balance = 0;
+let balanceSynced = false;
 let freeRolls = 0;
 let savedNumbers = [];
 let recentNumbers = [];
@@ -1579,14 +1580,19 @@ async function checkTaxes() {
     const lastTax = currentUser.last_tax_time ? new Date(currentUser.last_tax_time).getTime() : 0;
     const DAY = 24 * 60 * 60 * 1000;
     if (now - lastTax > DAY) {
+        let tax = 0;
         if (balance > 1000000) {
-            const tax = Math.floor(balance * 0.05);
+            tax = Math.floor(balance * 0.05);
             balance -= tax;
             updateBalance();
             showToast('error', 'Налог списан', `Вычли 5%: ${formatPrice(tax)}`);
         }
         currentUser.last_tax_time = new Date().toISOString();
-        await sb.from('profiles').update({ last_tax_time: currentUser.last_tax_time }).eq('id', currentUser.id);
+        await sb.from('profiles').update({
+            balance: balance,
+            last_tax_time: currentUser.last_tax_time
+        }).eq('id', currentUser.id);
+        cacheProfile();
     }
 }
 
@@ -1991,6 +1997,10 @@ async function rollOne() {
 
 async function startRoll(count) {
     if (isRolling) return;
+    if (!balanceSynced) {
+        showToast('error', 'Загрузка', 'Данные с сервера ещё идут, подождите');
+        return;
+    }
     try { new Audio('https://actions.google.com/sounds/v1/foley/playing_cards_flick_1.ogg').play().catch(()=>{}); } catch(_) {}
     let freeUsed = Math.min(freeRolls, count);
     let paidRolls = count - freeUsed;
@@ -2304,9 +2314,22 @@ async function checkNumber() {
 async function activatePromo() {
     const input = document.getElementById('promoInput').value.trim().toUpperCase();
     if (!input) { showToast('error', 'Введите промокод', ''); return; }
-    const { data: used, error: checkErr } = await sb.from('used_promocodes').select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
+
+    // Проверка по локальному кэшу (мгновенная)
+    if (usedPromoCodes.includes(input)) {
+        showToast('error', 'Уже использован', 'Этот код уже активирован');
+        return;
+    }
+
+    // Проверка в БД на случай, если кэш не загрузился
+    const { data: used, error: checkErr } = await sb.from('used_promocodes')
+        .select('id').eq('user_id', currentUser.id).eq('code', input).maybeSingle();
     if (checkErr) { showToast('error', 'Ошибка БД', checkErr.message); return; }
-    if (used) { showToast('error', 'Уже использован', 'Этот код уже активирован'); return; }
+    if (used) {
+        if (!usedPromoCodes.includes(input)) usedPromoCodes.push(input);
+        showToast('error', 'Уже использован', 'Этот код уже активирован');
+        return;
+    }
     const { data: promos, error: promoErr } = await sb.from('promo_codes').select('*').eq('code', input).limit(1);
     if (promoErr) { showToast('error', 'Ошибка БД', promoErr.message); return; }
     if (!promos || !promos.length) { showToast('error', 'Неверный промокод', ''); return; }
@@ -2966,7 +2989,7 @@ function renderNotifications() {
             pn.innerHTML = `<b>${currentUser.username}</b> ${renderTag(currentUser.tag)}<br><span style="color:#555;font-size:12px;">${tgName}</span>`;
         }
         if (levelDisplay) levelDisplay.textContent = 'Ур. ' + (currentUser.level || 1);
-        const avatarHtml = currentUser.avatar_url ? `<img src="${currentUser.avatar_url}" alt="">` : '<i class="fa-solid fa-crown"></i>';
+        const avatarHtml = buildAvatarHtml(currentUser.avatar_url);
         const headerAv = document.getElementById('headerAvatar');
         const profAv = document.getElementById('profileAvatarEl');
         if (headerAv) {
@@ -3126,14 +3149,15 @@ function loadCachedProfile() {
 }
 
 // ===== БЫСТРЫЙ ПОКАЗ =====
-function showGameImmediately() {
-    const fullName = telegramUser.first_name + (telegramUser.last_name ? ' ' + telegramUser.last_name : '');
-    const avatarHtml = telegramUser.photo_url
-        ? `<img src="${telegramUser.photo_url}" alt="">`
-        : '<i class="fa-solid fa-crown"></i>';
-    const headerAv = document.getElementById('headerAvatar');
-    if (headerAv) headerAv.innerHTML = avatarHtml;
+function buildAvatarHtml(url) {
+    if (!url) return '<i class="fa-solid fa-crown"></i>';
+    return '<img src="' + url + '" alt="" loading="eager" decoding="async" style="width:100%;height:100%;object-fit:cover;background:linear-gradient(135deg,#2a2200,#1a1500);" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'<i class=&quot;fa-solid fa-crown&quot;></i>\';">';
+}
 
+function showGameImmediately() {
+ const avatarHtml = buildAvatarHtml(telegramUser.photo_url);
+const headerAv = document.getElementById('headerAvatar');
+if (headerAv) headerAv.innerHTML = avatarHtml;
     const cached = loadCachedProfile();
     if (cached) {
         balance = cached.balance || 0;
@@ -3201,9 +3225,10 @@ async function refreshFromServer() {
         }
 
         currentUser = profile;
-        balance = profile.balance || 0;
+balance = profile.balance || 0;
+balanceSynced = true;
 
-        updateBalance();
+updateBalance();
         updateProfileUI();
         updateLuckUI();
         updateRollButtons();
@@ -3211,17 +3236,16 @@ async function refreshFromServer() {
         cacheProfile();
 
         Promise.allSettled([
-            loadSavedNumbers().then(() => { updateCollection(); updateProfileUI(); cacheProfile(); }),
-            loadAllPlayers(),
-            checkMaintenance(),
-            checkTaxes(),
-            initNewsFeed(),
-            (async () => {
-                const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
-                if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
-            })()
-        ]).catch(e => console.warn('bg load error:', e));
-
+    loadSavedNumbers().then(() => { updateCollection(); updateProfileUI(); cacheProfile(); }).catch(e => console.warn('numbers:', e)),
+    loadAllPlayers().catch(e => console.warn('players:', e)),
+    checkMaintenance().catch(e => console.warn('maint:', e)),
+    checkTaxes().catch(e => console.warn('tax:', e)),
+    initNewsFeed().catch(e => console.warn('news:', e)),
+    (async () => {
+        const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
+        if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
+    })().catch(e => console.warn('promos:', e))
+]);
         renderMiniCards();
         renderChancesScreen();
         startLuckTimer();
