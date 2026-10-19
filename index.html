@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Sim Card Game</title>
+<link rel="preconnect" href="https://docubgerphcbftmwyltl.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://docubgerphcbftmwyltl.supabase.co">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -223,7 +227,17 @@
 
     .skeleton { background: linear-gradient(90deg, #1c1c1c 25%, #252525 50%, #1c1c1c 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    .skeleton-card { height: 100px; margin: 0 16px 12px; }
+.skeleton-card { height: 100px; margin: 0 16px 12px; }
+.skeleton-balance {
+    display: inline-block;
+    width: 64px;
+    height: 20px;
+    background: linear-gradient(90deg, #1c1c1c 25%, #252525 50%, #1c1c1c 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    vertical-align: middle;
+}
 
     .collection-screen, .check-screen, .chances-screen, .profile-screen, .promo-screen, .games-screen,
     .admin-screen, .admin-players-screen, .admin-reset-screen, .admin-player-detail, .rating-screen,
@@ -3075,7 +3089,70 @@ async function deleteNews(id) {
     renderAdminNewsList();
 }
 
-// ===== ПРАВКА 3+4: bootstrap с try/catch и правильным uuid =====
+// ===== КЭШ ПРОФИЛЯ =====
+function cacheProfile() {
+    if (!currentUser || !telegramUser) return;
+    try {
+        localStorage.setItem('sim_profile_' + telegramUser.id, JSON.stringify({
+            profile: {
+                id: currentUser.id,
+                telegram_id: currentUser.telegram_id,
+                username: currentUser.username,
+                tg_username: currentUser.tg_username,
+                avatar_url: currentUser.avatar_url,
+                avatar_frame: currentUser.avatar_frame,
+                tag: currentUser.tag,
+                level: currentUser.level,
+                xp: currentUser.xp,
+                total_rolls: currentUser.total_rolls,
+                bp_points: currentUser.bp_points,
+                is_owner: currentUser.is_owner,
+                vip_until: currentUser.vip_until
+            },
+            balance: balance,
+            freeRolls: freeRolls,
+            luckBoost: luckBoost,
+            ts: Date.now()
+        }));
+    } catch(_) {}
+}
+function loadCachedProfile() {
+    if (!telegramUser) return null;
+    try {
+        const raw = localStorage.getItem('sim_profile_' + telegramUser.id);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch(_) { return null; }
+}
+
+// ===== БЫСТРЫЙ ПОКАЗ =====
+function showGameImmediately() {
+    const fullName = telegramUser.first_name + (telegramUser.last_name ? ' ' + telegramUser.last_name : '');
+    const avatarHtml = telegramUser.photo_url
+        ? `<img src="${telegramUser.photo_url}" alt="">`
+        : '<i class="fa-solid fa-crown"></i>';
+    const headerAv = document.getElementById('headerAvatar');
+    if (headerAv) headerAv.innerHTML = avatarHtml;
+
+    const cached = loadCachedProfile();
+    if (cached) {
+        balance = cached.balance || 0;
+        freeRolls = cached.freeRolls || 0;
+        luckBoost = cached.luckBoost || { x2: 0, x5: 0, x10: 0, x15: 0 };
+        updateBalance();
+        updateRollButtons();
+        updateLuckUI();
+        startLuckTimer();
+    } else {
+        document.getElementById('balanceDisplay').innerHTML =
+            '<span class="skeleton-balance"></span> <span>₽</span>';
+    }
+
+    document.getElementById('gameRoot').style.display = 'block';
+    document.getElementById('loadingScreen').classList.add('hidden');
+}
+
+// ===== ОСНОВНОЙ BOOTSTRAP =====
 async function bootstrap() {
     if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
         document.getElementById('loadingScreen').classList.add('hidden');
@@ -3084,54 +3161,78 @@ async function bootstrap() {
     }
     tg.ready(); tg.expand();
     telegramUser = tg.initDataUnsafe.user;
-    document.getElementById('loadingText').textContent = 'Вход...';
+    showGameImmediately();
+    refreshFromServer();
+}
+
+// ===== ЗАГРУЗКА С СЕРВЕРА =====
+async function refreshFromServer() {
     try {
-        let { data: profile } = await sb.from('profiles').select('*').eq('telegram_id', telegramUser.id).maybeSingle();
         const fullName = telegramUser.first_name + (telegramUser.last_name ? ' ' + telegramUser.last_name : '');
+
+        let { data: profile } = await sb.from('profiles')
+            .select('*').eq('telegram_id', telegramUser.id).maybeSingle();
+
         if (!profile) {
             const { data: newProfile, error } = await sb.from('profiles').insert({
                 id: uuidv4(), username: fullName,
-                telegram_id: telegramUser.id, tg_username: telegramUser.username || null,
+                telegram_id: telegramUser.id,
+                tg_username: telegramUser.username || null,
                 avatar_url: telegramUser.photo_url || null,
                 balance: STARTING_BALANCE, level: 1, total_rolls: 0
             }).select().single();
-            if (error) { document.getElementById('loadingText').textContent = 'Ошибка: ' + error.message; return; }
+            if (error) { showToast('error', 'Ошибка входа', error.message); return; }
             profile = newProfile;
         } else {
-            await sb.from('profiles').update({
-                username: fullName, tg_username: telegramUser.username || null,
-                avatar_url: telegramUser.photo_url || null
-            }).eq('id', profile.id);
-            profile.username = fullName;
-            profile.tg_username = telegramUser.username || null;
-            profile.avatar_url = telegramUser.photo_url || null;
+            const needUpdate =
+                profile.username !== fullName ||
+                profile.tg_username !== (telegramUser.username || null) ||
+                profile.avatar_url !== (telegramUser.photo_url || null);
+            if (needUpdate) {
+                await sb.from('profiles').update({
+                    username: fullName,
+                    tg_username: telegramUser.username || null,
+                    avatar_url: telegramUser.photo_url || null
+                }).eq('id', profile.id);
+                profile.username = fullName;
+                profile.tg_username = telegramUser.username || null;
+                profile.avatar_url = telegramUser.photo_url || null;
+            }
         }
+
         currentUser = profile;
         balance = profile.balance || 0;
 
-        try { await checkMaintenance(); } catch(e) { console.warn('checkMaintenance failed:', e); }
+        updateBalance();
+        updateProfileUI();
+        updateLuckUI();
+        updateRollButtons();
+        updateAdminVisibility();
+        cacheProfile();
 
-            document.getElementById('gameRoot').style.display = 'block';
-            document.getElementById('loadingScreen').classList.add('hidden');
+        Promise.allSettled([
+            loadSavedNumbers().then(() => { updateCollection(); updateProfileUI(); cacheProfile(); }),
+            loadAllPlayers(),
+            checkMaintenance(),
+            checkTaxes(),
+            initNewsFeed(),
+            (async () => {
+                const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
+                if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
+            })()
+        ]).catch(e => console.warn('bg load error:', e));
 
-        loadSavedNumbers();
-        loadAllPlayers();
-        
-        usedPromoCodes = []; 
-        try {
-            const { data: usedPromos } = await sb.from('used_promocodes').select('code').eq('user_id', currentUser.id);
-            if (usedPromos) usedPromoCodes = usedPromos.map(x => x.code);
-        } catch(e) { console.warn('usedPromos failed:', e); }
+        renderMiniCards();
+        renderChancesScreen();
+        startLuckTimer();
 
-        try { await checkTaxes(); } catch(e) { console.warn('checkTaxes failed:', e); }
-        initNewsFeed();
+        setTimeout(() => {
+            try { subscribeToNotifications(); } catch(e) { console.warn(e); }
+        }, 1500);
 
-        updateBalance(); updateProfileUI(); updateLuckUI(); updateRollButtons();
-        renderMiniCards(); renderChancesScreen(); startLuckTimer(); updateAdminVisibility();
-        subscribeToNotifications();
     } catch (e) {
-        console.error(e);
-        document.getElementById('loadingText').textContent = 'Ошибка: ' + (e.message || 'Не удалось');
+        console.error('refreshFromServer error:', e);
+        showToast('error', 'Ошибка загрузки', e.message || 'Проверьте интернет');
     }
 }
 async function saveUserData() {
@@ -3141,6 +3242,7 @@ async function saveUserData() {
             balance: balance, total_rolls: currentUser.total_rolls || 0,
             level: currentUser.level || 1, updated_at: new Date().toISOString()
         }).eq('id', currentUser.id);
+        cacheProfile();
     } catch (e) { console.error('Save error', e); }
 }
 async function loadSavedNumbers() {
